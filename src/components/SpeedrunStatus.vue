@@ -65,7 +65,9 @@ export default {
 
       this.timePlayedStr = Time.realTimePlayed.toStringShort();
       this.offlineProgress = player.options.offlineProgress;
-      this.offlineFraction = speedrun.offlineTimeUsed.div(player.records.realTimePlayed.clampMin(1));
+      this.offlineFraction = Decimal
+        .div(speedrun.offlineTimeUsed, player.records.realTimePlayed.clampMin(1))
+        .toNumber();
       this.mostRecent = Speedrun.mostRecentMilestone();
       this.timeSince = Time.realTimePlayed.minus(TimeSpan.fromMilliseconds(
         new Decimal(speedrun.records[this.mostRecent] ?? 0)))
@@ -74,7 +76,8 @@ export default {
     },
     milestoneName(id) {
       const db = GameDatabase.speedrunMilestones;
-      return id === 0 ? "None" : db.find(m => m.id === id).name;
+      if (id === 0) return "None";
+      return db.find(m => m.id === id)?.name ?? "Unknown";
     },
     changeName() {
       if (this.hasStarted) return;

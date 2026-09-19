@@ -166,6 +166,8 @@ export function secondSoftReset(enteringAntimatterChallenge) {
   player.records.thisInfinity.time = DC.D0;
   player.records.thisInfinity.lastBuyTime = DC.D0;
   player.records.thisInfinity.realTime = DC.D0;
+  // Achievement 35 tracks whether autobuyers were enabled during this Infinity.
+  player.records.thisInfinity.autobuyersUsed = false;
   Player.resetRequirements("infinity");
   AchievementTimers.marathon2.reset();
 }

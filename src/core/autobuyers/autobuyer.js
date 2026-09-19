@@ -28,6 +28,9 @@ export class AutobuyerState {
   }
 
   set isActive(value) {
+    if (value && !this.data.isActive && player.auto.autobuyersOn) {
+      player.records.thisInfinity.autobuyersUsed = true;
+    }
     this.data.isActive = value;
   }
 
@@ -75,7 +78,12 @@ export class AutobuyerState {
       groupName: { get: () => this.autobuyerGroupName },
       isActive: {
         get: () => this.isActive,
-        set: value => { this.isActive = value; },
+        set: value => {
+          if (value && !this.isActive && player.auto.autobuyersOn) {
+            player.records.thisInfinity.autobuyersUsed = true;
+          }
+          this.isActive = value;
+        },
       },
     });
     accessor.toggle = () => this.isActive = !this.isActive;

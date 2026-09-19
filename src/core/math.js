@@ -479,9 +479,9 @@ window.ExponentialCostScaling = class ExponentialCostScaling {
   */
 
   constructor(param) {
-    this._baseCost = param.baseCost;
-    this._baseIncrease = param.baseIncrease;
-    this._costScale = param.costScale;
+    this._baseCost = new Decimal(param.baseCost);
+    this._baseIncrease = new Decimal(param.baseIncrease);
+    this._costScale = new Decimal(param.costScale);
     if (param.purchasesBeforeScaling === undefined && param.scalingCostThreshold === undefined) {
       throw new Error("purchasesBeforeScaling or scalingCostThreshold must be defined");
     }
@@ -491,17 +491,24 @@ window.ExponentialCostScaling = class ExponentialCostScaling {
     if (param.purchasesBeforeScaling instanceof Decimal) this._purchasesBeforeScaling = param.purchasesBeforeScaling;
     if (param.scalingCostThreshold instanceof Decimal) this._purchasesBeforeScaling =
       (param.scalingCostThreshold.log10().sub(this._baseCost.log10()).div(this._baseIncrease.log10())).ceil();
-    this.log = {
-      _baseCost: param.baseCost.log10(),
-      _baseIncrease: param.baseIncrease.log10(),
-      _costScale: param.costScale.log10(),
-    };
+    this._logBaseCost = this._baseCost.log10();
+    this._logBaseIncrease = this._baseIncrease.log10();
+    this._logCostScale = this._costScale.log10();
+    this.updateCostScale();
+  }
+
+  updateCostScale() {
+    this._precalcDiscriminant = Decimal.pow(this._logBaseIncrease.mul(2).add(this._logCostScale), 2).sub(
+      this._logCostScale.mul(8).mul(this._logBaseIncrease.mul(this._purchasesBeforeScaling).add(this._logBaseCost))
+    );
+    this._precalcCenter = this._logBaseIncrease.neg().div(this._logCostScale)
+      .add(this._purchasesBeforeScaling).add(0.5);
   }
 
   updateData(param) {
-    this._baseCost = param.baseCost;
-    this._baseIncrease = param.baseIncrease;
-    this._costScale = param.costScale;
+    this._baseCost = new Decimal(param.baseCost);
+    this._baseIncrease = new Decimal(param.baseIncrease);
+    this._costScale = new Decimal(param.costScale);
     if (param.purchasesBeforeScaling === undefined && param.scalingCostThreshold === undefined) {
       throw new Error("purchasesBeforeScaling or scalingCostThreshold must be defined");
     }
@@ -511,11 +518,10 @@ window.ExponentialCostScaling = class ExponentialCostScaling {
     if (param.purchasesBeforeScaling instanceof Decimal) this._purchasesBeforeScaling = param.purchasesBeforeScaling;
     if (param.scalingCostThreshold instanceof Decimal) this._purchasesBeforeScaling =
       (param.scalingCostThreshold.log10().sub(this._baseCost.log10()).div(this._baseIncrease.log10())).ceil();
-    this.log = {
-      _baseCost: param.baseCost.log10(),
-      _baseIncrease: param.baseIncrease.log10(),
-      _costScale: param.costScale.log10(),
-    };
+    this._logBaseCost = this._baseCost.log10();
+    this._logBaseIncrease = this._baseIncrease.log10();
+    this._logCostScale = this._costScale.log10();
+    this.updateCostScale();
   }
 
   get costScale() {
@@ -525,15 +531,16 @@ window.ExponentialCostScaling = class ExponentialCostScaling {
   set costScale(value) {
     if (!(value instanceof Decimal)) return;
     this._costScale = value;
-    this.log._costScale = value.log10();
+    this._logCostScale = value.log10();
+    this.updateCostScale();
   }
 
 
   calculateCost(currentPurchases) {
     // Define these here just cause theyre easier to type
-    const base = this.log._baseCost;
-    const inc = this.log._baseIncrease;
-    const scale = this.log._costScale;
+    const base = this._logBaseCost;
+    const inc = this._logBaseIncrease;
+    const scale = this._logCostScale;
     const purchases = this._purchasesBeforeScaling;
 
     // If it never becomes exponential cost, just return linear and stop
@@ -547,64 +554,38 @@ window.ExponentialCostScaling = class ExponentialCostScaling {
     const expoPurchases = currentPurchases.sub(purchases);
     // eslint-disable-next-line max-len
     // Since we times by scale X times per purchase past max, we can find the triangular number of expoPurchases and just mult that by scale
-    const scaleCostFinal = expoPurchases.pow(2).add(expoPurchases).div(2).times(scale);
+    const scaleCostFinal = expoPurchases.mul(expoPurchases.add(1)).mul(scale).mul(0.5);
     // Add and pow10
     return Decimal.pow10(costBeforeExpo.add(scaleCostFinal));
   }
 
   getMaxBought(currentPurchases, currency, purchasesPerIncrease, roundDown = true) {
-    // Copypaste
-    const base = this.log._baseCost;
-    const inc = this.log._baseIncrease;
-    const scale = this.log._costScale;
-    const purchases = this._purchasesBeforeScaling;
-    const ppIlog = purchasesPerIncrease.log10();
-    let logMoney = currency.log10().sub(ppIlog);
-    // A console.log(logMoney);
-    // First, is the currency before the cost of Exponential? If so we solve it here and return
-    if (logMoney.lte(base.add(inc.times(purchases.floor())))) {
-      let purchaseAmount = logMoney.sub(base).div(inc).add(1);
-      // A console.log(purchaseAmount);
-      // Round value DOWN
-      if (roundDown) purchaseAmount = purchaseAmount.floor();
-      // Return null if its less than the purchases we already have
-      if (purchaseAmount.lte(currentPurchases)) return null;
-      const cost = this.calculateCost(purchaseAmount).log10().add(ppIlog);
-      purchaseAmount = purchaseAmount.sub(currentPurchases);
-      purchaseAmount = purchaseAmount.times(purchasesPerIncrease);
-      return { quantity: purchaseAmount,
-        logPrice: cost };
-      // We invert the calc after the floor to find the highest cost
+    const money = currency.div(purchasesPerIncrease);
+    const logMoney = money.log10();
+    let purchaseAmount = Decimal.floor(logMoney.sub(this._logBaseCost).div(this._logBaseIncrease).add(1));
+    if (purchaseAmount.gt(this._purchasesBeforeScaling)) {
+      const discrim = this._precalcDiscriminant.add(logMoney.mul(8).mul(this._logCostScale));
+      if (discrim.sign < 0) return null;
+      purchaseAmount = Decimal.floor(this._precalcCenter.add(
+        Decimal.sqrt(discrim).div(this._logCostScale.mul(2))
+      ));
     }
-
-    // Deduct the cost up to the linear limit
-    let purchaseAmount = purchases;
-    logMoney = logMoney.sub(base.add(inc.times(purchases)));
-
-    // Where does this equation come from?
-    // Well it comes from the fact that if we subtract all preScaling costs, the cost is equal to:
-    // 0.5s(p^2 + p) + ip (i = log(inc), s = log(scale), p = purchases)
-    // Solving for p there gives us a quadratic with -0.5s as a, (-0.5s - i) as b and cost as c
-    // Put that into the quadratic (-b - sqrt(b^2 - 4ac))/2a and you get purchases
-
-    logMoney = logMoney.sub(ppIlog);
-    const a = new Decimal(0).sub(scale).div(2);
-    const b = a.sub(inc);
-    const c = logMoney;
-
-    purchaseAmount = purchaseAmount.add(decimalQuadraticSolution(a, b, c, true)).add(1);
-
-    // Technically this only buys up to the nearest set, but post exponential thats a minor flaw at most (and correct?)
-    if (roundDown) purchaseAmount = purchaseAmount.floor();
-
     if (purchaseAmount.lte(currentPurchases)) return null;
-
-    const purchaseCost = this.calculateCost(purchaseAmount).log10().add(ppIlog);
+    let logPrice;
+    if (purchaseAmount.lte(this._purchasesBeforeScaling.add(1))) {
+      logPrice = purchaseAmount.sub(1).mul(this._logBaseIncrease).add(this._logBaseCost);
+    } else {
+      const excess = purchaseAmount.sub(this._purchasesBeforeScaling);
+      logPrice = purchaseAmount.sub(1).mul(this._logBaseIncrease).add(this._logBaseCost)
+        .add(this._logCostScale.mul(0.5).mul(excess).mul(excess.sub(1)));
+    }
     purchaseAmount = purchaseAmount.sub(currentPurchases);
+    if (purchaseAmount.lte(0)) return null;
     if (roundDown) purchaseAmount = purchaseAmount.floor();
-
-    purchaseAmount = purchaseAmount.times(purchasesPerIncrease);
-    return { quantity: purchaseAmount, logPrice: purchaseCost };
+    return {
+      quantity: purchaseAmount,
+      logPrice: logPrice.add(Decimal.log10(purchasesPerIncrease))
+    };
   }
 
   getContinuumValue(money, perSet) {

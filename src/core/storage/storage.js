@@ -531,7 +531,7 @@ export const GameStorage = {
     const simulateOffline = this.offlineEnabled ?? player.options.offlineProgress;
     if (simulateOffline && !Speedrun.isPausedAtStart()) {
       let diff = rawDiff;
-      player.speedrun.offlineTimeUsed += diff;
+      player.speedrun.offlineTimeUsed = new Decimal(player.speedrun.offlineTimeUsed).add(diff);
       if (diff > 5 * 60 * 1000 && player.celestials.enslaved.autoStoreReal) {
         diff = Enslaved.autoStoreRealTime(diff);
       }
@@ -545,10 +545,6 @@ export const GameStorage = {
         this.postLoadStuff();
       }
     } else {
-      // Try to unlock "Don't you dare sleep" (usually this check only happens
-      // during a game tick, which makes the achievement impossible to get
-      // with offline progress off)
-      if (!Speedrun.isPausedAtStart()) Achievement(35).tryUnlock();
       player.lastUpdate = Date.now();
       this.postLoadStuff();
     }

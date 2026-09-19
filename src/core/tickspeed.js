@@ -99,10 +99,11 @@ export function buyMaxTickSpeed() {
     }
   } else {
     const purchases = Tickspeed.costScale.getMaxBought(player.totalTickBought, Currency.antimatter.value, DC.D1, true);
-    if (purchases !== null) {
+    if (purchases !== null && purchases.quantity.gt(0)) {
       if (purchases.logPrice.eq(player.antimatter.max(1).log10()) && player.dimensions.antimatter[0].amount.eq(0)) {
-        purchases.logPrice = Tickspeed.costScale.calculateCost(purchases.quantity.sub(1));
-        purchases.quantity = purchases.quantity.sub(1);
+        purchases.logPrice = Tickspeed.costScale.calculateCost(
+          player.totalTickBought.add(purchases.quantity).sub(1));
+        if (purchases.quantity.gt(1)) purchases.quantity = purchases.quantity.sub(1);
       }
       Currency.antimatter.subtract(Decimal.pow10(purchases.logPrice));
       player.totalTickBought = player.totalTickBought.add(purchases.quantity);

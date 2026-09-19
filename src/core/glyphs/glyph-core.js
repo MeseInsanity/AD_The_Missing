@@ -47,7 +47,8 @@ export const Glyphs = {
     return player.reality.glyphs.inventory;
   },
   get sortedInventoryList() {
-    return this.inventoryList.sort((a, b) => Decimal.compare(a.level.mul(a.strength), b.level.mul(b.strength)));
+    return this.inventoryList.sort((a, b) =>
+      Decimal.compare(Decimal.mul(a.level, a.strength), Decimal.mul(b.level, b.strength)));
   },
   get activeList() {
     return player.reality.glyphs.active;
@@ -527,7 +528,7 @@ export const Glyphs = {
     this.sort((a, b) => Decimal.compare(a.level, b.level));
   },
   sortByPower() {
-    this.sort((a, b) => Decimal.compare(a.level.mul(a.strength), b.level.mul(b.strength)));
+    this.sort((a, b) => Decimal.compare(Decimal.mul(a.level, a.strength), Decimal.mul(b.level, b.strength)));
   },
   sortByScore() {
     this.sort((a, b) => Decimal.compare(AutoGlyphProcessor.filterValue(b), AutoGlyphProcessor.filterValue(a)));

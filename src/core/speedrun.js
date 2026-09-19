@@ -1,5 +1,6 @@
 import { GameDatabase } from "./secret-formula/game-database";
 import { GameMechanicState } from "./game-mechanics";
+import { DC } from "./constants";
 
 export const Speedrun = {
   officialFixedSeed: 69420,
@@ -80,12 +81,9 @@ export const Speedrun = {
 
     // A few achievements are given for free to mitigate weird strategies at the beginning of runs or unavoidable
     // timewalls for particularly fast/optimized runs
-    Achievement(22).unlock();
-    Achievement(35).unlock();
-    Achievement(76).unlock();
 
     // Some time elapses after the reset and before the UI is actually ready, which ends up getting "counted" as offline
-    player.speedrun.offlineTimeUsed = 0;
+    player.speedrun.offlineTimeUsed = DC.D0;
     GameStorage.save();
   },
   // Speedruns are initially paused until startTimer is called, which happens as soon as the player purchases a AD or
@@ -107,9 +105,12 @@ export const Speedrun = {
     player.speedrun.isSegmented = state;
   },
   mostRecentMilestone() {
-    const newestTime = player.speedrun.records.max();
-    if (newestTime === 0) return 0;
-    return player.speedrun.records.indexOf(newestTime);
+    const records = player.speedrun.records;
+    let newestIndex = 0;
+    for (let i = 1; i < records.length; i++) {
+      if (new Decimal(records[i]).gt(records[newestIndex])) newestIndex = i;
+    }
+    return new Decimal(records[newestIndex]).eq(0) ? 0 : newestIndex;
   }
 };
 

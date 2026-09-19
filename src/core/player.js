@@ -292,6 +292,7 @@ window.player = {
       time: DC.D0,
       realTime: DC.D0,
       trueTime: 0,
+      autobuyersUsed: false,
       lastBuyTime: DC.D0,
       maxAM: DC.D0,
       bestIPmin: DC.D0,
@@ -362,7 +363,7 @@ window.player = {
     displayAllMilestones: false,
     startDate: 0,
     name: "",
-    offlineTimeUsed: 0,
+    offlineTimeUsed: DC.D0,
     // One spot for every entry in GameDatabase.speedrunMilestones (note: 1-indexed)
     records: Array.repeat(0, 26),
     achievementTimes: {},

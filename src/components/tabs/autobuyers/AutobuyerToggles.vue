@@ -19,6 +19,9 @@ export default {
   },
   watch: {
     autobuyersOn(newValue) {
+      if (newValue && !player.auto.autobuyersOn && Autobuyers.unlocked.some(autobuyer => autobuyer.isActive)) {
+        player.records.thisInfinity.autobuyersUsed = true;
+      }
       player.auto.autobuyersOn = newValue;
     },
     disableContinuum(newValue) {

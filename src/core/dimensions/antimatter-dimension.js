@@ -89,6 +89,11 @@ export function getDimensionFinalMultiplierUncached(tier) {
 function applyNDMultipliers(mult, tier) {
   let multiplier = mult.times(GameCache.antimatterDimensionCommonMultiplier.value);
 
+  // Each first-row achievement affects its tier and every lower-tier Dimension.
+  for (let rewardTier = tier; rewardTier <= 8; rewardTier++) {
+    multiplier = multiplier.times(Achievement(rewardTier + 10).effectOrDefault(1));
+  }
+
   let buy10Value;
   if (Laitela.continuumActive) {
     buy10Value = AntimatterDimension(tier).continuumValue.div(10);
@@ -324,6 +329,7 @@ export function buyMaxDimension(tier, bulk = Infinity) {
   }
   let buying = maxBought.quantity;
   if (buying.gt(bulkLeft)) buying = new Decimal(bulkLeft);
+  if (buying.lte(0)) return;
   dimension.amount = dimension.amount.plus(buying.times(10));
   dimension.bought = dimension.bought.add(buying.times(10));
   dimension.currencyAmount = dimension.currencyAmount.minus(Decimal.pow10(maxBought.logPrice)).max(0);

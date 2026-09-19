@@ -122,6 +122,9 @@ export const Autobuyers = (function() {
 
     toggle() {
       player.auto.autobuyersOn = !player.auto.autobuyersOn;
+      if (player.auto.autobuyersOn && this.unlocked.some(autobuyer => autobuyer.isActive)) {
+        player.records.thisInfinity.autobuyersUsed = true;
+      }
     },
 
     tick() {

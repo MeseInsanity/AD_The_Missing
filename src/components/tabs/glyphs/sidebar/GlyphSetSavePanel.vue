@@ -71,7 +71,8 @@ export default {
     // preset match, and leniently when matching greedily may lead to an incomplete set being loaded
     loadGlyphSet(set, id) {
       if (!this.setLengthValid(set)) return;
-      let glyphsToLoad = [...set].sort((a, b) => Decimal.compare(a.level.mul(a.strength), b.level.mul(b.strength)));
+      let glyphsToLoad = [...set].sort((a, b) =>
+        Decimal.compare(Decimal.mul(a.level, a.strength), Decimal.mul(b.level, b.strength)));
       const activeGlyphs = [...Glyphs.active.filter(g => g)];
 
       // Create an array where each entry contains a single active glyph and all its matches in the preset which it

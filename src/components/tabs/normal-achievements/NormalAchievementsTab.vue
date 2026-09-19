@@ -121,7 +121,13 @@ export default {
       return this.renderedRowIndices.includes(row);
     },
     isObscured(row) {
-      return this.isDoomed ? false : row === 17;
+      // `row` is the zero-based index used by the rendered achievement grid.
+      if (PlayerProgress.current.hasFullCompletion || this.isDoomed) return false;
+      if (PlayerProgress.realityUnlocked()) return row >= 17;
+      if (PlayerProgress.eternityUnlocked()) return row >= 13;
+      if (PlayerProgress.hasBroken()) return row >= 9;
+      if (PlayerProgress.infinityUnlocked()) return row >= 5;
+      return row >= 2;
     },
     timeDisplay,
     timeDisplayNoDecimals,

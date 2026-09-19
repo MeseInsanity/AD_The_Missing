@@ -38,10 +38,15 @@ export default {
       return this.achievement.id;
     },
     displayId() {
-      return this.config.displayId ?? this.id;
+      if (this.isEffectivelyObscured) return `${this.achievement.row}-${this.achievement.column}`;
+      return this.config.displayId ?? `${this.achievement.row}-${this.achievement.column}`;
     },
     config() {
       return this.achievement.config;
+    },
+    // Completed achievements remain readable even when their row is obscured.
+    isEffectivelyObscured() {
+      return this.isObscured && !this.isUnlocked;
     },
     styleObject() {
       return {
@@ -52,13 +57,13 @@ export default {
       return {
         "o-achievement": true,
         "o-achievement--disabled": this.isDisabled,
-        "o-achievement--locked": !this.isUnlocked && !this.isDisabled && !this.isObscured,
+        "o-achievement--locked": !this.isUnlocked && !this.isDisabled && !this.isEffectivelyObscured,
         "o-achievement--unlocked": this.isUnlocked,
         "o-achievement--waiting": !this.isUnlocked && this.isPreRealityAchievement && !this.isDisabled,
-        "o-achievement--blink": !this.isUnlocked && this.id === 78 && !this.isDisabled,
-        "o-achievement--normal": !this.isCancer && !this.isObscured,
-        "o-achievement--cancer": this.isCancer && !this.isObscured,
-        "o-achievement--hidden": this.isObscured,
+        "o-achievement--blink": !this.isUnlocked && this.id === 78 && !this.isDisabled && !this.isEffectivelyObscured,
+        "o-achievement--normal": !this.isCancer && !this.isEffectivelyObscured,
+        "o-achievement--cancer": this.isCancer && !this.isEffectivelyObscured,
+        "o-achievement--hidden": this.isEffectivelyObscured,
       };
     },
     indicatorIconClass() {
@@ -86,7 +91,7 @@ export default {
       return this.realityUnlocked && this.achievement.row <= 13;
     },
     hasReward() {
-      return this.config.reward !== undefined && !this.isObscured;
+      return this.config.reward !== undefined && !this.isEffectivelyObscured;
     },
     // The garble templates themselves can be static, and shouldn't be recreated every render tick
     garbledNameTemplate() {
@@ -124,7 +129,7 @@ export default {
       // This uses key-swapping to force the garbled achievements to re-render their text, because otherwise they
       // would remain static. Keys for non-garbled achievements won't change, and all keys remain unique.
       this.garbleTimer++;
-      if (this.isObscured) {
+      if (this.isEffectivelyObscured) {
         this.garbleKey = 10 * this.id + Math.floor(this.garbleTimer / 3);
       } else {
         this.garbleKey = this.id;
@@ -156,7 +161,7 @@ export default {
     },
     // When appropriate, garbles input text for achievements on the last row. Otherwise leaves it unchanged
     processText(unmodified, garbledTemplate) {
-      if (!this.isObscured) return unmodified;
+      if (!this.isEffectivelyObscured) return unmodified;
 
       // The garbling effect often replaces spaces with non-spaces, which affects line length and can cause individual
       // lines to become long enough that they can't word-wrap. To address that, we take the template as a reference
@@ -200,7 +205,7 @@ export default {
           class="o-achievement__tooltip__reward"
         >
           <span
-            v-if="!isObscured"
+            v-if="!isEffectivelyObscured"
             :class="{ 'o-pelle-disabled': isDisabled }"
           >
             Reward: {{ config.reward }}

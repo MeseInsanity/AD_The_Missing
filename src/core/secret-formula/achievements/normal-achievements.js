@@ -6,30 +6,40 @@ export const normalAchievements = [
     id: 11,
     name: "You gotta start somewhere",
     description: "Buy a 1st Antimatter Dimension.",
+    reward: "1st Antimatter Dimensions are 10% stronger.",
+    effect: 1.1,
     checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
   },
   {
     id: 12,
     name: "100 antimatter is a lot",
     description: "Buy a 2nd Antimatter Dimension.",
+    reward: "2nd and lower Antimatter Dimensions are 20% stronger.",
+    effect: 1.2,
     checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
   },
   {
     id: 13,
     name: "Half life 3 CONFIRMED",
     description: "Buy a 3rd Antimatter Dimension.",
+    reward: "3rd and lower Antimatter Dimensions are 30% stronger.",
+    effect: 1.3,
     checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
   },
   {
     id: 14,
     name: "L4D: Left 4 Dimensions",
     description: "Buy a 4th Antimatter Dimension.",
+    reward: "4th and lower Antimatter Dimensions are 40% stronger.",
+    effect: 1.4,
     checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
   },
   {
     id: 15,
     name: "5 Dimension Antimatter Punch",
     description: "Buy a 5th Antimatter Dimension.",
+    reward: "5th and lower Antimatter Dimensions are 50% stronger.",
+    effect: 1.5,
     checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
   },
   {
@@ -40,12 +50,16 @@ export const normalAchievements = [
         ? "Buy a 6th Antimatter Dimension (they never amount to anything)"
         : "Buy a 6th Antimatter Dimension.";
     },
+    reward: "6th and lower Antimatter Dimensions are 60% stronger.",
+    effect: 1.6,
     checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
   },
   {
     id: 17,
     name: "Not a luck related achievement",
     description: "Buy a 7th Antimatter Dimension.",
+    reward: "7th and lower Antimatter Dimensions are 70% stronger.",
+    effect: 1.7,
     checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
   },
   {
@@ -56,6 +70,8 @@ export const normalAchievements = [
         ? "Buy an 8th Antimatter Dimension (don't get used to it)"
         : "Buy an 8th Antimatter Dimension.";
     },
+    reward: "All Antimatter Dimensions are 80% stronger.",
+    effect: 1.8,
     checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
   },
   {
@@ -69,10 +85,21 @@ export const normalAchievements = [
   },
   {
     id: 22,
-    name: "FAKE NEWS!",
-    get description() { return `Encounter ${formatInt(50)} different news messages.`; },
-    checkRequirement: () => NewsHandler.uniqueTickersSeen >= 50,
-    checkEvent: GAME_EVENT.REALITY_RESET_AFTER
+    name: "A Balanced Start",
+    description: "Perform a Dimension Boost with no Antimatter Dimension bought more than 20.",
+    reward: "Dimension Boost Power is increased based on total Antimatter Dimension purchases.",
+    checkRequirement: () =>
+      DimBoost.requirement.isSatisfied &&
+      AntimatterDimensions.all.every(dimension => dimension.bought.lte(20)),
+    checkEvent: GAME_EVENT.DIMBOOST_BEFORE,
+    effect: () => {
+      const totalPurchases = AntimatterDimensions.all
+        .map(dimension => dimension.bought.max(dimension.continuumAmount))
+        .reduce(Decimal.sumReducer, DC.D0)
+        .max(1);
+      return DC.D1.add(totalPurchases.max(1).log10().div(50));
+    },
+    formatEffect: value => `${formatX(value, 2, 2)}`
   },
   {
     id: 23,
@@ -162,13 +189,11 @@ export const normalAchievements = [
   {
     id: 35,
     name: "Don't you dare sleep",
-    get description() {
-      return PlayerProgress.realityUnlocked()
-        ? `Be offline for a period of over ${formatInt(6)} hours (real time).`
-        : `Be offline for a period of over ${formatInt(6)} hours.`;
-    },
-    checkRequirement: () => Date.now() - new Decimal(player.lastUpdate).toNumber() >= 21600000,
-    checkEvent: GAME_EVENT.GAME_TICK_BEFORE
+    description: "Reach Infinity without ever enabling Autobuyers during this Infinity.",
+    checkRequirement: () =>
+      !player.records.thisInfinity.autobuyersUsed &&
+      (!player.auto.autobuyersOn || Autobuyers.unlocked.every(autobuyer => !autobuyer.isActive)),
+    checkEvent: GAME_EVENT.BIG_CRUNCH_BEFORE
   },
   {
     id: 36,

@@ -28,7 +28,9 @@ export default {
       };
     },
     offlineAttr() {
-      const offlineFrac = this.prevRunInfo.offlineTimeUsed / this.prevRunInfo.records.max();
+      const offlineFrac = Decimal
+        .div(this.prevRunInfo.offlineTimeUsed, this.prevRunInfo.records.max())
+        .toNumber();
       let symbol;
       if (offlineFrac === 0) symbol = "fa-eye";
       else if (offlineFrac < 0.1) symbol = "fa-computer";
