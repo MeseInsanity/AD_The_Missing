@@ -29,7 +29,7 @@ export default {
         [
           BreakInfinityUpgrade.infinitiedGen,
           BreakInfinityUpgrade.autobuyMaxDimboosts,
-          BreakInfinityUpgrade.autobuyerSpeed
+          BreakInfinityUpgrade.galaxyFormula
         ],
         [
           BreakInfinityUpgrade.tickspeedCostMult,

@@ -44,8 +44,8 @@ export const breakInfinityUpgrades = {
   galaxyBoost: {
     id: "postGalaxy",
     cost: new Decimal(5e11),
-    description: () => `All Galaxies are ${formatPercents(0.5)} stronger`,
-    effect: 1.5
+    description: "All Galaxies are twice as strong, again.",
+    effect: 2
   },
   infinitiedMult: {
     id: "infinitiedMult",
@@ -95,10 +95,10 @@ export const breakInfinityUpgrades = {
     cost: new Decimal(5e9),
     description: "Unlock the buy max Dimension Boost Autobuyer mode"
   },
-  autobuyerSpeed: {
-    id: "autoBuyerUpgrade",
+  galaxyFormula: {
+    id: "galaxyFormula",
     cost: DC.E15,
-    description: "Autobuyers unlocked or improved by Normal Challenges work twice as fast"
+    description: "Antimatter Galaxies Formula is now improved."
   },
   tickspeedCostMult: rebuyable({
     id: 0,

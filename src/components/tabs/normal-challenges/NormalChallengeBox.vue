@@ -31,8 +31,12 @@ export default {
         return this.challenge.config;
       }
       return {
-        description: `Infinity ${formatInt(this.challenge.config.lockedAt)} times to unlock.`
+        description: `Complete ${formatInt(this.challenge.config.lockedAt.toNumber())} Normal Challenges to unlock.`
       };
+    },
+    lockedText() {
+      return ` (${formatInt(NormalChallenges.all.countWhere(challenge => challenge.isCompleted))}` +
+        `/${formatInt(this.challenge.config.lockedAt.toNumber())})`;
     },
     name() {
       return `C${this.challenge.id}`;
@@ -63,6 +67,7 @@ export default {
     :is-completed="isCompleted"
     :override-label="overrideLabel"
     :locked-at="lockedAt"
+    :locked-text="lockedText"
     class="c-challenge-box--normal"
     @start="challenge.requestStart()"
   >

@@ -33,6 +33,11 @@ export default {
       required: false,
       default: "",
     },
+    lockedText: {
+      type: String,
+      required: false,
+      default: "",
+    },
   },
   data() {
     return {
@@ -62,9 +67,9 @@ export default {
       if (this.isRunning || this.inC1) return "Running";
       if (this.isCompleted) return "Completed";
       if (this.isUnlocked) return "Start";
-      const lockedText = this.lockedAt === undefined
+      const lockedText = this.lockedText || (this.lockedAt === undefined
         ? ""
-        : ` (${format(this.infinities)}/${formatInt(this.lockedAt)})`;
+        : ` (${format(this.infinities)}/${formatInt(this.lockedAt)})`);
       return `Locked${lockedText}`;
     }
   },

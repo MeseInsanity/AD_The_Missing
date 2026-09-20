@@ -1,4 +1,5 @@
 import { DC } from "./constants";
+import { Fragments } from "./secret-formula/fragments";
 
 export function effectiveBaseGalaxies() {
   // Note that this already includes the "50% more" active path effect
@@ -23,6 +24,7 @@ export function getTickSpeedMultiplier() {
   if (InfinityChallenge(3).isRunning) return DC.D1;
   if (Ra.isRunning) return DC.C1D1_1245;
   let galaxies = effectiveBaseGalaxies();
+  const fragmentEffect = Fragments.galaxyPower.effect();
   const effects = Effects.product(
     InfinityUpgrade.galaxyBoost,
     InfinityUpgrade.galaxyBoost.chargedEffect,
@@ -35,35 +37,22 @@ export function getTickSpeedMultiplier() {
     PelleUpgrade.galaxyPower,
     PelleRifts.decay.milestones[1]
   );
-  if (galaxies.lt(3)) {
-    // Magic numbers are to retain balancing from before while displaying
-    // them now as positive multipliers rather than negative percentages
-    let baseMultiplier = DC.C1D1_1245;
-    if (player.galaxies.eq(1)) baseMultiplier = DC.C1D1_11888888;
-    if (player.galaxies.eq(2)) baseMultiplier = DC.C1D1_11267177;
-    if (NormalChallenge(5).isRunning) {
-      baseMultiplier = DC.D1.div(1.08);
-      if (player.galaxies.eq(1)) baseMultiplier = DC.D1.div(1.07632);
-      if (player.galaxies.eq(2)) baseMultiplier = DC.D1.div(1.072);
-    }
-    const perGalaxy = effects.div(50);
-    if (Pelle.isDoomed) galaxies.div(2);
-
-    galaxies = galaxies.times(Pelle.specialGlyphEffect.power);
-    return DC.D0_01.clampMin(baseMultiplier.sub((galaxies.times(perGalaxy))));
-  }
-  let baseMultiplier = 0.8;
-  if (NormalChallenge(5).isRunning) baseMultiplier = 0.83;
-  galaxies = galaxies.sub(2);
-  galaxies = galaxies.times(effects);
+  if (Pelle.isDoomed) galaxies = galaxies.div(2);
+  galaxies = galaxies.times(Pelle.specialGlyphEffect.power);
   galaxies = galaxies.times(getAdjustedGlyphEffect("cursedgalaxies"));
   galaxies = galaxies.times(getAdjustedGlyphEffect("realitygalaxies"));
   galaxies = galaxies.times(ImaginaryUpgrade(9).effectOrDefault(DC.D0).add(1));
-  if (Pelle.isDoomed) galaxies = galaxies.div(2);
 
-  galaxies = galaxies.times(Pelle.specialGlyphEffect.power);
+  if (!BreakInfinityUpgrade.galaxyFormula.isBought) {
+    const base = NormalChallenge(5).isRunning ? DC.D1_08 : DC.D1_1245;
+    const fragmentDivider = DC.D4.div(fragmentEffect).sqrt();
+    return DC.D1.div(base.add(galaxies.times(effects).times(0.01).div(fragmentDivider)));
+  }
+  let baseMultiplier = NormalChallenge(5).isRunning ? DC.C1D1_08 : DC.C1D1_1245;
+  galaxies = galaxies.times(effects);
   const perGalaxy = DC.D0_965;
-  return perGalaxy.pow(galaxies.sub(2)).times(baseMultiplier);
+  const fragmentDivider = DC.D4.div(fragmentEffect).sqrt();
+  return baseMultiplier.times(perGalaxy.pow(galaxies.div(fragmentDivider)));
 }
 
 export function buyTickSpeed() {

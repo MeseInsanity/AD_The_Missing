@@ -56,8 +56,8 @@ class NormalChallengeState extends GameMechanicState {
   get isUnlocked() {
     if (PlayerProgress.eternityUnlocked()) return true;
     if (this.id === 0) return true;
-    const ip = GameDatabase.challenges.normal[this.id - 1].lockedAt;
-    return Currency.infinitiesTotal.gte(ip);
+    const requiredCompletions = this.config.lockedAt.toNumber();
+    return NormalChallenges.all.countWhere(challenge => challenge.isCompleted) >= requiredCompletions;
   }
 
   get isDisabled() {

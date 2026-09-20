@@ -193,7 +193,9 @@ export const normalAchievements = [
     checkRequirement: () =>
       !player.records.thisInfinity.autobuyersUsed &&
       (!player.auto.autobuyersOn || Autobuyers.unlocked.every(autobuyer => !autobuyer.isActive)),
-    checkEvent: GAME_EVENT.BIG_CRUNCH_BEFORE
+    checkEvent: GAME_EVENT.BIG_CRUNCH_BEFORE,
+    get reward() { return "Autobuyers unlocked or improved by Normal Challenges work twice as fast."; },
+    effect: 2
   },
   {
     id: 36,

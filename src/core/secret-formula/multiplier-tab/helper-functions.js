@@ -54,7 +54,7 @@ export const MultiplierTabHelper = {
       baseMult = new Decimal(baseMult).div(0.965 ** 2);
       const logBase = Decimal.log10(baseMult);
 
-      const perGalaxy = effects.mul(0.02);
+      const perGalaxy = effects.mul(0.01);
       effectiveCount = effectiveCount.mul(Pelle.specialGlyphEffect.power);
 
       tickFrac = Tickspeed.totalUpgrades.mul(logBase);
