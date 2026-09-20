@@ -23,7 +23,7 @@ export function updateNormalAndInfinityChallenges(diff) {
   }
 
   if (NormalChallenge(2).isRunning) {
-    player.chall2Pow = Decimal.min(player.chall2Pow.add(diff.div(100).div(1800)), 1);
+    player.chall2Pow = player.chall2Pow.times(DC.D0_5.pow(diff.div(4000)));
   }
 
   if (InfinityChallenge(2).isRunning) {

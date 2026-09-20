@@ -13,6 +13,10 @@ export const infinityUpgrades = {
     id: "timeMult",
     cost: 1,
     description: "Antimatter Dimensions gain a multiplier based on time played",
+    onPurchased: () => {
+      InfinityDimension(1).isUnlocked = true;
+      Tab.dimensions.infinity.show();
+    },
     effect: () => Decimal.pow(Time.totalTimePlayed.totalMinutes.div(2), 0.15),
     formatEffect: value => formatX(value, 2, 2),
     charged: {

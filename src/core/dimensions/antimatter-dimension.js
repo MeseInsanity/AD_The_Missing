@@ -188,7 +188,7 @@ function onBuyDimension(tier) {
 
   if (player.speedrun.isActive && !player.speedrun.hasStarted) Speedrun.startTimer();
 
-  if (NormalChallenge(2).isRunning) player.chall2Pow = DC.D0;
+  if (NormalChallenge(2).isRunning) player.chall2Pow = DC.D1;
   if (NormalChallenge(4).isRunning || InfinityChallenge(1).isRunning) {
     AntimatterDimensions.resetAmountUpToTier(tier - 1);
   }
@@ -595,9 +595,6 @@ class AntimatterDimensionState extends DimensionState {
       if (tier === 6) amount = amount.pow(1.2);
     }
     let production = amount.times(this.multiplier).times(Tickspeed.perSecond);
-    if (NormalChallenge(2).isRunning) {
-      production = production.times(player.chall2Pow);
-    }
     if (tier === 1) {
       if (NormalChallenge(3).isRunning) {
         production = production.times(player.chall3Pow);

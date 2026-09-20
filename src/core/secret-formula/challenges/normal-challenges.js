@@ -23,9 +23,7 @@ export const normalChallenges = [
     id: 2,
     legacyId: 2,
     isQuickResettable: false,
-    description:
-      () => "buying Antimatter Dimensions or Tickspeed upgrades halts production of all Antimatter Dimensions. " +
-      `Production gradually returns to normal over ${formatInt(3)} minutes.`,
+    description: "Buying Antimatter Dimensions or Tickspeed upgrades maximizes a Tickspeed penalty based on Antimatter. This penalty decays with a half-life of 4 seconds.",
     name: "2nd Antimatter Dimension Autobuyer",
     reward: "Upgradeable 2nd Antimatter Dimension Autobuyer",
     lockedAt: DC.D0,

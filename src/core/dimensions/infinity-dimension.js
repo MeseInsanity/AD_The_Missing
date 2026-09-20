@@ -1,5 +1,7 @@
 import { DC } from "../constants";
 
+import { Fragments } from "../secret-formula/fragments";
+
 import { DimensionState } from "./dimension";
 
 export function infinityDimensionCommonMultiplier() {
@@ -50,17 +52,21 @@ class InfinityDimensionState extends DimensionState {
       DC.E60000,
     ];
     this._unlockRequirement = UNLOCK_REQUIREMENTS[tier];
-    const COST_MULTS = [null, 1e3, 1e6, 1e8, 1e10, 1e15, 1e20, 1e25, 1e30];
+    const COST_MULTS = [null, 10, 1e2, 1e3, 1e4, 1e15, 1e20, 1e25, 1e30];
     this._costMultiplier = COST_MULTS[tier];
     const POWER_MULTS = [null, 50, 30, 10, 5, 5, 5, 5, 5];
     this._powerMultiplier = POWER_MULTS[tier];
-    const BASE_COSTS = [null, 1e8, 1e9, 1e10, 1e20, 1e140, 1e200, 1e250, 1e280];
+    const BASE_COSTS = [null, 0, 1e2, 1e4, 1e7, 1e140, 1e200, 1e250, 1e280];
     this._baseCost = new Decimal(BASE_COSTS[tier]);
     this.ipRequirement = BASE_COSTS[1];
   }
 
   /** @returns {Decimal} */
-  get cost() { return this.data.cost; }
+  get cost() {
+    // Costs are saved on the player object. Use the configured base cost before the
+    // first purchase so cost changes apply to existing saves as well as new games.
+    return this.purchases.eq(0) ? this.baseCost : this.data.cost;
+  }
   /** @param {Decimal} value */
   set cost(value) { this.data.cost = value; }
 
@@ -73,7 +79,7 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get isUnlocked() {
-    return this.data.isUnlocked;
+    return this.data.isUnlocked || (this.tier === 1 && InfinityUpgrade.totalTimeMult.isBought);
   }
 
   set isUnlocked(value) {
@@ -97,6 +103,7 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get canUnlock() {
+    if (this.tier === 1) return InfinityUpgrade.totalTimeMult.isBought;
     return (Perk.bypassIDAntimatter.canBeApplied || this.antimatterRequirementReached) &&
       this.ipRequirementReached;
   }
@@ -217,7 +224,7 @@ class InfinityDimensionState extends DimensionState {
     }
     return InfinityDimensions.capIncrease.add(this.tier === 8
       ? DC.BEMAX
-      : InfinityDimensions.HARDCAP_PURCHASES);
+      : InfinityDimensions.basePurchaseCap);
   }
 
   get isCapped() {
@@ -225,7 +232,8 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get hardcapIPAmount() {
-    return this._baseCost.times(Decimal.pow(this.costMultiplier, this.purchaseCap));
+    const baseCost = this.tier === 1 ? DC.D1 : this._baseCost;
+    return baseCost.times(Decimal.pow(this.costMultiplier, this.purchaseCap));
   }
 
   resetAmount() {
@@ -264,7 +272,9 @@ class InfinityDimensionState extends DimensionState {
     }
 
     Currency.infinityPoints.purchase(this.cost);
-    this.cost = Decimal.round(this.cost.times(this.costMultiplier));
+    this.cost = this.cost.eq(0)
+      ? this.costMultiplier
+      : Decimal.round(this.cost.times(this.costMultiplier));
     // Because each ID purchase gives 10 IDs
     this.amount = this.amount.plus(10);
     this.baseAmount = this.baseAmount.add(10);
@@ -286,6 +296,12 @@ class InfinityDimensionState extends DimensionState {
       return false;
     }
 
+    let boughtFree = false;
+    if (this.cost.eq(0)) {
+      boughtFree = this.buySingle();
+      if (!boughtFree || !this.isAvailableForPurchase) return boughtFree;
+    }
+
     let purchasesUntilHardcap = this.purchaseCap.sub(this.purchases);
     if (EternityChallenge(8).isRunning) {
       purchasesUntilHardcap = Decimal.clampMax(purchasesUntilHardcap, player.eterc8ids);
@@ -298,7 +314,7 @@ class InfinityDimensionState extends DimensionState {
       purchasesUntilHardcap
     );
 
-    if (costScaling.purchases.lte(0)) return false;
+    if (costScaling.purchases.lte(0)) return boughtFree;
 
     Currency.infinityPoints.purchase(costScaling.totalCost);
     this.cost = this.cost.times(costScaling.totalCostMultiplier);
@@ -327,6 +343,17 @@ export const InfinityDimensions = {
    */
   all: InfinityDimension.index.compact(),
   HARDCAP_PURCHASES: new Decimal(2000000),
+
+  get basePurchaseCap() {
+    const completions = InfinityChallenges.completed.length;
+    if (completions <= 7) {
+      return new Decimal(5 + (20 * completions) / 7).floor();
+    }
+    if (completions <= 11) {
+      return Decimal.floor(Decimal.pow(4, (completions - 7) / 4).times(25));
+    }
+    return new Decimal(200);
+  },
 
   unlockNext() {
     if (InfinityDimension(8).isUnlocked) return;
@@ -357,7 +384,7 @@ export const InfinityDimensions = {
   },
 
   get totalDimCap() {
-    return this.HARDCAP_PURCHASES.add(this.capIncrease);
+    return this.basePurchaseCap.add(this.capIncrease);
   },
 
   canBuy() {
@@ -410,7 +437,7 @@ export const InfinityDimensions = {
   },
 
   get powerConversionRate() {
-    return getAdjustedGlyphEffect("infinityrate").add(7)
+    return getAdjustedGlyphEffect("infinityrate").add(Fragments.infinityPowerConversion.effect())
       .add(PelleUpgrade.infConversion.effectOrDefault(0)).mul(PelleRifts.paradox.milestones[2].effectOrDefault(1));
   }
 };

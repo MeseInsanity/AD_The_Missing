@@ -110,7 +110,7 @@ export default {
           translated
         </span>
         to a
-        <span class="c-infinity-dim-description__accent">{{ formatX(dimMultiplier, 2, 1) }}</span>
+        <span class="c-infinity-dim-description__accent">{{ formatX(dimMultiplier, 2, 2) }}</span>
         multiplier on all
         <span v-if="!isEC9Running">Antimatter Dimensions.</span>
         <span v-else>Time Dimensions due to Eternity Challenge 9.</span>

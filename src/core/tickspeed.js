@@ -20,6 +20,13 @@ export function effectiveBaseGalaxies() {
   return Decimal.max(player.galaxies.add(GalaxyGenerator.galaxies).add(replicantiGalaxies).add(freeGalaxies), 0);
 }
 
+function applyNC2TickspeedPenalty(multiplier) {
+  if (!NormalChallenge(2).isRunning) return multiplier;
+  const progress = Currency.antimatter.value.clampMin(1).pLog10()
+    .div(Decimal.log10(Player.infinityGoal)).clampMin(0).clampMax(1);
+  return multiplier.add(DC.D1.sub(multiplier).times(progress).times(player.chall2Pow));
+}
+
 export function getTickSpeedMultiplier() {
   if (InfinityChallenge(3).isRunning) return DC.D1;
   if (Ra.isRunning) return DC.C1D1_1245;
@@ -45,14 +52,15 @@ export function getTickSpeedMultiplier() {
 
   if (!BreakInfinityUpgrade.galaxyFormula.isBought) {
     const base = NormalChallenge(5).isRunning ? DC.D1_08 : DC.D1_1245;
-    const fragmentDivider = DC.D4.div(fragmentEffect).sqrt();
-    return DC.D1.div(base.add(galaxies.times(effects).times(0.01).div(fragmentDivider)));
+    const multiplier = DC.D1.div(base.add(galaxies.times(effects).times(0.01)));
+    return applyNC2TickspeedPenalty(multiplier);
   }
   let baseMultiplier = NormalChallenge(5).isRunning ? DC.C1D1_08 : DC.C1D1_1245;
   galaxies = galaxies.times(effects);
   const perGalaxy = DC.D0_965;
   const fragmentDivider = DC.D4.div(fragmentEffect).sqrt();
-  return baseMultiplier.times(perGalaxy.pow(galaxies.div(fragmentDivider)));
+  const multiplier = baseMultiplier.times(perGalaxy.pow(galaxies.div(fragmentDivider)));
+  return applyNC2TickspeedPenalty(multiplier);
 }
 
 export function buyTickSpeed() {
@@ -66,7 +74,7 @@ export function buyTickSpeed() {
   player.totalTickBought = player.totalTickBought.add(1);
   player.records.thisInfinity.lastBuyTime = player.records.thisInfinity.time;
   player.requirementChecks.permanent.singleTickspeed++;
-  if (NormalChallenge(2).isRunning) player.chall2Pow = DC.D0;
+  if (NormalChallenge(2).isRunning) player.chall2Pow = DC.D1;
   GameUI.update();
   return true;
 }
@@ -108,7 +116,7 @@ export function buyMaxTickSpeed() {
 
   if (boughtTickspeed) {
     player.records.thisInfinity.lastBuyTime = player.records.thisInfinity.time;
-    if (NormalChallenge(2).isRunning) player.chall2Pow = DC.D0;
+    if (NormalChallenge(2).isRunning) player.chall2Pow = DC.D1;
   }
   // eslint-disable-next-line max-statements-per-line
   if (player.dimensions.antimatter[0].amount.eq(0)) { Currency.antimatter.bumpTo(100); }

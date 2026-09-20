@@ -28,7 +28,7 @@ window.player = {
       isUnlocked: false,
       bought: DC.D0,
       amount: DC.D0,
-      cost: [DC.E8, DC.E9, DC.E10, DC.E20, DC.E140, DC.E200, DC.E250, DC.E280][tier],
+      cost: [DC.D0, DC.E2, DC.E4, DC.E7, DC.E140, DC.E200, DC.E250, DC.E280][tier],
       baseAmount: DC.D0
     })),
     time: Array.range(0, 8).map(tier => ({
@@ -223,7 +223,7 @@ window.player = {
   },
   lastUpdate: new Date().getTime(),
   backupTimer: 0,
-  chall2Pow: DC.D1,
+  chall2Pow: DC.D0,
   chall3Pow: DC.D0_01,
   matter: DC.D1,
   chall9TickspeedCostBumps: DC.D0,

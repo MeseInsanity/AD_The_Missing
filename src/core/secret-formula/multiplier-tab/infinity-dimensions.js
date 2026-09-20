@@ -66,7 +66,7 @@ export const ID = {
       const getMult = id => {
         const purchases = id === 8
           ? Math.floor(InfinityDimension(id).baseAmount / 10)
-          : Math.min(InfinityDimensions.HARDCAP_PURCHASES, Math.floor(InfinityDimension(id).baseAmount / 10));
+          : Math.min(InfinityDimensions.basePurchaseCap, Math.floor(InfinityDimension(id).baseAmount / 10));
         const baseMult = InfinityDimension(id)._powerMultiplier;
         return Decimal.pow(baseMult, purchases);
       };
@@ -86,7 +86,7 @@ export const ID = {
         if (id === 8) return DC.D1;
         const purchases = Math.floor(InfinityDimension(id).baseAmount / 10);
         return Decimal.pow(InfinityDimension(id)._powerMultiplier,
-          Math.clampMin(purchases - InfinityDimensions.HARDCAP_PURCHASES, 0));
+          Math.clampMin(purchases - InfinityDimensions.basePurchaseCap, 0));
       };
       if (dim) return getMult(dim);
       return InfinityDimensions.all

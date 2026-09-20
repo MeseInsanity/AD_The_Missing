@@ -42,6 +42,7 @@ export class InfinityUpgradeState extends SetPurchasableMechanicState {
 
   purchase() {
     if (super.purchase()) {
+      this.config.onPurchased?.();
       // This applies the 4th column of infinity upgrades retroactively
       if (this.config.id.includes("skip")) skipResetsIfPossible();
       EventHub.dispatch(GAME_EVENT.INFINITY_UPGRADE_BOUGHT);

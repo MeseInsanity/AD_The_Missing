@@ -421,8 +421,8 @@ export const normalAchievements = [
   {
     id: 63,
     name: "A new beginning",
-    description: "Begin generation of Infinity Power.",
-    checkRequirement: () => Currency.infinityPower.gt(1),
+    description: "Reach an Infinity Power conversion exponent of 1.",
+    checkRequirement: () => InfinityDimensions.powerConversionRate.gte(1),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER
   },
   {
@@ -543,8 +543,8 @@ export const normalAchievements = [
   {
     id: 77,
     name: "1 Million is a lot",
-    get description() { return `Reach ${format(1e6)} Infinity Power.`; },
-    checkRequirement: () => Currency.infinityPower.gte(1e6),
+    get description() { return `Reach ${formatX(1e6)} from Infinity Dimensions to Antimatter Dimensions.`; },
+    checkRequirement: () => Currency.infinityPower.value.pow(InfinityDimensions.powerConversionRate).gte(DC.E6),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER
   },
   {
