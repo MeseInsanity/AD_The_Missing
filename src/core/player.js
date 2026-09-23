@@ -225,6 +225,8 @@ window.player = {
   backupTimer: 0,
   chall2Pow: DC.D0,
   chall3Pow: DC.D0_01,
+  chall5Pow: DC.D1,
+  chall5Sacrifices: 0,
   matter: DC.D1,
   chall9TickspeedCostBumps: DC.D0,
   chall8TotalSacrifice: DC.D1,

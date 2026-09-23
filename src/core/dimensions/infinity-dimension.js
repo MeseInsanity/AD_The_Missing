@@ -79,7 +79,7 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get isUnlocked() {
-    return this.data.isUnlocked || (this.tier === 1 && InfinityUpgrade.totalTimeMult.isBought);
+    return this.data.isUnlocked || (this.tier === 1 && InfinityDimensions.areFourChallengesCompleted);
   }
 
   set isUnlocked(value) {
@@ -103,7 +103,7 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get canUnlock() {
-    if (this.tier === 1) return InfinityUpgrade.totalTimeMult.isBought;
+    if (this.tier === 1) return InfinityDimensions.areFourChallengesCompleted;
     return (Perk.bypassIDAntimatter.canBeApplied || this.antimatterRequirementReached) &&
       this.ipRequirementReached;
   }
@@ -355,6 +355,10 @@ export const InfinityDimensions = {
     return new Decimal(200);
   },
 
+  get areFourChallengesCompleted() {
+    return Achievement(47).isUnlocked && NormalChallenges.all.countWhere(c => c.isCompleted) >= 4;
+  },
+
   unlockNext() {
     if (InfinityDimension(8).isUnlocked) return;
     this.next().unlock();
@@ -437,7 +441,9 @@ export const InfinityDimensions = {
   },
 
   get powerConversionRate() {
+    const normalChallengeBonus = DC.D0_01.times(NormalChallenges.all.countWhere(c => c.isCompleted));
     return getAdjustedGlyphEffect("infinityrate").add(Fragments.infinityPowerConversion.effect())
+      .add(normalChallengeBonus)
       .add(PelleUpgrade.infConversion.effectOrDefault(0)).mul(PelleRifts.paradox.milestones[2].effectOrDefault(1));
   }
 };

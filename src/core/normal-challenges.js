@@ -18,12 +18,12 @@ export function updateNormalAndInfinityChallenges(diff) {
     }
   }
 
-  if (NormalChallenge(3).isRunning) {
-    player.chall3Pow = player.chall3Pow.times(DC.D1_00038.pow(diff.div(100))).clampMax(DC.NUMMAX);
+  if (NormalChallenge(6).isRunning) {
+    player.chall2Pow = player.chall2Pow.times(DC.D0_5.pow(diff.div(4000)));
   }
 
-  if (NormalChallenge(2).isRunning) {
-    player.chall2Pow = player.chall2Pow.times(DC.D0_5.pow(diff.div(4000)));
+  if (NormalChallenge(5).isRunning) {
+    player.chall5Pow = (player.chall5Pow ?? DC.D1).add(diff.div(30000)).clampMax(1);
   }
 
   if (InfinityChallenge(2).isRunning) {
@@ -84,6 +84,10 @@ class NormalChallengeState extends GameMechanicState {
     // Forces big crunch reset but ensures IP gain, if any.
     bigCrunchReset(true, true);
     player.challenge.normal.current = this.id;
+    if (this.id === 5) {
+      player.chall5Pow = DC.D1;
+      player.chall5Sacrifices = 0;
+    }
     player.challenge.infinity.current = 0;
     if (Enslaved.isRunning && EternityChallenge(6).isRunning && this.id === 10) {
       EnslavedProgress.challengeCombo.giveProgress();
@@ -130,6 +134,7 @@ class NormalChallengeState extends GameMechanicState {
 
   exit() {
     player.challenge.normal.current = 0;
+    if (this.id === 5) player.chall5Sacrifices = 0;
     bigCrunchReset(true, false);
     if (!Enslaved.isRunning) Tab.dimensions.antimatter.show();
   }

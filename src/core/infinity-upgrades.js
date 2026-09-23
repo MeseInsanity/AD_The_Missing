@@ -118,7 +118,11 @@ export function disChargeAll() {
     InfinityUpgrade.thisInfinityTimeMult,
     InfinityUpgrade.unspentIPMult,
     InfinityUpgrade.dimboostMult,
-    InfinityUpgrade.ipGen
+    InfinityUpgrade.ipGen,
+    InfinityUpgrade.bestInfinityTimeDimensions,
+    InfinityUpgrade.currentInfinityGalaxiesSacrifice,
+    InfinityUpgrade.currentInfinityBoostsBuy10,
+    InfinityUpgrade.currentInfinitySacrificeTickspeed
   ];
   for (const upgrade of upgrades) {
     if (upgrade.isCharged) {

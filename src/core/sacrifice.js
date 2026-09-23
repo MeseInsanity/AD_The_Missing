@@ -28,10 +28,7 @@ export class Sacrifice {
     let factor = 2;
     let places = 1;
     let base = `(log₁₀(AD1)/${formatInt(10)})`;
-    if (f("Challenge8isRunning", NormalChallenge(8).isRunning)) {
-      factor = 1;
-      base = "x";
-    } else if (f("InfinityChallenge2isCompleted", InfinityChallenge(2).isCompleted)) {
+    if (f("InfinityChallenge2isCompleted", InfinityChallenge(2).isCompleted)) {
       factor = 1 / 120;
       places = 3;
       base = "AD1";
@@ -55,10 +52,8 @@ export class Sacrifice {
   // assume that all things boosting sacrifice can be gotten independently, which resulted in some odd effect stacking.
   static get sacrificeExponent() {
     let base;
-    // C8 seems weaker, but it actually follows its own formula which ends up being stronger based on how it stacks
-    if (NormalChallenge(8).isRunning) base = DC.D1;
     // Pre-Reality this was 100; having ach32/57 results in 1.2x, which is brought back in line by changing to 120
-    else if (InfinityChallenge(2).isCompleted) base = DC.D1.div(120);
+    if (InfinityChallenge(2).isCompleted) base = DC.D1.div(120);
     else base = DC.D2;
 
     // All the factors which go into the multiplier have to combine this way in order to replicate legacy behavior
@@ -74,14 +69,7 @@ export class Sacrifice {
     if (nd1Amount.eq(0)) return DC.D1;
     const sacrificed = player.sacrificed.clampMin(1);
     let prePowerSacrificeMult;
-    // Pre-reality update C8 works really weirdly - every sacrifice, the current sacrifice multiplier gets applied to
-    // ND8, then sacrificed amount is updated, and then the updated sacrifice multiplier then gets applied to a
-    // different variable that is only applied during C8. However since sacrifice only depends on sacrificed ND1, this
-    // can actually be done in a single calculation in order to handle C8 in a less hacky way.
-    if (NormalChallenge(8).isRunning) {
-      prePowerSacrificeMult = nd1Amount.pow(0.05).dividedBy(sacrificed.pow(0.04)).clampMin(1)
-        .times(nd1Amount.pow(0.05).dividedBy(sacrificed.plus(nd1Amount).pow(0.04)));
-    } else if (InfinityChallenge(2).isCompleted) {
+    if (InfinityChallenge(2).isCompleted) {
       prePowerSacrificeMult = nd1Amount.dividedBy(sacrificed);
     } else {
       prePowerSacrificeMult = new Decimal((nd1Amount.max(1).log10().div(10)).div(Decimal.max(sacrificed.max(1).log10().div(10), 1)));
@@ -92,12 +80,6 @@ export class Sacrifice {
 
   static get totalBoost() {
     if (player.sacrificed.eq(0)) return DC.D1;
-    // C8 uses a variable that keeps track of a sacrifice boost that persists across sacrifice-resets and isn't
-    // used anywhere else, which also naturally takes account of the exponent from achievements and time studies.
-    if (NormalChallenge(8).isRunning) {
-      return player.chall8TotalSacrifice;
-    }
-
     let prePowerBoost;
 
     if (InfinityChallenge(2).isCompleted) {
@@ -106,7 +88,9 @@ export class Sacrifice {
       prePowerBoost = player.sacrificed.max(1).log10().div(10);
     }
 
-    return prePowerBoost.clampMin(1).pow(this.sacrificeExponent);
+    return prePowerBoost.clampMin(1).pow(this.sacrificeExponent)
+      .timesEffectsOf(InfinityUpgrade.currentInfinityGalaxiesSacrifice)
+      .powEffectsOf(InfinityUpgrade.currentInfinityGalaxiesSacrifice.chargedEffect);
   }
 }
 
@@ -114,23 +98,15 @@ export function sacrificeReset() {
   if (!Sacrifice.canSacrifice) return false;
   if ((!player.break || (!InfinityChallenge.isRunning && NormalChallenge.isRunning)) &&
     Currency.antimatter.gt(DC.NUMMAX)) return false;
-  if (
-    NormalChallenge(8).isRunning &&
-    (Sacrifice.totalBoost.gte(DC.NUMMAX))
-  ) {
-    return false;
-  }
   EventHub.dispatch(GAME_EVENT.SACRIFICE_RESET_BEFORE);
   const nextBoost = Sacrifice.nextBoost;
-  player.chall8TotalSacrifice = player.chall8TotalSacrifice.times(nextBoost);
   player.sacrificed = player.sacrificed.plus(AntimatterDimension(1).amount);
+  if (NormalChallenge(5).isRunning) {
+    player.chall5Pow = DC.D0;
+    player.chall5Sacrifices = (player.chall5Sacrifices ?? 0) + 1;
+  }
   const isAch118Unlocked = Achievement(118).canBeApplied;
-  if (NormalChallenge(8).isRunning) {
-    if (!isAch118Unlocked) {
-      AntimatterDimensions.reset();
-    }
-    Currency.antimatter.reset();
-  } else if (!isAch118Unlocked) {
+  if (!isAch118Unlocked) {
     AntimatterDimensions.resetAmountUpToTier(NormalChallenge(12).isRunning ? 6 : 7);
   }
   player.requirementChecks.infinity.noSacrifice = false;

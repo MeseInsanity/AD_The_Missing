@@ -1,4 +1,5 @@
 import { DC } from "../../constants";
+import { effectiveGalaxyCount } from "../../tickspeed";
 
 function dimInfinityMult() {
   return Currency.infinitiesTotal.value.times(0.2).plus(1);
@@ -8,15 +9,97 @@ function chargedDimInfinityMult() {
     .mul(Math.sqrt(Ra.pets.teresa.level) / 150).add(1);
 }
 
+function bestInfinityTimeMult() {
+  const seconds = Time.bestInfinity.totalSeconds.max(1);
+  return Decimal.min(Decimal.pow(new Decimal(1800).div(seconds), 0.423).add(1), 10);
+}
+
+function galaxySacrificeMultiplier() {
+  return effectiveGalaxyCount().clampMax(30).times(0.05).add(1);
+}
+
+function galaxySacrificePower() {
+  const galaxyStrength = effectiveGalaxyCount().add(1).log10().div(2).clampMax(1);
+  return galaxyStrength.times(0.1 * Math.sqrt(Ra.pets.teresa.level / 2)).add(1);
+}
+
+function dimBoostBuy10Power() {
+  return DimBoost.totalBoosts.max(1).log10().div(8).clampMax(1).times(0.1).add(1);
+}
+
+function chargedDimBoostBuy10Power() {
+  const boostStrength = DimBoost.totalBoosts.max(1).log10().div(8).clampMax(1);
+  return boostStrength.times(1 + Math.pow(Ra.pets.teresa.level / 2, 2)).add(1);
+}
+
+function sacrificeTickspeedMultiplier() {
+  const sacrificeLog = Sacrifice.totalBoost.max(1).log10();
+  if (!InfinityChallenge(2).isCompleted) {
+    return sacrificeLog.div(7).clampMax(1).times(0.35).add(1);
+  }
+  return sacrificeLog.sub(90).div(210).clampMin(0).clampMax(1).times(0.15).add(1.35);
+}
+
 export const infinityUpgrades = {
+  // These effects are wired into their respective mechanics now. Their placement, prerequisites, and costs remain
+  // deferred until the full Infinity Upgrade grid refactor.
+  bestInfinityTimeDimensions: {
+    id: "bestInfinityTimeDimensions",
+    cost: 0,
+    checkRequirement: () => false,
+    description: "Antimatter Dimensions are stronger based on your fastest Infinity time",
+    effect: () => bestInfinityTimeMult(),
+    formatEffect: value => formatX(value, 2, 2),
+    charged: {
+      description: "Antimatter Dimensions gain a power effect based on your fastest Infinity time and Teresa level",
+      effect: () => Decimal.log10(bestInfinityTimeMult()).div(8).clampMax(1)
+        .times(0.16 * Math.sqrt(Ra.pets.teresa.level / 2)).add(1),
+      formatEffect: value => formatPow(value, 4, 4)
+    }
+  },
+  currentInfinityGalaxiesSacrifice: {
+    id: "currentInfinityGalaxiesSacrifice",
+    cost: 0,
+    checkRequirement: () => false,
+    description: "Sacrifice is stronger based on Galaxies in the current Infinity",
+    effect: () => galaxySacrificeMultiplier(),
+    formatEffect: value => formatX(value, 2, 2),
+    charged: {
+      description: "Sacrifice gains a power effect based on Galaxies in the current Infinity and Teresa level",
+      effect: () => galaxySacrificePower(),
+      formatEffect: value => formatPow(value, 4, 4)
+    }
+  },
+  currentInfinityBoostsBuy10: {
+    id: "currentInfinityBoostsBuy10",
+    cost: 0,
+    checkRequirement: () => false,
+    description: "Buy 10 Multiplier is stronger based on Dimension Boosts in the current Infinity",
+    effect: () => dimBoostBuy10Power(),
+    formatEffect: value => formatPow(value, 3, 3),
+    charged: {
+      description: "Buy 10 Multiplier gains a power effect based on Dimension Boosts and Teresa level",
+      effect: () => chargedDimBoostBuy10Power(),
+      formatEffect: value => formatPow(value, 3, 3)
+    }
+  },
+  currentInfinitySacrificeTickspeed: {
+    id: "currentInfinitySacrificeTickspeed",
+    cost: 0,
+    checkRequirement: () => false,
+    description: "Tickspeed is stronger based on Sacrifice in the current Infinity",
+    effect: () => sacrificeTickspeedMultiplier(),
+    formatEffect: value => formatX(value, 2, 2),
+    charged: {
+      description: "Tickspeed is further strengthened based on Sacrifice and Teresa level",
+      effect: () => sacrificeTickspeedMultiplier().pow(1 + Math.sqrt(Ra.pets.teresa.level / 2)),
+      formatEffect: value => formatX(value, 2, 2)
+    }
+  },
   totalTimeMult: {
     id: "timeMult",
     cost: 1,
     description: "Antimatter Dimensions gain a multiplier based on time played",
-    onPurchased: () => {
-      InfinityDimension(1).isUnlocked = true;
-      Tab.dimensions.infinity.show();
-    },
     effect: () => Decimal.pow(Time.totalTimePlayed.totalMinutes.div(2), 0.15),
     formatEffect: value => formatX(value, 2, 2),
     charged: {

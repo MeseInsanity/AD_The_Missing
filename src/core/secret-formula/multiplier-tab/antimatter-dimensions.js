@@ -372,10 +372,6 @@ export const AD = {
       const formatFn = num => (num.gte(1) ? formatX(num, 2, 2) : `/${format(num.reciprocal(), 2, 2)}`);
 
       let dimMults = Array.repeat(DC.D1, 9);
-      if (NormalChallenge(3).isRunning) {
-        dimMults[1] = dimMults[1].times(player.chall3Pow);
-      }
-
       if (NormalChallenge(12).isRunning) {
         dimMults[2] = AntimatterDimension(2).totalAmount.pow(0.6);
         dimMults[4] = AntimatterDimension(4).totalAmount.pow(0.4);
@@ -392,10 +388,6 @@ export const AD = {
     // This and displayOverride contain largely the same code
     multValue: dim => {
       let dimMults = Array.repeat(DC.D1, 9);
-      if (NormalChallenge(3).isRunning) {
-        dimMults[1] = dimMults[1].times(player.chall3Pow);
-      }
-
       // Legacy behavior for NC12 we're preserving dictates that it boosts production based on dimension amount
       // without actually increasing the multiplier itself, so this effectively turns the powers in the production
       // code info effective multipliers raised to pow-1

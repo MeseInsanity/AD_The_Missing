@@ -160,8 +160,8 @@ export const normalAchievements = [
   {
     id: 32,
     name: "The Gods are pleased",
-    get description() { return `Get over ${formatX(600)} from Dimensional Sacrifice outside of Challenge 8.`; },
-    checkRequirement: () => !NormalChallenge(8).isOnlyActiveChallenge && Sacrifice.totalBoost.gte(600),
+    get description() { return `Get over ${formatX(600)} from Dimensional Sacrifice.`; },
+    checkRequirement: () => Sacrifice.totalBoost.gte(600),
     checkEvent: GAME_EVENT.SACRIFICE_RESET_AFTER,
     get reward() {
       return `Dimensional Sacrifice is stronger.
@@ -301,9 +301,10 @@ export const normalAchievements = [
   {
     id: 47,
     name: "Daredevil",
-    get description() { return `Complete ${formatInt(3)} Normal Challenges.`; },
-    checkRequirement: () => NormalChallenges.all.countWhere(c => c.isCompleted) >= 3,
+    get description() { return `Complete ${formatInt(4)} Normal Challenges.`; },
+    checkRequirement: () => NormalChallenges.all.countWhere(c => c.isCompleted) >= 4,
     checkEvent: [GAME_EVENT.BIG_CRUNCH_AFTER, GAME_EVENT.REALITY_RESET_AFTER, GAME_EVENT.REALITY_UPGRADE_TEN_BOUGHT],
+    reward: "Unlock Infinity Dimensions.",
   },
   {
     id: 48,

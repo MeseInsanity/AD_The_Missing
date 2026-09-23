@@ -7,6 +7,6 @@ export const Fragments = {
   },
   infinityPowerConversion: {
     // Starts deliberately low in Pre-Break; Fragments will raise this later.
-    effect: () => DC.D0_1
+    effect: () => DC.D0_01.times(2)
   }
 };

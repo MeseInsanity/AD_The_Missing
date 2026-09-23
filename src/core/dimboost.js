@@ -15,10 +15,6 @@ class DimBoostRequirement {
 
 export class DimBoost {
   static get power() {
-    if (NormalChallenge(8).isRunning) {
-      return DC.D1;
-    }
-
     let boost = new Decimal(Effects.max(
       2,
       InfinityUpgrade.dimboostMult,
@@ -36,6 +32,24 @@ export class DimBoost {
       ).powEffectsOf(InfinityUpgrade.dimboostMult.chargedEffect);
     boost = boost.times(Achievement(22).effectOrDefault(1));
     if (GlyphAlteration.isAdded("effarig")) boost = boost.pow(getSecondaryGlyphEffect("effarigforgotten"));
+    if (NormalChallenge(3).isRunning) {
+      const decayExponent = Math.pow(15 / 16, DimBoost.purchasedBoosts.toNumber());
+      boost = boost.pow(decayExponent);
+    }
+    if (NormalChallenge(5).isRunning) {
+      const seventhDimensionLog = AntimatterDimension(7).amount.max(1).log10().max(1);
+      const penaltyExponent = DC.D1.div(seventhDimensionLog).pow(0.75);
+      const elapsedProgress = (player.chall5Pow ?? DC.D1).clampMin(0).clampMax(1);
+      const sacrificeCount = player.chall5Sacrifices ?? 0;
+      const maximumRelief = Math.pow(0.95, Math.max(0, sacrificeCount - 1));
+      const timedRelief = elapsedProgress.lte(1 / 3)
+        ? DC.D1
+        : DC.D1.sub(elapsedProgress).div(2 / 3).clampMin(0);
+      const activeRelief = timedRelief.times(maximumRelief);
+      const effectiveExponent = DC.D1.sub(DC.D1.sub(penaltyExponent).times(DC.D1.sub(activeRelief)));
+      boost = boost.pow(effectiveExponent);
+    }
+    if (NormalChallenge(4).isRunning) boost = boost.pow(2.5);
     return boost;
   }
 
@@ -69,11 +83,6 @@ export class DimBoost {
       // more boosts than this; it's just that boosts beyond this are pointless.
       return DC.D2;
     }
-    if (NormalChallenge(8).isRunning) {
-      // See above. It's important we check for this after checking for IC1 since otherwise
-      // this case would trigger when we're in IC1.
-      return DC.D5;
-    }
     return DC.BEMAX;
   }
 
@@ -88,7 +97,6 @@ export class DimBoost {
     if (DimBoost.purchasedBoosts.gte(this.maxBoosts)) {
       if (Ra.isRunning) return "Locked (Ra's Reality)";
       if (InfinityChallenge(1).isRunning) return "Locked (Infinity Challenge 1)";
-      if (NormalChallenge(8).isRunning) return "Locked (8th Antimatter Dimension Autobuyer Challenge)";
     }
     return null;
   }
@@ -108,7 +116,8 @@ export class DimBoost {
     if (tier === 6 && NormalChallenge(10).isRunning) {
       amount = amount.add(targetResets.sub(3).mul(DC.D20.sub(discount)).round());
     } else if (tier === 8) {
-      amount = amount.add(targetResets.sub(5).mul(DC.D15.sub(discount)).round());
+      const scalingIncrease = DC.D15;
+      amount = amount.add(targetResets.sub(5).mul(scalingIncrease.sub(discount)).round());
     }
     if (EternityChallenge(5).isRunning) {
       amount = Decimal.pow(targetResets.sub(1), 3).add(targetResets).add(amount).sub(1);
@@ -142,8 +151,7 @@ export class DimBoost {
     if (boosts.gte(DimBoost.maxDimensionsUnlockable - 1)) dimensionRange = `to all Dimensions`;
 
     let boostEffects;
-    if (NormalChallenge(8).isRunning) boostEffects = newUnlock;
-    else if (newUnlock === "") boostEffects = `${formattedMultText} ${dimensionRange}`;
+    if (newUnlock === "") boostEffects = `${formattedMultText} ${dimensionRange}`;
     else boostEffects = `${newUnlock} and ${formattedMultText} ${dimensionRange}`;
 
     if (boostEffects === "") return "Dimension Boosts are currently useless";

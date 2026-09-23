@@ -20,18 +20,10 @@ export function effectiveBaseGalaxies() {
   return Decimal.max(player.galaxies.add(GalaxyGenerator.galaxies).add(replicantiGalaxies).add(freeGalaxies), 0);
 }
 
-function applyNC2TickspeedPenalty(multiplier) {
-  if (!NormalChallenge(2).isRunning) return multiplier;
-  const progress = Currency.antimatter.value.clampMin(1).pLog10()
-    .div(Decimal.log10(Player.infinityGoal)).clampMin(0).clampMax(1);
-  return multiplier.add(DC.D1.sub(multiplier).times(progress).times(player.chall2Pow));
-}
-
-export function getTickSpeedMultiplier() {
-  if (InfinityChallenge(3).isRunning) return DC.D1;
-  if (Ra.isRunning) return DC.C1D1_1245;
+// The Galaxy count after all effects which directly strengthen Galaxies. This intentionally does
+// not include the Fragment divider, which is specific to the improved Galaxy Formula.
+export function effectiveGalaxyCount() {
   let galaxies = effectiveBaseGalaxies();
-  const fragmentEffect = Fragments.galaxyPower.effect();
   const effects = Effects.product(
     InfinityUpgrade.galaxyBoost,
     InfinityUpgrade.galaxyBoost.chargedEffect,
@@ -49,18 +41,35 @@ export function getTickSpeedMultiplier() {
   galaxies = galaxies.times(getAdjustedGlyphEffect("cursedgalaxies"));
   galaxies = galaxies.times(getAdjustedGlyphEffect("realitygalaxies"));
   galaxies = galaxies.times(ImaginaryUpgrade(9).effectOrDefault(DC.D0).add(1));
+  return galaxies.times(effects);
+}
+
+function applyNC6TickspeedPenalty(multiplier) {
+  if (!NormalChallenge(6).isRunning) return multiplier;
+  const progress = Currency.antimatter.value.clampMin(1).pLog10()
+    .div(Decimal.log10(Player.infinityGoal)).clampMin(0).clampMax(1);
+  return multiplier.add(DC.D1.sub(multiplier).times(progress).times(player.chall2Pow));
+}
+
+function applyNC4TickspeedPenalty(multiplier) {
+  return NormalChallenge(4).isRunning ? multiplier.pow(0.4) : multiplier;
+}
+
+export function getTickSpeedMultiplier() {
+  if (InfinityChallenge(3).isRunning) return DC.D1;
+  if (Ra.isRunning) return DC.C1D1_1245;
+  const galaxies = effectiveGalaxyCount();
+  const fragmentEffect = Fragments.galaxyPower.effect();
 
   if (!BreakInfinityUpgrade.galaxyFormula.isBought) {
-    const base = NormalChallenge(5).isRunning ? DC.D1_08 : DC.D1_1245;
-    const multiplier = DC.D1.div(base.add(galaxies.times(effects).times(0.01)));
-    return applyNC2TickspeedPenalty(multiplier);
+    const multiplier = DC.D1.div(DC.D1_1245.add(galaxies.times(0.01)));
+    return applyNC6TickspeedPenalty(applyNC4TickspeedPenalty(multiplier));
   }
-  let baseMultiplier = NormalChallenge(5).isRunning ? DC.C1D1_08 : DC.C1D1_1245;
-  galaxies = galaxies.times(effects);
+  const baseMultiplier = DC.C1D1_1245;
   const perGalaxy = DC.D0_965;
   const fragmentDivider = DC.D4.div(fragmentEffect).sqrt();
   const multiplier = baseMultiplier.times(perGalaxy.pow(galaxies.div(fragmentDivider)));
-  return applyNC2TickspeedPenalty(multiplier);
+  return applyNC6TickspeedPenalty(applyNC4TickspeedPenalty(multiplier));
 }
 
 export function buyTickSpeed() {
@@ -74,7 +83,7 @@ export function buyTickSpeed() {
   player.totalTickBought = player.totalTickBought.add(1);
   player.records.thisInfinity.lastBuyTime = player.records.thisInfinity.time;
   player.requirementChecks.permanent.singleTickspeed++;
-  if (NormalChallenge(2).isRunning) player.chall2Pow = DC.D1;
+  if (NormalChallenge(6).isRunning) player.chall2Pow = DC.D1;
   GameUI.update();
   return true;
 }
@@ -116,7 +125,7 @@ export function buyMaxTickSpeed() {
 
   if (boughtTickspeed) {
     player.records.thisInfinity.lastBuyTime = player.records.thisInfinity.time;
-    if (NormalChallenge(2).isRunning) player.chall2Pow = DC.D1;
+    if (NormalChallenge(6).isRunning) player.chall2Pow = DC.D1;
   }
   // eslint-disable-next-line max-statements-per-line
   if (player.dimensions.antimatter[0].amount.eq(0)) { Currency.antimatter.bumpTo(100); }
@@ -153,7 +162,13 @@ export const Tickspeed = {
     const tickspeed = Effarig.isRunning
       ? Effarig.tickspeed
       : this.baseValue.powEffectOf(DilationUpgrade.tickspeedPower);
-    return player.dilation.active || PelleStrikes.dilation.hasStrike ? dilatedValueOf(tickspeed.recip()).recip() : tickspeed;
+    const finalTickspeed = player.dilation.active || PelleStrikes.dilation.hasStrike
+      ? dilatedValueOf(tickspeed.recip()).recip()
+      : tickspeed;
+    return finalTickspeed.dividedByEffectsOf(
+      InfinityUpgrade.currentInfinitySacrificeTickspeed,
+      InfinityUpgrade.currentInfinitySacrificeTickspeed.chargedEffect
+    );
   },
 
   get cost() {
