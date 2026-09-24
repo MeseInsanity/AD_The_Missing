@@ -173,9 +173,11 @@ export const normalAchievements = [
   {
     id: 33,
     name: "That's a lot of infinites",
-    get description() { return `Reach Infinity ${formatInt(10)} times.`; },
-    checkRequirement: () => Currency.infinities.gte(10),
-    checkEvent: GAME_EVENT.BIG_CRUNCH_AFTER
+    get description() { return `Reach Infinity ${formatInt(16)} times.`; },
+    checkRequirement: () => Currency.infinities.gte(16),
+    checkEvent: GAME_EVENT.BIG_CRUNCH_AFTER,
+    get reward() { return `Infinity Point gain is multiplied by ${formatX(2)}.`; },
+    effect: 2
   },
   {
     id: 34,
@@ -238,7 +240,8 @@ export const normalAchievements = [
       GAME_EVENT.REALITY_UPGRADE_TEN_BOUGHT
     ],
     get reward() {
-      return `Unlock two new Infinity Upgrades- ${formatX(2)} IP multiplier and offline IP generation.`;
+      return `Passively generate Infinity Points ${formatInt(10)} times slower than your fastest Infinity. ` +
+        `While offline, gain ${formatPercents(0.5)} of your best IP/min without using Max All.`;
     },
   },
   {
@@ -525,8 +528,8 @@ export const normalAchievements = [
   {
     id: 75,
     name: "NEW DIMENSIONS???",
-    description: "Unlock the 4th Infinity Dimension.",
-    checkRequirement: () => InfinityDimension(4).isUnlocked,
+    description: "Unlock the 5th Infinity Dimension.",
+    checkRequirement: () => InfinityDimension(5).isUnlocked,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     reward: "Your Achievement bonus affects Infinity Dimensions.",
     effect: () => Achievements.power

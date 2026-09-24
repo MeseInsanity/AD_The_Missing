@@ -19,7 +19,10 @@ export function antimatterDimensionCommonMultiplier() {
     BreakInfinityUpgrade.achievementMult,
     BreakInfinityUpgrade.slowestChallengeMult,
     InfinityUpgrade.totalTimeMult,
+    InfinityUpgrade.dim18mult,
     InfinityUpgrade.thisInfinityTimeMult,
+    InfinityUpgrade.unspentIPMult,
+    InfinityUpgrade.unspentIPMult.chargedEffect,
     InfinityUpgrade.bestInfinityTimeDimensions,
     Achievement(48),
     Achievement(56),
@@ -120,18 +123,13 @@ function applyNDMultipliers(mult, tier) {
   multiplier = multiplier.times(Decimal.pow(buyTenMultiplier, buy10Value));
   multiplier = multiplier.times(DimBoost.multiplierToNDTier(tier));
 
-  let infinitiedMult = DC.D1.timesEffectsOf(
-    AntimatterDimension(tier).infinityUpgrade,
-    BreakInfinityUpgrade.infinitiedMult
-  );
+  let infinitiedMult = DC.D1.timesEffectsOf(BreakInfinityUpgrade.infinitiedMult);
   infinitiedMult = infinitiedMult.pow(TimeStudy(31).effectOrDefault(1));
   multiplier = multiplier.times(infinitiedMult);
 
   if (tier === 1) {
     multiplier = multiplier
       .timesEffectsOf(
-        InfinityUpgrade.unspentIPMult,
-        InfinityUpgrade.unspentIPMult.chargedEffect,
         Achievement(28),
         Achievement(31),
         Achievement(68),
@@ -176,8 +174,8 @@ function applyNDPowers(mult, tier) {
 
   multiplier = multiplier
     .powEffectsOf(
-      AntimatterDimension(tier).infinityUpgrade.chargedEffect,
       InfinityUpgrade.totalTimeMult.chargedEffect,
+      InfinityUpgrade.dim18mult.chargedEffect,
       InfinityUpgrade.thisInfinityTimeMult.chargedEffect,
       InfinityUpgrade.bestInfinityTimeDimensions.chargedEffect,
       AlchemyResource.power,
@@ -647,10 +645,8 @@ export const AntimatterDimensions = {
       mult = DC.D1.add(mult.sub(1).times(remainingEffect));
     }
 
-    mult = mult.powEffectsOf(
-      InfinityUpgrade.currentInfinityBoostsBuy10,
-      InfinityUpgrade.currentInfinityBoostsBuy10.chargedEffect
-    );
+    mult = mult.timesEffectsOf(InfinityUpgrade.currentInfinityBoostsBuy10)
+      .powEffectsOf(InfinityUpgrade.currentInfinityBoostsBuy10.chargedEffect);
 
     mult = mult.plusEffectsOf(
       Achievement(141).effects.buyTenMult,
@@ -664,6 +660,8 @@ export const AntimatterDimensions = {
 
     mult = mult.pow(getAdjustedGlyphEffect("effarigforgotten")).powEffectOf(InfinityUpgrade.buy10Mult.chargedEffect);
     mult = mult.pow(ImaginaryUpgrade(14).effectOrDefault(1));
+
+    if (NormalChallenge(8).isRunning) mult = mult.pow(DC.D0_5);
 
     return mult;
   },

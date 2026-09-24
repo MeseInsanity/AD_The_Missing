@@ -33,10 +33,15 @@ export default {
   },
   methods: {
     update() {
-      this.isVisible = player.break && !InfinityDimension(8).isUnlocked && !Player.canEternity &&
+      const canShowUnlockButton = player.break && !InfinityDimension(8).isUnlocked && !Player.canEternity &&
         !EternityMilestone.autoUnlockID.isReached;
-      if (!this.isVisible) return;
+      if (!canShowUnlockButton) {
+        this.isVisible = false;
+        return;
+      }
       const nextDimension = InfinityDimensions.next();
+      this.isVisible = nextDimension.isVisible;
+      if (!this.isVisible) return;
       this.canUnlock = nextDimension.canUnlock;
       this.hasIPUnlock = nextDimension.hasIPUnlock;
       this.amRequirement = nextDimension.amRequirement;

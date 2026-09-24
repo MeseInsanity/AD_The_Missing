@@ -7,7 +7,6 @@ import { DimensionState } from "./dimension";
 export function infinityDimensionCommonMultiplier() {
   let mult = new Decimal(1)
     .timesEffectsOf(
-      Achievement(75),
       TimeStudy(82),
       TimeStudy(92),
       TimeStudy(162),
@@ -54,9 +53,11 @@ class InfinityDimensionState extends DimensionState {
     this._unlockRequirement = UNLOCK_REQUIREMENTS[tier];
     const COST_MULTS = [null, 10, 1e2, 1e3, 1e4, 1e15, 1e20, 1e25, 1e30];
     this._costMultiplier = COST_MULTS[tier];
-    const POWER_MULTS = [null, 50, 30, 10, 5, 5, 5, 5, 5];
+    // Keep all early Infinity Dimension buy-10 multipliers at the common baseline.
+    // Later progression will improve this formula through dedicated upgrades.
+    const POWER_MULTS = [null, 5, 5, 5, 5, 5, 5, 5, 5];
     this._powerMultiplier = POWER_MULTS[tier];
-    const BASE_COSTS = [null, 0, 1e2, 1e4, 1e7, 1e140, 1e200, 1e250, 1e280];
+    const BASE_COSTS = [null, 1, 1e2, 1e4, 1e7, 1e140, 1e200, 1e250, 1e280];
     this._baseCost = new Decimal(BASE_COSTS[tier]);
     this.ipRequirement = BASE_COSTS[1];
   }
@@ -79,7 +80,13 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get isUnlocked() {
-    return this.data.isUnlocked || (this.tier === 1 && InfinityDimensions.areFourChallengesCompleted);
+    if (!this.isVisible) return false;
+    // Achievement 4-7 grants the early ID set as a package; individual gates begin at ID5.
+    return this.data.isUnlocked || (this.tier <= 4 && InfinityDimensions.areFourChallengesCompleted);
+  }
+
+  get isVisible() {
+    return this.tier <= 4 || InfinityChallenge(8).isCompleted;
   }
 
   set isUnlocked(value) {
@@ -103,7 +110,8 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get canUnlock() {
-    if (this.tier === 1) return InfinityDimensions.areFourChallengesCompleted;
+    if (!this.isVisible) return false;
+    if (this.tier <= 4) return InfinityDimensions.areFourChallengesCompleted;
     return (Perk.bypassIDAntimatter.canBeApplied || this.antimatterRequirementReached) &&
       this.ipRequirementReached;
   }
@@ -441,9 +449,10 @@ export const InfinityDimensions = {
   },
 
   get powerConversionRate() {
-    const normalChallengeBonus = DC.D0_01.times(NormalChallenges.all.countWhere(c => c.isCompleted));
-    return getAdjustedGlyphEffect("infinityrate").add(Fragments.infinityPowerConversion.effect())
-      .add(normalChallengeBonus)
+    const normalChallengeCompletions = NormalChallenges.all.countWhere(c => c.isCompleted);
+    const normalChallengeExponent = DC.D0_05.times(Decimal.pow(2, Math.max(normalChallengeCompletions - 4, 0) / 4));
+    const fragmentBonus = Fragments.infinityPowerConversion.effect().sub(DC.D0_01.times(2)).max(0);
+    return getAdjustedGlyphEffect("infinityrate").add(normalChallengeExponent).add(fragmentBonus)
       .add(PelleUpgrade.infConversion.effectOrDefault(0)).mul(PelleRifts.paradox.milestones[2].effectOrDefault(1));
   }
 };

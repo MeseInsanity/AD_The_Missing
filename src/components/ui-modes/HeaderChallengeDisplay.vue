@@ -1,6 +1,16 @@
 <script>
 import FailableEcText from "./FailableEcText";
 import PrimaryButton from "@/components/PrimaryButton";
+import wordShift from "@/core/word-shift";
+import { Fragments } from "@/core/secret-formula/fragments";
+
+const UNIVERSE_GLITCH_INTERVAL = 75000;
+const UNIVERSE_GLITCH_DURATION = 700;
+const UNIVERSE_GLITCH_TEXT = [
+  "the Antimatter Universe",
+  "an unfamiliar Universe",
+  "the Universe you remember"
+];
 
 export default {
   name: "HeaderChallengeDisplay",
@@ -16,6 +26,8 @@ export default {
       exitText: "",
       resetCelestial: false,
       inPelle: false,
+      universeGlitch: false,
+      universeGlitchIndex: 0,
     };
   },
   computed: {
@@ -95,7 +107,10 @@ export default {
       }
       if (this.inPelle) return "a Doomed Reality. Good luck.";
       if (this.activeChallengeNames.length === 0) {
-        return "the Antimatter Universe (no active challenges)";
+        const displayedName = this.universeGlitch
+          ? wordShift.randomCrossWords(UNIVERSE_GLITCH_TEXT[this.universeGlitchIndex])
+          : "the Antimatter Universe";
+        return `${displayedName} (no active challenges)`;
       }
       return this.activeChallengeNames.join(" + ");
     },
@@ -111,6 +126,12 @@ export default {
       this.exitText = this.exitDisplay();
       this.resetCelestial = player.options.retryCelestial;
       this.inPelle = Pelle.isDoomed;
+      const frequency = Math.max(Fragments.universeGlitchFrequency.effect().toNumber(), 1);
+      const glitchInterval = UNIVERSE_GLITCH_INTERVAL / frequency;
+      const glitchDuration = Math.min(UNIVERSE_GLITCH_DURATION, glitchInterval / 20);
+      const glitchTime = Date.now() % glitchInterval;
+      this.universeGlitch = glitchTime < glitchDuration;
+      this.universeGlitchIndex = Math.floor(Date.now() / glitchInterval) % UNIVERSE_GLITCH_TEXT.length;
     },
     // Process exit requests from the inside out; Challenges first, then dilation, then Celestial Reality. If the
     // relevant option is toggled, we pass a bunch of information over to a modal - otherwise we immediately exit

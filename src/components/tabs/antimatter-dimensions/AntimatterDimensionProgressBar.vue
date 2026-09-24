@@ -94,10 +94,14 @@ export default {
       } else if (InfinityDimension(8).isUnlocked) {
         setProgress(Currency.infinityPoints.value, Player.eternityGoal, "Percentage to Eternity");
       } else if (player.break) {
-        const text = `Percentage to unlock a new ${InfinityDimensions.next().hasIPUnlock
+        const nextID = InfinityDimensions.next();
+        if (!nextID.isVisible) {
+          setLinearProgress(0, 1, "Further Infinity Dimensions are obscured");
+          return;
+        }
+        const text = `Percentage to unlock a new ${nextID.hasIPUnlock
           ? "type of Dimension"
           : "Infinity Dimension"}`;
-        const nextID = InfinityDimensions.next();
         if (nextID.ipRequirementReached) {
           setProgress(player.records.thisEternity.maxAM, nextID.amRequirement, text);
         } else {

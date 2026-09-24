@@ -19,6 +19,7 @@ export default {
   data() {
     return {
       hasPrevTier: false,
+      isVisible: false,
       isUnlocked: false,
       canUnlock: false,
       multiplier: new Decimal(0),
@@ -69,8 +70,8 @@ export default {
       return `Purchased ${quantifyInt("time", this.purchases)}`;
     },
     showRow() {
-      return this.eternityReached || this.isUnlocked || this.canUnlock || this.amount.gt(0) ||
-        this.hasPrevTier;
+      return this.isVisible && (this.eternityReached || this.isUnlocked || this.canUnlock || this.amount.gt(0) ||
+        this.hasPrevTier);
     },
     showCostTitle() {
       return this.cost.max(1).log10().lte(1e6);
@@ -85,6 +86,7 @@ export default {
     update() {
       const tier = this.tier;
       const dimension = InfinityDimension(tier);
+      this.isVisible = dimension.isVisible;
       this.hasPrevTier = tier === 1 || InfinityDimension(tier - 1).isUnlocked;
       const autobuyer = Autobuyer.infinityDimension(tier);
       this.isUnlocked = dimension.isUnlocked;

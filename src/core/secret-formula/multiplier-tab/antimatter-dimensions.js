@@ -164,21 +164,14 @@ export const AD = {
     multValue: dim => {
       const allMult = DC.D1.timesEffectsOf(
         InfinityUpgrade.totalTimeMult,
+        InfinityUpgrade.dim18mult,
         InfinityUpgrade.thisInfinityTimeMult,
+        InfinityUpgrade.unspentIPMult,
+        InfinityUpgrade.unspentIPMult.chargedEffect,
+        InfinityUpgrade.bestInfinityTimeDimensions,
       );
 
       const dimMults = Array.repeat(DC.D1, 9);
-      for (let tier = 1; tier <= 8; tier++) {
-        if (tier === 1) {
-          dimMults[tier] = dimMults[tier].timesEffectsOf(
-            InfinityUpgrade.unspentIPMult,
-            InfinityUpgrade.unspentIPMult.chargedEffect,
-          );
-        }
-        dimMults[tier] = dimMults[tier].timesEffectsOf(
-          AntimatterDimension(tier).infinityUpgrade,
-        );
-      }
 
       if (dim) return allMult.times(dimMults[dim]);
       let totalMult = DC.D1;
@@ -188,13 +181,12 @@ export const AD = {
       return totalMult;
     },
     powValue: dim => {
-      const allPow = InfinityUpgrade.totalTimeMult.chargedEffect.effectOrDefault(new Decimal(1)).mul(
-        InfinityUpgrade.thisInfinityTimeMult.chargedEffect.effectOrDefault(new Decimal(1)));
+      const allPow = InfinityUpgrade.totalTimeMult.chargedEffect.effectOrDefault(new Decimal(1))
+        .mul(InfinityUpgrade.dim18mult.chargedEffect.effectOrDefault(new Decimal(1)))
+        .mul(InfinityUpgrade.thisInfinityTimeMult.chargedEffect.effectOrDefault(new Decimal(1)))
+        .mul(InfinityUpgrade.bestInfinityTimeDimensions.chargedEffect.effectOrDefault(new Decimal(1)));
 
       const dimPow = Array.repeat(1, 9);
-      for (let tier = 1; tier <= 8; tier++) {
-        dimPow[tier] = AntimatterDimension(tier).infinityUpgrade.chargedEffect.effectOrDefault(new Decimal(1));
-      }
 
       if (dim) return allPow.mul(dimPow[dim]);
       // This isn't entirely accurate because you can't return a power for all ADs if only some of them actually have
@@ -270,10 +262,7 @@ export const AD = {
       const dimMults = Array.repeat(DC.D1, 9);
       for (let tier = 1; tier <= 8; tier++) {
         // We don't want to double-count the base effect that TS31 boosts
-        const infinitiedMult = DC.D1.timesEffectsOf(
-          AntimatterDimension(tier).infinityUpgrade,
-          BreakInfinityUpgrade.infinitiedMult
-        );
+        const infinitiedMult = DC.D1.timesEffectsOf(BreakInfinityUpgrade.infinitiedMult);
         dimMults[tier] = dimMults[tier].times(infinitiedMult.pow(TimeStudy(31).effectOrDefault(1) - 1));
 
         dimMults[tier] = dimMults[tier].timesEffectsOf(

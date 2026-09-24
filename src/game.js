@@ -929,7 +929,8 @@ export function simulateTime(seconds, real, fast) {
     Currency.eternityPoints.add(getOfflineEPGain(seconds * 1000));
   }
 
-  if (InfinityUpgrade.ipOffline.isBought && player.options.offlineProgress) {
+  // Legacy saves can retain the old IU purchase; Ach 4-1 now grants this effect directly.
+  if ((Achievement(41).isUnlocked || InfinityUpgrade.ipOffline.isBought) && player.options.offlineProgress) {
     Currency.infinityPoints.add(player.records.thisEternity.bestIPMsWithoutMaxAll.times(seconds * 1000 / 2));
   }
 

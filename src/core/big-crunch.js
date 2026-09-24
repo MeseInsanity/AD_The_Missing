@@ -173,7 +173,8 @@ export function secondSoftReset(enteringAntimatterChallenge) {
 }
 
 export function preProductionGenerateIP(diff) {
-  if (InfinityUpgrade.ipGen.isBought) {
+  // Legacy saves can retain the old IU purchase; Ach 4-1 now grants this effect directly.
+  if (Achievement(41).isUnlocked || InfinityUpgrade.ipGen.isBought) {
     const genPeriod = Time.bestInfinity.totalMilliseconds.clampMin(1e-100).times(10);
     let genCount;
     if (diff.gte(1e100)) {
@@ -185,7 +186,10 @@ export function preProductionGenerateIP(diff) {
       genCount = Decimal.floor(player.partInfinityPoint);
       player.partInfinityPoint -= genCount.toNumber();
     }
-    let gainedPerGen = player.records.bestInfinity.time.gte(DC.BEMAX) ? DC.D0 : InfinityUpgrade.ipGen.effectValue;
+    let gainedPerGen = player.records.bestInfinity.time.gte(DC.BEMAX) ? DC.D0 :
+      (Achievement(41).isUnlocked
+        ? (Teresa.isRunning || V.isRunning || Pelle.isDoomed ? DC.D0 : GameCache.totalIPMult.value)
+        : InfinityUpgrade.ipGen.effectValue);
     if (Laitela.isRunning) gainedPerGen = dilatedValueOf(gainedPerGen);
     const gainedThisTick = genCount.times(gainedPerGen);
     Currency.infinityPoints.add(gainedThisTick);

@@ -29,6 +29,7 @@ export default {
       extraTesseracts: new Decimal(0),
       creditsClosed: false,
       showLockedDimCostNote: true,
+      isEighthDimensionUnlocked: false,
     };
   },
   computed: {
@@ -39,7 +40,8 @@ export default {
   },
   methods: {
     update() {
-      this.showLockedDimCostNote = !InfinityDimension(8).isUnlocked;
+      this.isEighthDimensionUnlocked = InfinityDimension(8).isUnlocked;
+      this.showLockedDimCostNote = InfinityDimension(5).isVisible && !this.isEighthDimensionUnlocked;
       this.isEC9Running = EternityChallenge(9).isRunning;
       this.infinityPower.copyFrom(Currency.infinityPower);
       this.conversionRate.copyFrom(InfinityDimensions.powerConversionRate);
@@ -139,8 +141,13 @@ export default {
       All Infinity Dimensions are limited to a single purchase.
     </div>
     <div v-else>
-      All Infinity Dimensions except for the 8th are limited to a maximum of {{ format(totalDimCap, 2) }}
-      purchases each.
+      <span v-if="isEighthDimensionUnlocked">
+        All Infinity Dimensions except for the 8th are limited to a maximum of {{ format(totalDimCap, 2) }}
+        purchases each.
+      </span>
+      <span v-else>
+        All Infinity Dimensions are limited to a maximum of {{ format(totalDimCap, 2) }} purchases each.
+      </span>
     </div>
     <div>You are getting {{ format(powerPerSecond, 2, 0) }} {{ incomeType }} per second.</div>
     <b

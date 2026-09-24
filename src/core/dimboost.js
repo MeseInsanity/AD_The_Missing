@@ -42,14 +42,15 @@ export class DimBoost {
       const elapsedProgress = (player.chall5Pow ?? DC.D1).clampMin(0).clampMax(1);
       const sacrificeCount = player.chall5Sacrifices ?? 0;
       const maximumRelief = Math.pow(0.95, Math.max(0, sacrificeCount - 1));
-      const timedRelief = elapsedProgress.lte(1 / 3)
+      const timedRelief = elapsedProgress.lte(1 / 4)
         ? DC.D1
-        : DC.D1.sub(elapsedProgress).div(2 / 3).clampMin(0);
+        : DC.D1.sub(elapsedProgress).div(3 / 4).clampMin(0);
       const activeRelief = timedRelief.times(maximumRelief);
       const effectiveExponent = DC.D1.sub(DC.D1.sub(penaltyExponent).times(DC.D1.sub(activeRelief)));
       boost = boost.pow(effectiveExponent);
     }
     if (NormalChallenge(4).isRunning) boost = boost.pow(2.5);
+    if (NormalChallenge(8).isRunning) boost = boost.pow(DC.D0_5);
     return boost;
   }
 

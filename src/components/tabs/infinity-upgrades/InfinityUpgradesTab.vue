@@ -1,14 +1,12 @@
 <script>
 import InfinityUpgradeButton from "@/components/InfinityUpgradeButton";
-import IpMultiplierButton from "./IpMultiplierButton";
 import PrimaryButton from "@/components/PrimaryButton";
 
 export default {
   name: "InfinityUpgradesTab",
   components: {
     PrimaryButton,
-    InfinityUpgradeButton,
-    IpMultiplierButton
+    InfinityUpgradeButton
   },
   data() {
     return {
@@ -16,65 +14,64 @@ export default {
       chargeUnlocked: false,
       totalCharges: 0,
       chargesUsed: 0,
-      disCharge: false,
-      ipMultSoftCap: 0,
-      ipMultHardCap: 0,
-      eternityUnlocked: false,
-      bottomRowUnlocked: false,
-      styleOfColumnBg: undefined
+      disCharge: false
     };
   },
   computed: {
     grid() {
       return [
-        [
-          InfinityUpgrade.totalTimeMult,
-          InfinityUpgrade.dim18mult,
-          InfinityUpgrade.dim36mult,
-          InfinityUpgrade.resetBoost
-        ],
-        [
-          InfinityUpgrade.buy10Mult,
-          InfinityUpgrade.dim27mult,
-          InfinityUpgrade.dim45mult,
-          InfinityUpgrade.galaxyBoost
-        ],
-        [
-          InfinityUpgrade.thisInfinityTimeMult,
-          InfinityUpgrade.unspentIPMult,
-          InfinityUpgrade.dimboostMult,
-          InfinityUpgrade.ipGen
-        ],
-        [
-          InfinityUpgrade.skipReset1,
-          InfinityUpgrade.skipReset2,
-          InfinityUpgrade.skipReset3,
-          InfinityUpgrade.skipResetGalaxy
-        ]
+        {
+          name: "Past Records",
+          upgrades: [
+            InfinityUpgrade.totalTimeMult,
+            InfinityUpgrade.dim18mult,
+            InfinityUpgrade.bestInfinityTimeDimensions,
+            InfinityUpgrade.unspentIPMult
+          ]
+        },
+        {
+          name: "Current Run",
+          upgrades: [
+            InfinityUpgrade.thisInfinityTimeMult,
+            InfinityUpgrade.currentInfinityGalaxiesSacrifice,
+            InfinityUpgrade.currentInfinitySacrificeTickspeed,
+            InfinityUpgrade.currentInfinityBoostsBuy10
+          ]
+        },
+        {
+          name: "Core Mechanics",
+          upgrades: [
+            InfinityUpgrade.buy10Mult,
+            InfinityUpgrade.dimboostMult,
+            InfinityUpgrade.resetBoost,
+            InfinityUpgrade.galaxyBoost
+          ]
+        },
+        {
+          name: "Starting Momentum",
+          upgrades: [
+            InfinityUpgrade.skipReset1,
+            InfinityUpgrade.skipReset2,
+            InfinityUpgrade.skipReset3,
+            InfinityUpgrade.skipResetGalaxy
+          ]
+        }
       ];
     },
     allColumnUpgrades() {
-      return this.grid.flat();
+      return this.grid.flatMap(row => row.upgrades);
     },
     disChargeClassObject() {
       return {
         "o-primary-btn--subtab-option": true,
         "o-primary-btn--charged-respec-active": this.disCharge
       };
-    },
-    offlineIpUpgrade: () => InfinityUpgrade.ipOffline
+    }
   },
   watch: {
     disCharge(newValue) {
       player.celestials.ra.disCharge = newValue;
     }
-  },
-  created() {
-    this.on$(GAME_EVENT.INFINITY_UPGRADE_BOUGHT, () => this.setStyleOfColumnBg());
-    this.on$(GAME_EVENT.INFINITY_UPGRADE_CHARGED, () => this.setStyleOfColumnBg());
-    this.on$(GAME_EVENT.INFINITY_UPGRADES_DISCHARGED, () => this.setStyleOfColumnBg());
-
-    this.setStyleOfColumnBg();
   },
   methods: {
     update() {
@@ -83,35 +80,12 @@ export default {
       this.totalCharges = Ra.totalCharges;
       this.chargesUsed = Ra.totalCharges - Ra.chargesLeft;
       this.disCharge = player.celestials.ra.disCharge;
-      this.ipMultSoftCap = GameDatabase.infinity.upgrades.ipMult.costIncreaseThreshold;
-      this.ipMultHardCap = GameDatabase.infinity.upgrades.ipMult.costCap;
-      this.eternityUnlocked = PlayerProgress.current.isEternityUnlocked;
-      this.bottomRowUnlocked = Achievement(41).isUnlocked;
     },
-    btnClassObject(column) {
-      const classObject = {
-        "l-infinity-upgrade-grid__cell": true
+    btnClassObject(upgrade) {
+      return {
+        "l-infinity-upgrade-grid__cell": true,
+        "c-infinity-upgrade-grid__cell--galaxy": upgrade === InfinityUpgrade.galaxyBoost
       };
-      if (column > 0) {
-        // Indexing starts from 0, while css classes start from 2 (and first column has default css class)
-        classObject[`o-infinity-upgrade-btn--color-${column + 1}`] = true;
-      }
-      return classObject;
-    },
-    getColumnColor(location) {
-      if (location.isCharged) return "var(--color-teresa--base)";
-      if (location.isBought) return "var(--color-infinity)";
-      return "transparent";
-    },
-    setStyleOfColumnBg() {
-      this.styleOfColumnBg = this.grid.map(col => ({
-        background:
-          `linear-gradient(to bottom,
-          ${this.getColumnColor(col[0])} 15%,
-          ${this.getColumnColor(col[1])} 35% 40%,
-          ${this.getColumnColor(col[2])} 60% 65%,
-          ${this.getColumnColor(col[3])} 85% 100%`
-      }));
     },
   }
 };
@@ -140,67 +114,78 @@ export default {
       You cannot Charge Infinity Upgrades while Doomed.
     </div>
     <br>
-    Within each column, the upgrades must be purchased from top to bottom.
+    Within each row, the upgrades must be purchased from left to right.
     <br>
-    <div class="l-infinity-upgrade-grid l-infinity-upgrades-tab__grid">
+    <div class="l-infinity-upgrades-tab__grid">
       <div
-        v-for="(column, columnId) in grid"
-        :key="columnId"
-        class="c-infinity-upgrade-grid__column"
+        v-for="row in grid"
+        :key="row.name"
+        class="c-infinity-upgrade-grid__row"
       >
-        <InfinityUpgradeButton
-          v-for="upgrade in column"
-          :key="upgrade.id"
-          :upgrade="upgrade"
-          :class="btnClassObject(columnId)"
-        />
         <div
-          class="c-infinity-upgrade-grid__column--background"
-          :style="styleOfColumnBg[columnId]"
-        />
+          class="c-infinity-upgrade-grid__row-label"
+        >
+          {{ row.name }}
+        </div>
+        <div class="l-infinity-upgrade-grid__row-upgrades">
+          <div
+            v-for="(upgrade, index) in row.upgrades"
+            :key="upgrade.id"
+            class="l-infinity-upgrade-grid__row-item"
+          >
+            <InfinityUpgradeButton
+              :upgrade="upgrade"
+              :class="btnClassObject(upgrade)"
+            />
+            <span
+              v-if="index < row.upgrades.length - 1"
+              class="c-infinity-upgrade-grid__arrow"
+            >
+              &#9654;
+            </span>
+          </div>
+        </div>
       </div>
-    </div>
-    <div
-      v-if="bottomRowUnlocked"
-      class="l-infinity-upgrades-bottom-row"
-    >
-      <IpMultiplierButton class="l-infinity-upgrades-tab__mult-btn" />
-      <InfinityUpgradeButton
-        :upgrade="offlineIpUpgrade"
-        :class="btnClassObject(1)"
-      />
-    </div>
-    <div v-if="eternityUnlocked && bottomRowUnlocked">
-      The Infinity Point multiplier becomes more expensive
-      <br>
-      above {{ formatPostBreak(ipMultSoftCap) }} Infinity Points, and cannot be purchased past
-      {{ formatPostBreak(ipMultHardCap) }} Infinity Points.
     </div>
   </div>
 </template>
 
 <style scoped>
-.c-infinity-upgrade-grid__column {
+.c-infinity-upgrade-grid__row {
   display: flex;
-  overflow: hidden;
-  flex-direction: column;
   position: relative;
+  justify-content: center;
+  margin: 1.5rem 0 0.8rem;
+  padding: 1.1rem 0.8rem 0.7rem;
+  border: var(--var-border-width, 0.2rem) solid var(--color-infinity);
   border-radius: var(--var-border-radius, 0.3rem);
-  margin: 0 0.3rem;
 }
 
-.c-infinity-upgrade-grid__column--background {
-  width: 100%;
-  height: 100%;
+.c-infinity-upgrade-grid__row-label {
   position: absolute;
-  top: 0;
-  left: 0;
-  z-index: -1;
-  opacity: 0.7;
+  top: -0.8rem;
+  left: 1rem;
+  padding: 0 0.5rem;
+  background: var(--color-base, #000);
+  color: var(--color-infinity);
+  font-weight: bold;
 }
 
-.s-base--dark .c-infinity-upgrade-grid__column--background {
-  opacity: 0.5;
+.l-infinity-upgrade-grid__row-upgrades,
+.l-infinity-upgrade-grid__row-item {
+  display: flex;
+  align-items: center;
+}
+
+.c-infinity-upgrade-grid__arrow {
+  color: var(--color-infinity);
+  font-size: 2rem;
+}
+
+.c-infinity-upgrade-grid__cell--galaxy {
+  border-color: #a35ec9;
+  box-shadow: inset 0 0 1rem #a35ec955;
+  color: #c77dea;
 }
 
 .l-infinity-upgrades-bottom-row .l-infinity-upgrade-grid__cell,
