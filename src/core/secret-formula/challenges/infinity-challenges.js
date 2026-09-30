@@ -21,7 +21,7 @@ export const infinityChallenges = [
     goal: DC.E10500,
     isQuickResettable: false,
     reward: {
-      description: () => `Dimensional Sacrifice autobuyer and stronger Dimensional Sacrifice
+      description: () => `Stronger Dimensional Sacrifice
         ${Sacrifice.getSacrificeDescription({ "InfinityChallenge2isCompleted": false })} ➜
         ${Sacrifice.getSacrificeDescription({ "InfinityChallenge2isCompleted": true })}`,
     },

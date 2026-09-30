@@ -75,10 +75,13 @@ export default {
         if (isString(value)) {
           // This is a special case for scrambling EC6 description text
           if (this.config.scrambleText) {
-            this.description = capitalize(value).replace("*", wordShift.wordCycle(this.config.scrambleText, true));
+            const scrambleText = this.config.id === "galaxyFormula"
+              ? ["improved", "corrupted", "unsealed", "???"]
+              : this.config.scrambleText;
+            this.description = capitalize(value).replace("*", wordShift.wordCycle(scrambleText, true));
             this.updateFunction = () =>
               this.description = capitalize(description())
-                .replace("*", wordShift.wordCycle(this.config.scrambleText, true));
+                .replace("*", wordShift.wordCycle(scrambleText, true));
             return;
           }
           this.description = capitalize(value);

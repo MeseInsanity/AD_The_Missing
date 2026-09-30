@@ -48,7 +48,6 @@ export default {
       totalMultiplier: new Decimal(),
       totalPositivePower: 1,
       replacePowers: player.options.multiplierTab.replacePowers,
-      inNC12: false,
     };
   },
   computed: {
@@ -121,7 +120,6 @@ export default {
       this.calculatePercents();
       this.now = Date.now();
       this.replacePowers = player.options.multiplierTab.replacePowers && this.allowPowerToggle;
-      this.inNC12 = NormalChallenge(12).isRunning;
     },
     changeGroup() {
       this.selected = (this.selected + 1) % this.groups.length;
@@ -449,10 +447,6 @@ export default {
           your AD count) after a Sacrifice. This may misrepresent your actual production if your ADs have been
           producing for a while, but the relative mismatch will become smaller as you progress further in the game
           and numbers become larger.
-        </div>
-        <div v-if="inNC12">
-          The breakdown in this tab within Normal Challenge 12 may be inaccurate for some entries, and might count
-          extra multipliers which apply to all Antimatter Dimensions rather than just the ones which are displayed.
         </div>
       </div>
     </div>

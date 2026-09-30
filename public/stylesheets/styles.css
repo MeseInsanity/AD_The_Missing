@@ -4635,6 +4635,17 @@ properly on certain themes. */
   animation: a-time-study 1.5s infinite;
 }
 
+.o-break-infinity-btn--broken {
+  color: #d9f3ff;
+  background-color: #123c5a !important;
+  border-color: #4ca9dc;
+  box-shadow: inset 0 0 1rem #2d98d455;
+}
+
+.o-break-infinity-btn--broken:hover {
+  background-color: #1b577d !important;
+}
+
 .l-break-infinity-tab__grid {
   margin-top: 1rem;
 }

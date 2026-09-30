@@ -24,6 +24,10 @@ export class TickspeedAutobuyerState extends UpgradeableAutobuyerState {
     return Player.defaultStart.auto.tickspeed.interval;
   }
 
+  get interval() {
+    return BreakInfinityUpgrade.instantAutobuyers.isBought ? 0 : super.interval;
+  }
+
   get isBought() {
     return this.data.isBought;
   }

@@ -26,7 +26,7 @@ export default {
         this.tooltip = tooltip;
       };
       const setLinearProgress = (current, goal, tooltip) => {
-        this.fill = Decimal.min(current.div(goal), 1);
+        this.fill = Decimal.min(new Decimal(current).div(goal), 1);
         this.tooltip = tooltip;
       };
 

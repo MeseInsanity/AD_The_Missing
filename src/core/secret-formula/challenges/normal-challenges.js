@@ -1,5 +1,7 @@
 import { DC } from "../../constants";
 
+const NC10_PURCHASE_LIMIT = 9000;
+
 // I tried to make it relatively simple to add more locks; the idea is that you give it a value here
 // and then it's all handled in the backend
 // If you need to lock a challenge, set lockedAt to a new Decimal variable reflective of a desired number of Infinities
@@ -9,6 +11,7 @@ export const normalChallenges = [
   {
     id: 1,
     legacyId: 1,
+    title: "Hello, Infinity",
     isQuickResettable: false,
     description() {
       return PlayerProgress.eternityUnlocked()
@@ -22,8 +25,9 @@ export const normalChallenges = [
   {
     id: 2,
     legacyId: 2,
+    title: "Ticking Point",
     isQuickResettable: false,
-    description: "Tickspeed purchases strengthen 1st Antimatter Dimensions, but all other Buy 10 multipliers are fixed at x1.",
+    description: "Tickspeed strengthens 1st AD, but disables other Buy 10 multipliers.",
     name: "2nd Antimatter Dimension Autobuyer",
     reward: "Upgradeable 2nd Antimatter Dimension Autobuyer",
     lockedAt: DC.D0,
@@ -31,17 +35,19 @@ export const normalChallenges = [
   {
     id: 3,
     legacyId: 3,
+    title: "Recursive Growth",
     isQuickResettable: false,
-    description: "Dimension Boosts weaken with each use, but Buy 10 multipliers strengthen with Dimension purchases.",
-    name: "3rd Antimatter Dimension",
+    description: "Dimension Boosts are getting weaker, but each AD purchase strengthens its own Buy 10 multiplier.",
+    name: "3rd Antimatter Dimension Autobuyer",
     reward: "Upgradeable 3rd Antimatter Dimension Autobuyer",
     lockedAt: DC.D0,
   },
   {
     id: 4,
     legacyId: 8,
+    title: "Heavy Lifting",
     isQuickResettable: false,
-    description: "Tickspeed is raised to the 0.4th power, but Dimension Boosts are raised to the 2.5th power.",
+    description: "Tickspeed is much weaker, but Dimension Boosts are stronger.",
     name: "4th Antimatter Dimension Autobuyer",
     reward: "Upgradeable 4th Antimatter Dimension Autobuyer",
     lockedAt: DC.D0,
@@ -49,8 +55,9 @@ export const normalChallenges = [
   {
     id: 5,
     legacyId: 6,
+    title: "Sacrificial Cycle",
     isQuickResettable: false,
-    description: "Dimension Boosts weaken based on 7th Antimatter Dimensions. Sacrifice temporarily reduces this penalty for 20 seconds, but each Sacrifice is less effective.",
+    description: "ADs weaken as they grow. Sacrifice briefly restores their power.",
     name: "5th Antimatter Dimension Autobuyer",
     reward: "Upgradeable 5th Antimatter Dimension Autobuyer",
     lockedAt: DC.D0,
@@ -58,8 +65,9 @@ export const normalChallenges = [
   {
     id: 6,
     legacyId: 10,
+    title: "Purchase Pressure",
     isQuickResettable: false,
-    description: "Buying Antimatter Dimensions or Tickspeed upgrades maximizes a Tickspeed penalty based on Antimatter. This penalty decays with a half-life of 4 seconds.",
+    description: "Any purchases give a penalty to Tickspeed, which decays over time.",
     name: "6th Antimatter Dimension Autobuyer",
     reward: "Upgradeable 6th Antimatter Dimension Autobuyer",
     lockedAt: DC.D0,
@@ -67,8 +75,9 @@ export const normalChallenges = [
   {
     id: 7,
     legacyId: 9,
+    title: "Last One Standing",
     isQuickResettable: false,
-    description: "Buying Tickspeed upgrades weakens the Buy 10 multiplier.",
+    description: "Tickspeed weakens Buy 10 multipliers, except for the last purchased AD.",
     name: "7th Antimatter Dimension Autobuyer",
     reward: "Upgradeable 7th Antimatter Dimension Autobuyer",
     lockedAt: DC.D0,
@@ -76,8 +85,9 @@ export const normalChallenges = [
   {
     id: 8,
     legacyId: 11,
+    title: "Brute Force",
     isQuickResettable: false,
-    description: "You cannot buy Antimatter Galaxies. Buy 10 and Dimension Boost multipliers are square-rooted.",
+    description: "Galaxies are disabled. Buy 10 and Dimension Boost multipliers are weakened.",
     name: "8th Antimatter Dimension Autobuyer",
     reward: "Upgradeable 8th Antimatter Dimension Autobuyer",
     lockedAt: DC.D0,
@@ -85,9 +95,9 @@ export const normalChallenges = [
   {
     id: 9,
     legacyId: 5,
+    title: "Supply Chain",
     isQuickResettable: true,
-    description: () => `whenever you buy Tickspeed upgrades or ${formatInt(10)} of an Antimatter Dimension, ` +
-      "everything else of equal cost will increase to its next cost step.",
+    description: "ADs, except 1st AD, cost the previous tier. Antimatter never accumulates. Sacrifice reduces 8th AD costs, while lower-tier purchases empower the tier above.",
     name: "Tickspeed Autobuyer",
     reward: "Upgradeable Tickspeed Autobuyer",
     lockedAt: DC.D8,
@@ -95,9 +105,12 @@ export const normalChallenges = [
   {
     id: 10,
     legacyId: 4,
+    title: "Budget Cuts",
     isQuickResettable: false,
-    description: () => `there are only ${formatInt(6)} Antimatter Dimensions. Dimension Boost ` +
-      "and Antimatter Galaxy costs are modified.",
+    description: () => NC10_PURCHASE_LIMIT === null
+      ? "AD and Tickspeed purchases are unrestricted."
+      : `AD and Tickspeed purchases are limited to ${formatInt(NC10_PURCHASE_LIMIT)} total.`,
+    purchaseLimit: NC10_PURCHASE_LIMIT,
     name: "Automated Dimension Boosts",
     reward: "Dimension Boosts Autobuyer",
     lockedAt: DC.D8,
@@ -105,9 +118,9 @@ export const normalChallenges = [
   {
     id: 11,
     legacyId: 12,
+    title: "Matter Resistance",
     isQuickResettable: true,
-    description: () => `there is normal matter which rises once you have at least ${formatInt(1)} 2nd Antimatter ` +
-      "Dimension. If it exceeds your antimatter, it will Dimension Boost without giving the bonus.",
+    description: "2nd ADs produce Matter, which grows faster over time and weakens all ADs. Each annihilation permanently reduces this penalty.",
     name: "Automated Antimatter Galaxies",
     reward: "Antimatter Galaxies Autobuyer",
     lockedAt: DC.D8,
@@ -115,10 +128,10 @@ export const normalChallenges = [
   {
     id: 12,
     legacyId: 7,
+    title: "Sixth Sense",
     isQuickResettable: false,
-    description: () => `each Antimatter Dimension produces the Dimension ${formatInt(2)} tiers below it
-      instead of ${formatInt(1)}. Both 1st and 2nd Dimensions produce antimatter.
-      The 2nd, 4th, and 6th Dimensions are made stronger to compensate.`,
+    description: () => `there are only ${formatInt(6)} ADs. Dimension Boost ` +
+      "and Antimatter Galaxy costs are modified.",
     name: "Automated Big Crunches",
     reward: "Big Crunches Autobuyer",
     lockedAt: DC.D8,

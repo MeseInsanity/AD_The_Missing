@@ -10,6 +10,16 @@ export default {
     PrimaryToggleButton,
     InfinityUpgradeButton
   },
+  props: {
+    buttonClass: {
+      type: [Array, Object, String],
+      default: undefined
+    },
+    breakInfinityStyle: {
+      type: Boolean,
+      default: false
+    }
+  },
   data() {
     return {
       isAutobuyerActive: false,
@@ -41,14 +51,19 @@ export default {
 </script>
 
 <template>
-  <div class="l-spoon-btn-group">
+  <div
+    :class="[
+      'l-spoon-btn-group',
+      { 'c-break-infinity-ip-mult-group': breakInfinityStyle }
+    ]"
+  >
     <InfinityUpgradeButton
       :upgrade="upgrade"
-      class="o-infinity-upgrade-btn--multiplier"
+      :class="['o-infinity-upgrade-btn--multiplier', buttonClass]"
     >
       <template v-if="isCapped">
         <br>
-        <span>(Capped at {{ quantify("Infinity Point", upgrade.config.costCap) }})</span>
+        <span>(Capped at {{ quantify("Infinity Point", upgrade.config.cap()) }})</span>
       </template>
     </InfinityUpgradeButton>
     <PrimaryButton
@@ -67,5 +82,23 @@ export default {
 </template>
 
 <style scoped>
+
+.c-break-infinity-ip-mult-group {
+  width: 19rem;
+}
+
+.c-break-infinity-ip-mult-group ::v-deep .o-primary-btn {
+  width: 100%;
+  color: #d9f3ff;
+  background-color: #0e2d43;
+  border-color: #4ca9dc;
+}
+
+.c-break-infinity-ip-mult-group ::v-deep .o-primary-btn:hover {
+  color: #fff;
+  background-color: #1b577d;
+  border-color: #78c9f2;
+  box-shadow: inset 0 0 0.8rem #6ecbff55;
+}
 
 </style>

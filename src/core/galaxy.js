@@ -140,15 +140,15 @@ export class Galaxy {
   }
 
   static get costMult() {
-    return new Decimal(Effects.min(NormalChallenge(10).isRunning ? 90 : 60, TimeStudy(42)));
+    return new Decimal(Effects.min(NormalChallenge(12).isRunning ? 90 : 60, TimeStudy(42)));
   }
 
   static get baseCost() {
-    return NormalChallenge(10).isRunning ? DC.D99 : DC.D80;
+    return NormalChallenge(12).isRunning ? DC.D99 : DC.D80;
   }
 
   static get requiredTier() {
-    return NormalChallenge(10).isRunning ? 6 : 8;
+    return NormalChallenge(12).isRunning ? 6 : 8;
   }
 
   static get canBeBought() {
@@ -164,7 +164,7 @@ export class Galaxy {
     if (EternityChallenge(6).isRunning) return "Locked (Eternity Challenge 6)";
     if (InfinityChallenge(7).isRunning) return "Locked (Infinity Challenge 7)";
     if (InfinityChallenge(1).isRunning) return "Locked (Infinity Challenge 1)";
-    if (NormalChallenge(8).isRunning) return "Locked (8th Antimatter Dimension Autobuyer Challenge)";
+    if (NormalChallenge(8).isRunning) return "Locked (Normal Challenge 8)";
     return null;
   }
 
@@ -196,6 +196,10 @@ export class Galaxy {
 export function galaxyReset() {
   EventHub.dispatch(GAME_EVENT.GALAXY_RESET_BEFORE);
   player.galaxies = player.galaxies.add(1);
+  if (NormalChallenge(5).isRunning) {
+    player.chall5Sacrifices = 0;
+    player.chall5Pow = DC.D1;
+  }
   if (!Achievement(143).isUnlocked || (Pelle.isDoomed && !PelleUpgrade.galaxyNoResetDimboost.canBeApplied)) {
     player.dimensionBoosts = DC.D0;
   }
@@ -215,7 +219,9 @@ export function manualRequestGalaxyReset(bulk) {
     return;
   }
   if (player.options.confirmations.antimatterGalaxy) {
-    Modal.antimatterGalaxy.show({ bulk: bulk && EternityMilestone.autobuyMaxGalaxies.isReached });
+    Modal.antimatterGalaxy.show({
+      bulk: bulk && (EternityMilestone.autobuyMaxGalaxies.isReached || BreakInfinityUpgrade.galaxyBulk.isBought)
+    });
     return;
   }
   requestGalaxyReset(bulk);
@@ -226,7 +232,9 @@ export function manualRequestGalaxyReset(bulk) {
 export function requestGalaxyReset(bulk, limit = Number.MAX_VALUE) {
   const challengeLimit = NormalChallenge(8).isRunning ? DC.D0 : limit;
   const restrictedLimit = RealityUpgrade(7).isLockingMechanics ? DC.D1 : challengeLimit;
-  if (EternityMilestone.autobuyMaxGalaxies.isReached && bulk) return maxBuyGalaxies(restrictedLimit);
+  if ((EternityMilestone.autobuyMaxGalaxies.isReached || BreakInfinityUpgrade.galaxyBulk.isBought) && bulk) {
+    return maxBuyGalaxies(restrictedLimit);
+  }
   if (player.galaxies.gte(restrictedLimit) || !Galaxy.canBeBought || !Galaxy.requirement.isSatisfied) return false;
   Tutorial.turnOffEffect(TUTORIAL_STATE.GALAXY);
   galaxyReset();

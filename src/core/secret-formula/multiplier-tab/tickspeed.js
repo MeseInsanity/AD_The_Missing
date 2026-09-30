@@ -78,10 +78,10 @@ export const tickspeedUpgrades = {
     icon: MultiplierTabIcons.PURCHASE("AD"),
   },
   free: {
-    name: "Tickspeed Upgrades from TD",
-    displayOverride: () => formatInt(player.totalTickGained),
-    multValue: () => Decimal.pow10(player.totalTickGained),
-    isActive: () => Currency.timeShards.gt(0),
+    name: "Free Tickspeed Upgrades",
+    displayOverride: () => formatInt(player.totalTickGained.plusEffectOf(BreakInfinityUpgrade.bestAMTickspeed)),
+    multValue: () => Decimal.pow10(player.totalTickGained.plusEffectOf(BreakInfinityUpgrade.bestAMTickspeed)),
+    isActive: () => Currency.timeShards.gt(0) || BreakInfinityUpgrade.bestAMTickspeed.isBought,
     icon: MultiplierTabIcons.SPECIFIC_GLYPH("time"),
   }
 };

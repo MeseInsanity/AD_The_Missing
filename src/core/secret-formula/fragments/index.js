@@ -16,5 +16,9 @@ export const Fragments = {
   infinityPowerConversion: {
     // Starts deliberately low in Pre-Break; Fragments will raise this later.
     effect: () => DC.D0_01.times(2)
+  },
+  ipMultCostScaling: {
+    // A future Fragment effect returns a normalized 0-1 strength which softens the post-ee6 IP multiplier cost curve.
+    effect: () => DC.D0
   }
 };

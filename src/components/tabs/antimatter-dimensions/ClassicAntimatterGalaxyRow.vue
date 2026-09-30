@@ -103,7 +103,7 @@ export default {
       this.distantStart.copyFrom(Galaxy.costScalingStart);
       this.remoteStart.copyFrom(Galaxy.remoteStart);
       this.lockText = Galaxy.lockText;
-      this.canBulkBuy = EternityMilestone.autobuyMaxGalaxies.isReached;
+      this.canBulkBuy = EternityMilestone.autobuyMaxGalaxies.isReached || BreakInfinityUpgrade.galaxyBulk.isBought;
       this.creditsClosed = GameEnd.creditsEverClosed;
       this.hasTutorial = Tutorial.isActive(TUTORIAL_STATE.GALAXY);
     },

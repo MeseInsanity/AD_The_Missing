@@ -7,23 +7,10 @@ import { MultiplierTabIcons } from "./icons";
 // See index.js for documentation
 export const AD = {
   total: {
-    name: dim => {
-      if (dim) return `AD ${dim} Multiplier`;
-      if (NormalChallenge(12).isRunning) {
-        if (MultiplierTabHelper.actualNC12Production().eq(0)) return "Base AD Production from All Dimensions";
-        return `Base AD Production from ${MultiplierTabHelper.isNC12ProducingEven() ? "Even" : "Odd"} Dimensions`;
-      }
-      return "Base AD Production";
-    },
+    name: dim => (dim ? `AD ${dim} Multiplier` : "Base AD Production"),
     displayOverride: dim => {
-      if (dim) {
-        const singleMult = NormalChallenge(12).isRunning
-          ? MultiplierTabHelper.multInNC12(dim)
-          : AntimatterDimension(dim).multiplier;
-        return formatX(singleMult, 2, 2);
-      }
+      if (dim) return formatX(AntimatterDimension(dim).multiplier, 2, 2);
       const maxTier = EternityChallenge(7).isRunning ? 7 : MultiplierTabHelper.activeDimCount("AD");
-      if (NormalChallenge(12).isRunning) return `${format(MultiplierTabHelper.actualNC12Production(), 2)}/sec`;
       return `${format(AntimatterDimensions.all
         .filter(ad => ad.isProducing)
         .map(ad => ad.multiplier)
@@ -31,13 +18,6 @@ export const AD = {
         .times(AntimatterDimension(maxTier).totalAmount), 2)}/sec`;
     },
     multValue: dim => {
-      if (NormalChallenge(12).isRunning) {
-        const nc12Prod = MultiplierTabHelper.actualNC12Production();
-        if (!dim) return nc12Prod.eq(0) ? 1 : nc12Prod;
-        return (MultiplierTabHelper.isNC12ProducingEven() ? dim % 2 === 0 : dim % 2 === 1)
-          ? MultiplierTabHelper.multInNC12(dim)
-          : DC.D1;
-      }
       const mult = dim
         ? AntimatterDimension(dim).multiplier
         : AntimatterDimensions.all
@@ -66,10 +46,23 @@ export const AD = {
         ? AntimatterDimension(ad).continuumValue
         : Decimal.floor(AntimatterDimension(ad).bought.div(10))
       );
-      if (dim) return Decimal.pow(AntimatterDimensions.buyTenMultiplier, getPurchases(dim));
+      const lowerTierPower = NormalChallenge(9).isRunning
+        ? new Decimal(0.1)
+        : NormalChallenge.isRuleBreaking
+          ? new Decimal(Achievement(58).effectOrDefault(0)).times(0.5)
+          : Achievement(58).effectOrDefault(0);
+      const purchaseMultiplier = ad => {
+        let multiplier = Decimal.pow(AntimatterDimensions.buyTenMultiplier, getPurchases(ad));
+        if (ad > 1 && (NormalChallenge(9).isRunning || Achievement(58).isUnlocked)) {
+          multiplier = multiplier.times(Decimal.pow(AntimatterDimensions.buyTenMultiplier,
+            getPurchases(ad - 1).times(lowerTierPower)));
+        }
+        return multiplier;
+      };
+      if (dim) return purchaseMultiplier(dim);
       return AntimatterDimensions.all
         .filter(ad => ad.isProducing)
-        .map(ad => Decimal.pow(AntimatterDimensions.buyTenMultiplier, getPurchases(ad.tier)))
+        .map(ad => purchaseMultiplier(ad.tier))
         .reduce((x, y) => x.times(y), DC.D1);
     },
     isActive: () => !EternityChallenge(11).isRunning,
@@ -130,6 +123,10 @@ export const AD = {
 
       const dimMults = Array.repeat(DC.D1, 9);
       for (let tier = 1; tier <= 8; tier++) {
+        const firstRowStart = Achievement(43).isUnlocked ? 1 : tier;
+        for (let rewardTier = firstRowStart; rewardTier <= 8; rewardTier++) {
+          dimMults[tier] = dimMults[tier].times(Achievement(rewardTier + 10).effectOrDefault(1));
+        }
         if (tier === 1) {
           dimMults[tier] = dimMults[tier].timesEffectsOf(
             Achievement(28),
@@ -143,9 +140,6 @@ export const AD = {
           tier < 8 ? Achievement(34) : null,
           tier <= 4 ? Achievement(64) : null,
         );
-        if (Achievement(43).isUnlocked) {
-          dimMults[tier] = dimMults[tier].times(1 + tier / 100);
-        }
       }
 
       if (dim) return allMult.times(dimMults[dim]);
@@ -203,12 +197,20 @@ export const AD = {
     multValue: dim => {
       const mult = DC.D1.timesEffectsOf(
         BreakInfinityUpgrade.totalAMMult,
-        BreakInfinityUpgrade.currentAMMult,
         BreakInfinityUpgrade.achievementMult,
         BreakInfinityUpgrade.slowestChallengeMult,
         BreakInfinityUpgrade.infinitiedMult
       );
-      return Decimal.pow(mult, dim ? 1 : MultiplierTabHelper.activeDimCount("AD"));
+      if (dim) {
+        return mult.timesEffectsOf(
+          dim === 1 ? BreakInfinityUpgrade.currentAMMult : null,
+          dim === 8 ? BreakInfinityUpgrade.averageAMMult : null
+        );
+      }
+      const activeDimCount = MultiplierTabHelper.activeDimCount("AD");
+      return Decimal.pow(mult, activeDimCount)
+        .timesEffectOf(BreakInfinityUpgrade.currentAMMult)
+        .times(activeDimCount >= 8 ? BreakInfinityUpgrade.averageAMMult.effectOrDefault(DC.D1) : DC.D1);
     },
     isActive: () => player.break && !EternityChallenge(11).isRunning,
     icon: MultiplierTabIcons.BREAK_INFINITY,
@@ -359,50 +361,10 @@ export const AD = {
     // sure to render a x or / conditionally. This requires we calculate the value itself again, however
     displayOverride: dim => {
       const formatFn = num => (num.gte(1) ? formatX(num, 2, 2) : `/${format(num.reciprocal(), 2, 2)}`);
-
-      let dimMults = Array.repeat(DC.D1, 9);
-      if (NormalChallenge(12).isRunning) {
-        dimMults[2] = AntimatterDimension(2).totalAmount.pow(0.6);
-        dimMults[4] = AntimatterDimension(4).totalAmount.pow(0.4);
-        dimMults[6] = AntimatterDimension(6).totalAmount.pow(0.2);
-      }
-
-      if (dim) return formatFn(dimMults[dim]);
-      let totalMult = DC.D1;
-      for (let tier = 1; tier <= MultiplierTabHelper.activeDimCount("AD"); tier++) {
-        totalMult = totalMult.times(dimMults[tier]);
-      }
-      return formatFn(totalMult);
+      return formatFn(DC.D1);
     },
-    // This and displayOverride contain largely the same code
-    multValue: dim => {
-      let dimMults = Array.repeat(DC.D1, 9);
-      // Legacy behavior for NC12 we're preserving dictates that it boosts production based on dimension amount
-      // without actually increasing the multiplier itself, so this effectively turns the powers in the production
-      // code info effective multipliers raised to pow-1
-      if (NormalChallenge(12).isRunning) {
-        dimMults[2] = AntimatterDimension(2).totalAmount.pow(0.6);
-        dimMults[4] = AntimatterDimension(4).totalAmount.pow(0.4);
-        dimMults[6] = AntimatterDimension(6).totalAmount.pow(0.2);
-
-        // We have to hide this when producing odd or when referencing a dimension which has no amount, but then we
-        // also need to total up the multipliers when on the grouped layout. No amount evaluates to zero, so in all
-        // those cases we use 1 instead in order to calculate properly
-        if (!MultiplierTabHelper.isNC12ProducingEven()) return DC.D1;
-        if (dim) return dimMults[dim].neq(0) ? dimMults[dim] : DC.D1;
-        let totalNC12 = DC.D1;
-        for (let d = 2; d <= 6; d += 2) totalNC12 = totalNC12.times(dimMults[d].clampMin(1));
-        return totalNC12;
-      }
-
-      if (dim) return dimMults[dim];
-      let totalMult = DC.D1;
-      for (let tier = 1; tier <= MultiplierTabHelper.activeDimCount("AD"); tier++) {
-        totalMult = totalMult.times(dimMults[tier]);
-      }
-      return totalMult;
-    },
-    isActive: () => [2, 3, 12].some(c => NormalChallenge(c).isRunning),
+    multValue: () => DC.D1,
+    isActive: () => [2, 3].some(c => NormalChallenge(c).isRunning),
     icon: MultiplierTabIcons.CHALLENGE("infinity"),
   },
   nerfIC: {

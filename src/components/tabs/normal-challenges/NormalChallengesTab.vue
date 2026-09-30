@@ -46,6 +46,10 @@ export default {
       </span>
     </div>
     <div>
+      In C9–C12, multipliers to ADs, Dimension Boosts, and Buy 10 Multipliers from Infinity Upgrades
+      and individual Achievement Rewards are square-rooted.
+    </div>
+    <div>
       If you have an active Big Crunch Autobuyer, it will attempt to Crunch
       as soon as possible when reaching Infinite antimatter.
     </div>

@@ -1,5 +1,6 @@
 import { GameMechanicState, SetPurchasableMechanicState } from "./game-mechanics";
 import { DC } from "./constants";
+import { Fragments } from "./secret-formula/fragments";
 
 class ChargedInfinityUpgradeState extends GameMechanicState {
   constructor(config, upgrade) {
@@ -99,6 +100,7 @@ export function totalIPMult() {
       Achievement(125),
       Achievement(141).effects.ipGain,
       InfinityUpgrade.ipMult,
+      BreakInfinityUpgrade.infinityIPMult,
       DilationUpgrade.ipMultDT,
       GlyphEffect.ipMult
     );
@@ -121,9 +123,9 @@ export function disChargeAll() {
     InfinityUpgrade.dimboostMult,
     InfinityUpgrade.ipGen,
     InfinityUpgrade.bestInfinityTimeDimensions,
-    InfinityUpgrade.currentInfinityGalaxiesSacrifice,
+    InfinityUpgrade.currentInfinityTickspeedSacrifice,
     InfinityUpgrade.currentInfinityBoostsBuy10,
-    InfinityUpgrade.currentInfinitySacrificeTickspeed
+    InfinityUpgrade.currentInfinitySacrificeDimBoost
   ];
   for (const upgrade of upgrades) {
     if (upgrade.isCharged) {
@@ -134,37 +136,63 @@ export function disChargeAll() {
   EventHub.dispatch(GAME_EVENT.INFINITY_UPGRADES_DISCHARGED);
 }
 
-// The repeatable 2xIP upgrade has an odd cost structure - it follows a shallow exponential (step *10) up to e3M, at
-// which point it follows a steeper one (step *1e10) up to e6M before finally hardcapping. At the hardcap, there's
-// an extra bump that increases the multipler itself from e993k to e1M. All these numbers are specified in
-// GameDatabase.infinity.upgrades.ipMult
+// The IP multiplier has three analytically-invertible sections: eight x25 * 5^stage fixed-ratio stages, followed
+// by a Fragment-adjustable post-scaling curve.
 class InfinityIPMultUpgrade extends GameMechanicState {
-  get cost() {
-    if (this.purchaseCount.gte(this.purchasesAtIncrease)) {
-      return this.config.costIncreaseThreshold
-        .times(Decimal.pow(this.costIncrease, this.purchaseCount.sub(this.purchasesAtIncrease)));
+  get baseCostExponent() {
+    return 3;
+  }
+
+  get fragmentStrength() {
+    return Math.clamp(Fragments.ipMultCostScaling.effect().toNumber(), 0, 1);
+  }
+
+  get firstPostScalingPurchase() {
+    return Math.ceil(8192 * Math.log(2) / Math.log(3));
+  }
+
+  get maxPurchases() {
+    return Math.ceil(1e6 * Math.log(10) / Math.log(3));
+  }
+
+  get postScalingEndExponent() {
+    const strength = this.fragmentStrength;
+    return Math.pow(10, (1 - strength) * Math.log10(2e7) + strength * 6);
+  }
+
+  get postScalingPower() {
+    return 0.5 + this.fragmentStrength / 2;
+  }
+
+  costExponentAt(purchaseCount) {
+    const count = Math.max(purchaseCount, 0);
+    if (count >= this.firstPostScalingPurchase) {
+      const progress = Math.clamp(
+        (count - this.firstPostScalingPurchase) / (this.maxPurchases - this.firstPostScalingPurchase), 0, 1
+      );
+      return 20000 + (this.postScalingEndExponent - 20000) * Math.pow(progress, this.postScalingPower);
     }
-    return Decimal.pow(this.costIncrease, this.purchaseCount.add(1));
+
+    let exponent = this.baseCostExponent;
+    for (let stage = 0; stage < 8; stage++) {
+      const start = Math.ceil(stage * 1024 * Math.log(2) / Math.log(3));
+      const end = Math.ceil((stage + 1) * 1024 * Math.log(2) / Math.log(3));
+      const purchases = Math.clamp(count - start, 0, end - start);
+      exponent += purchases * Math.log10(25 * 5 ** stage);
+    }
+    return exponent;
+  }
+
+  get cost() {
+    return Decimal.pow10(this.costExponentAt(this.purchaseCount.toNumber()));
   }
 
   get purchaseCount() {
     return player.IPMultPurchases;
   }
 
-  get purchasesAtIncrease() {
-    return this.config.costIncreaseThreshold.max(1).log10().sub(1);
-  }
-
-  get hasIncreasedCost() {
-    return this.purchaseCount.gte(this.purchasesAtIncrease);
-  }
-
-  get costIncrease() {
-    return this.hasIncreasedCost ? 1e10 : 10;
-  }
-
   get isCapped() {
-    return this.cost.gte(this.config.costCap) || player.IPMultPurchases.gt(3300000);
+    return this.purchaseCount.gte(this.maxPurchases);
   }
 
   get isBought() {
@@ -179,36 +207,31 @@ class InfinityIPMultUpgrade extends GameMechanicState {
     return !Pelle.isDoomed && !this.isCapped && Currency.infinityPoints.gte(this.cost) && this.isRequirementSatisfied;
   }
 
-  // This is only ever called with amount = 1 or within buyMax under conditions that ensure the scaling doesn't
-  // change mid-purchase
   purchase(amount = 1) {
     if (!this.canBeBought) return;
     if (!TimeStudy(181).isBought) {
-      Autobuyer.bigCrunch.bumpAmount(DC.D2.pow(amount));
+      Autobuyer.bigCrunch.bumpAmount(DC.D3.pow(amount));
     }
-    Currency.infinityPoints.subtract(Decimal.sumGeometricSeries(amount, this.cost, this.costIncrease, 0));
+    const finalPurchaseCount = this.purchaseCount.add(amount).sub(1).toNumber();
+    Currency.infinityPoints.subtract(Decimal.pow10(this.costExponentAt(finalPurchaseCount)));
     player.IPMultPurchases = player.IPMultPurchases.add(amount);
     GameUI.update();
   }
 
   buyMax() {
     if (!this.canBeBought) return;
-    if (!this.hasIncreasedCost) {
-      // Only allow IP below the softcap to be used
-      const availableIP = Currency.infinityPoints.value.clampMax(this.config.costIncreaseThreshold);
-      const purchases = Decimal.affordGeometricSeries(availableIP, this.cost, this.costIncrease, 0);
-      if (purchases.lte(0)) return;
-      this.purchase(purchases);
+    const availableExponent = Currency.infinityPoints.value.log10().toNumber();
+    let low = this.purchaseCount.toNumber();
+    let high = this.maxPurchases;
+    while (low < high) {
+      const midpoint = Math.ceil((low + high) / 2);
+      if (this.costExponentAt(midpoint - 1) <= availableExponent) low = midpoint;
+      else high = midpoint - 1;
     }
-    // Do not replace it with `if else` - it's specifically designed to process two sides of threshold separately
-    // (for example, we have 1e4000000 IP and no mult - first it will go to (but not including) 1e3000000 and then
-    // it will go in this part)
-    if (this.hasIncreasedCost) {
-      const availableIP = Currency.infinityPoints.value.clampMax(this.config.costCap);
-      const purchases = Decimal.affordGeometricSeries(availableIP, this.cost, this.costIncrease, 0);
-      if (purchases.lte(0)) return;
-      this.purchase(purchases);
-    }
+    const purchases = low - this.purchaseCount.toNumber();
+    if (purchases <= 0) return;
+    // The final purchase dominates every section's total cost, so this follows the same Buy Max approximation as EPx5.
+    this.purchase(purchases);
   }
 }
 

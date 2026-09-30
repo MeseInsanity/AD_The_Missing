@@ -33,8 +33,8 @@ export default {
           name: "Current Run",
           upgrades: [
             InfinityUpgrade.thisInfinityTimeMult,
-            InfinityUpgrade.currentInfinityGalaxiesSacrifice,
-            InfinityUpgrade.currentInfinitySacrificeTickspeed,
+            InfinityUpgrade.currentInfinityTickspeedSacrifice,
+            InfinityUpgrade.currentInfinitySacrificeDimBoost,
             InfinityUpgrade.currentInfinityBoostsBuy10
           ]
         },
@@ -42,8 +42,8 @@ export default {
           name: "Core Mechanics",
           upgrades: [
             InfinityUpgrade.buy10Mult,
-            InfinityUpgrade.dimboostMult,
             InfinityUpgrade.resetBoost,
+            InfinityUpgrade.dimboostMult,
             InfinityUpgrade.galaxyBoost
           ]
         },
@@ -156,7 +156,7 @@ export default {
   position: relative;
   justify-content: center;
   margin: 1.5rem 0 0.8rem;
-  padding: 1.1rem 0.8rem 0.7rem;
+  padding: 1.5rem 0.8rem 0.7rem;
   border: var(--var-border-width, 0.2rem) solid var(--color-infinity);
   border-radius: var(--var-border-radius, 0.3rem);
 }
@@ -183,9 +183,19 @@ export default {
 }
 
 .c-infinity-upgrade-grid__cell--galaxy {
-  border-color: #a35ec9;
-  box-shadow: inset 0 0 1rem #a35ec955;
-  color: #c77dea;
+  border-color: #ff5252;
+  background-color: #26070d;
+  box-shadow: inset 0 0 1rem #ff525266;
+}
+
+.c-infinity-upgrade-grid__cell--galaxy:not(.o-infinity-upgrade-btn--bought):hover {
+  background-color: #5c0b17;
+  box-shadow: inset 0 0 1.2rem #ff525299, 0 0 0.6rem #ff525244;
+}
+
+.c-infinity-upgrade-grid__cell--galaxy.o-infinity-upgrade-btn--bought {
+  color: #fff5e6;
+  background-color: #9b1c1c;
 }
 
 .l-infinity-upgrades-bottom-row .l-infinity-upgrade-grid__cell,

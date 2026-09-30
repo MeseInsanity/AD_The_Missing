@@ -47,7 +47,7 @@ export const IP = {
     icon: MultiplierTabIcons.DIVISOR("IP"),
   },
   infinityUpgrade: {
-    name: () => `Infinity Upgrade - Repeatable ${formatX(2)} IP`,
+    name: () => `Infinity Upgrade - Repeatable ${formatX(3)} IP`,
     multValue: () => InfinityUpgrade.ipMult.effectOrDefault(1),
     isActive: () => player.break && !Pelle.isDoomed,
     icon: MultiplierTabIcons.UPGRADE("infinity"),

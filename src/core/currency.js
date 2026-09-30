@@ -223,19 +223,19 @@ Currency.antimatter = new class extends DecimalCurrency {
     super.add(amount);
     if (amount.gt(0)) {
       player.records.totalAntimatter = player.records.totalAntimatter.add(amount);
+      const thisInfinity = player.records.thisInfinity;
+      thisInfinity.totalAntimatter = (thisInfinity.totalAntimatter ?? DC.D0).add(amount);
       player.requirementChecks.reality.noAM = false;
     }
   }
 
   get productionPerSecond() {
-    return NormalChallenge(12).isRunning
-      ? AntimatterDimension(1).productionPerRealSecond.plus(AntimatterDimension(2).productionPerRealSecond)
-      : AntimatterDimension(1).productionPerRealSecond;
+    return AntimatterDimension(1).productionPerRealSecond;
   }
 
   get startingValue() {
     if (Pelle.isDisabled()) return new Decimal(100);
-    return Effects.max(
+    const startingValue = Effects.max(
       DC.E1,
       Perk.startAM,
       Achievement(21),
@@ -244,6 +244,9 @@ Currency.antimatter = new class extends DecimalCurrency {
       Achievement(55),
       Achievement(78)
     );
+    return NormalChallenge(9).isRunning
+      ? startingValue.clampMax(DC.E2)
+      : startingValue;
   }
 }();
 

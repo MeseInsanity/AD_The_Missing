@@ -167,7 +167,10 @@ export const Achievements = {
   _power: new Lazy(() => {
     const unlockedRows = Achievements.allRows
       .countWhere(row => row.every(ach => ach.isUnlocked));
-    const basePower = Decimal.pow(1.25, unlockedRows).mul(Decimal.pow(1.03, Achievements.effectiveCount));
+    const individualMultiplier = BreakInfinityUpgrade.achievementFormula.isBought ? 1.05 : 1.03;
+    const rowMultiplier = BreakInfinityUpgrade.achievementFormula.isBought ? 1.35 : 1.25;
+    const basePower = Decimal.pow(rowMultiplier, unlockedRows)
+      .mul(Decimal.pow(individualMultiplier, Achievements.effectiveCount));
     const exponent = getAdjustedGlyphEffect("effarigachievement").mul(Ra.unlocks.achievementPower.effectOrDefault(1));
     return basePower.pow(exponent);
   }),

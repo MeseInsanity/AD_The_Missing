@@ -18,6 +18,7 @@ export function startEternityChallenge() {
   resetTimeDimensions();
   resetTickspeed();
   player.records.thisInfinity.maxAM = DC.D0;
+  player.records.thisInfinity.totalAntimatter = DC.D0;
   player.records.thisEternity.maxAM = DC.D0;
   Currency.antimatter.reset();
   playerInfinityUpgradesOnReset();

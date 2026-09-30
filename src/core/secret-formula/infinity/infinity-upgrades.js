@@ -1,5 +1,4 @@
 import { DC } from "../../constants";
-import { effectiveGalaxyCount } from "../../tickspeed";
 import { Fragments } from "../fragments";
 
 function dimInfinityMult() {
@@ -31,13 +30,12 @@ function bestInfinityTimeMult() {
   return softcapValue.times(overflow.div(5).add(1));
 }
 
-function galaxySacrificeMultiplier() {
-  return effectiveGalaxyCount().clampMax(30).times(0.05).add(1);
+function tickspeedSacrificeMultiplier() {
+  return Tickspeed.perSecond;
 }
 
-function galaxySacrificePower() {
-  const galaxyStrength = effectiveGalaxyCount().add(1).log10().div(2).clampMax(1);
-  return galaxyStrength.times(0.1 * Math.sqrt(Ra.pets.teresa.level / 2)).add(1);
+function chargedTickspeedSacrificeMultiplier() {
+  return Tickspeed.perSecond.pow(Ra.pets.teresa.level / 2);
 }
 
 function dimBoostBuy10Multiplier() {
@@ -49,17 +47,19 @@ function chargedDimBoostBuy10Power() {
   return boostStrength.times(1 + Math.pow(Ra.pets.teresa.level / 2, 2)).add(1);
 }
 
-function sacrificeTickspeedMultiplier() {
+function sacrificeDimBoostMultiplier() {
   const sacrificeLog = Sacrifice.totalBoost.max(1).log10();
-  if (!InfinityChallenge(2).isCompleted) {
-    return sacrificeLog.div(7).clampMax(1).times(0.35).add(1);
-  }
-  return sacrificeLog.sub(90).div(210).clampMin(0).clampMax(1).times(0.15).add(1.35);
+  return sacrificeLog.div(sacrificeLog.add(5)).times(0.25).add(1);
+}
+
+function chargedSacrificeDimBoostPower() {
+  return Decimal.pow(2, Ra.pets.teresa.level / 2 + 1);
 }
 
 export const infinityUpgrades = {
   bestInfinityTimeDimensions: {
     id: "bestInfinityTimeDimensions",
+    name: "Delta MAX",
     cost: 8,
     checkRequirement: () => InfinityUpgrade.dim18mult.isBought,
     description: "Antimatter Dimensions are stronger based on your fastest Infinity time",
@@ -72,23 +72,28 @@ export const infinityUpgrades = {
       formatEffect: value => formatPow(value, 4, 4)
     }
   },
-  currentInfinityGalaxiesSacrifice: {
+  currentInfinityTickspeedSacrifice: {
+    // Keep the old ID so saves retain the purchase in this grid slot.
     id: "currentInfinityGalaxiesSacrifice",
+    name: "Tick Tock Soul",
     cost: 2,
     checkRequirement: () => InfinityUpgrade.thisInfinityTimeMult.isBought,
-    description: "Sacrifice is stronger based on Galaxies in the current Infinity",
-    effect: () => galaxySacrificeMultiplier(),
+    description: "Sacrificed Dimensions are multiplied by current Total Tickspeed.",
+    effect: () => tickspeedSacrificeMultiplier(),
     formatEffect: value => formatX(value, 2, 2),
+    hideEffect: true,
     charged: {
-      description: "Sacrifice gains a power effect based on Galaxies in the current Infinity and Teresa level",
-      effect: () => galaxySacrificePower(),
-      formatEffect: value => formatPow(value, 4, 4)
+      description: "Sacrificed Dimensions are further multiplied by current Total Tickspeed based on Teresa level.",
+      effect: () => chargedTickspeedSacrificeMultiplier(),
+      formatEffect: value => formatX(value, 2, 2),
+      hideEffect: true
     }
   },
   currentInfinityBoostsBuy10: {
     id: "currentInfinityBoostsBuy10",
-    cost: 32,
-    checkRequirement: () => InfinityUpgrade.currentInfinitySacrificeTickspeed.isBought,
+    name: "Turbo Boost",
+    cost: 64,
+    checkRequirement: () => InfinityUpgrade.currentInfinitySacrificeDimBoost.isBought,
     description: "Buy 10 Multiplier is stronger based on Dimension Boosts in the current Infinity",
     effect: () => dimBoostBuy10Multiplier(),
     formatEffect: value => formatX(value, 3, 3),
@@ -98,21 +103,24 @@ export const infinityUpgrades = {
       formatEffect: value => formatPow(value, 3, 3)
     }
   },
-  currentInfinitySacrificeTickspeed: {
+  currentInfinitySacrificeDimBoost: {
+    // Keep the old ID so saves retain the purchase in this grid slot.
     id: "currentInfinitySacrificeTickspeed",
+    name: "Soul Burner",
     cost: 16,
-    checkRequirement: () => InfinityUpgrade.currentInfinityGalaxiesSacrifice.isBought,
-    description: "Tickspeed is stronger based on Sacrifice in the current Infinity",
-    effect: () => sacrificeTickspeedMultiplier(),
+    checkRequirement: () => InfinityUpgrade.currentInfinityTickspeedSacrifice.isBought,
+    description: "Dimension Boost is stronger based on Sacrifice in the current Infinity",
+    effect: () => sacrificeDimBoostMultiplier(),
     formatEffect: value => formatX(value, 2, 2),
     charged: {
-      description: "Tickspeed is further strengthened based on Sacrifice and Teresa level",
-      effect: () => sacrificeTickspeedMultiplier().pow(1 + Math.sqrt(Ra.pets.teresa.level / 2)),
-      formatEffect: value => formatX(value, 2, 2)
+      description: "Dimension Boost gains a power effect based on Sacrifice and Teresa level",
+      effect: () => chargedSacrificeDimBoostPower(),
+      formatEffect: value => formatPow(value, 3, 3)
     }
   },
   totalTimeMult: {
     id: "timeMult",
+    name: "Clockwork",
     cost: 1,
     description: "Antimatter Dimensions gain a multiplier based on time played",
     effect: () => Decimal.pow(Time.totalTimePlayed.totalMinutes.div(2), 0.15),
@@ -127,6 +135,7 @@ export const infinityUpgrades = {
   },
   dim18mult: {
     id: "18Mult",
+    name: "Infinite Loop",
     cost: 2,
     checkRequirement: () => InfinityUpgrade.totalTimeMult.isBought,
     description: "Antimatter Dimensions gain a multiplier based on Infinities",
@@ -179,8 +188,9 @@ export const infinityUpgrades = {
   },
   resetBoost: {
     id: "resetBoost",
-    cost: 32,
-    checkRequirement: () => InfinityUpgrade.dimboostMult.isBought,
+    name: "Sub-9",
+    cost: 4,
+    checkRequirement: () => InfinityUpgrade.buy10Mult.isBought,
     description: () =>
       `Decrease the number of Dimensions needed for Dimension Boosts and Antimatter Galaxies by ${formatInt(9)}`,
     effect: 9,
@@ -192,6 +202,7 @@ export const infinityUpgrades = {
   },
   buy10Mult: {
     id: "dimMult",
+    name: "Bulk Order",
     cost: 2,
     description: () => `Increase the multiplier for buying ${formatInt(10)} Antimatter Dimensions`,
     effect: () => 1.1,
@@ -205,6 +216,7 @@ export const infinityUpgrades = {
   },
   galaxyBoost: {
     id: "galaxyBoost",
+    name: "Forbidden Galaxy",
     cost: 1024,
     checkRequirement: () => InfinityUpgrade.resetBoost.isBought,
     description: "All Galaxies are twice as strong",
@@ -217,6 +229,7 @@ export const infinityUpgrades = {
   },
   thisInfinityTimeMult: {
     id: "timeMult2",
+    name: "Long Life",
     cost: 1,
     description: "Antimatter Dimensions gain a multiplier based on time spent in current Infinity",
     effect: () => Decimal.max(Decimal.pow(Time.thisInfinity.totalMinutes.div(4), 0.25), 1),
@@ -232,6 +245,7 @@ export const infinityUpgrades = {
   },
   unspentIPMult: {
     id: "unspentBonus",
+    name: "Deep Reserve",
     cost: 256,
     checkRequirement: () => InfinityUpgrade.bestInfinityTimeDimensions.isBought,
     description: "Antimatter Dimensions gain a multiplier based on unspent Infinity Points",
@@ -246,8 +260,9 @@ export const infinityUpgrades = {
   },
   dimboostMult: {
     id: "resetMult",
-    cost: 4,
-    checkRequirement: () => InfinityUpgrade.buy10Mult.isBought,
+    name: "Nitro Engine",
+    cost: 32,
+    checkRequirement: () => InfinityUpgrade.resetBoost.isBought,
     description: "Increase Dimension Boost multiplier",
     effect: () => 2.5,
     formatEffect: () => `${formatX(2, 0, 1)} ➜ ${formatX(2.5, 0, 1)}`,
@@ -281,12 +296,14 @@ export const infinityUpgrades = {
   },
   skipReset1: {
     id: "skipReset1",
+    name: "Gear 1",
     cost: 10,
     description: () =>
       `Start every reset with ${formatInt(1)} Dimension Boost, automatically unlocking the 5th Antimatter Dimension`,
   },
   skipReset2: {
     id: "skipReset2",
+    name: "Gear 2",
     cost: 20,
     checkRequirement: () => InfinityUpgrade.skipReset1.isBought,
     description: () =>
@@ -294,6 +311,7 @@ export const infinityUpgrades = {
   },
   skipReset3: {
     id: "skipReset3",
+    name: "Gear 3",
     cost: 40,
     checkRequirement: () => InfinityUpgrade.skipReset2.isBought,
     description: () =>
@@ -301,6 +319,7 @@ export const infinityUpgrades = {
   },
   skipResetGalaxy: {
     id: "skipResetGalaxy",
+    name: "Top Gear",
     cost: 80,
     checkRequirement: () => InfinityUpgrade.skipReset3.isBought,
     description: () =>
@@ -322,15 +341,13 @@ export const infinityUpgrades = {
   },
   ipMult: {
     id: "ipMult",
+    name: "Infinite Returns",
     cost: () => InfinityUpgrade.ipMult.cost,
     checkRequirement: () => Achievement(41).isUnlocked,
-    costCap: DC.E6E6,
-    costIncreaseThreshold: DC.E3E6,
-    description: () => `Multiply Infinity Points from all sources by ${formatX(2)}`,
-    // Normally the multiplier caps at e993k or so with 3300000 purchases, but if the cost is capped then we just give
-    // an extra e7k to make the multiplier look nice
-    effect: () => (player.IPMultPurchases.gte(3300000) ? DC.E1E6 : DC.D2.pow(player.IPMultPurchases)),
+    description: () => `Multiply Infinity Points from all sources by ${formatX(3)}`,
+    effect: () => DC.D3.pow(player.IPMultPurchases).clampMax(DC.E1E6),
     cap: () => Effarig.eternityCap ?? DC.E1E6,
     formatEffect: value => formatX(value, 2, 2),
+    formatCost: value => format(value, 2, 0),
   }
 };

@@ -25,10 +25,10 @@ export const speedrunMilestones = [
   },
   {
     id: 4,
-    key: "completeC9",
-    name: "Tickspeed Challenge",
-    description: "Complete the Tickspeed Autobuyer Challenge",
-    checkRequirement: () => NormalChallenge(9).isCompleted,
+    key: "completeC8",
+    name: "Normal Challenge 8",
+    description: "Complete Normal Challenge 8",
+    checkRequirement: () => NormalChallenge(8).isCompleted,
     checkEvent: GAME_EVENT.BIG_CRUNCH_AFTER,
   },
   {
@@ -50,9 +50,9 @@ export const speedrunMilestones = [
   {
     id: 7,
     key: "upgrade5e11IP",
-    get name() { return `${format(5e11)} IP Upgrade`; },
-    description: () => `Purchase the ${formatPercents(0.5)} stronger Galaxies upgrade`,
-    checkRequirement: () => true,
+    name: "Galaxy awakes",
+    description: "Purchase AWAKENING GALAXY",
+    checkRequirement: () => BreakInfinityUpgrade.galaxyFormula.isBought,
     // This is checked within BreakInfinityUpgrade.onPurchased
   },
   {

@@ -30,7 +30,7 @@ export default {
   methods: {
     update() {
       this.currentMultiplier.copyFrom(Sacrifice.totalBoost);
-      this.nextMultiplier.copyFrom(Sacrifice.nextBoost.times(Sacrifice.totalBoost));
+      this.nextMultiplier.copyFrom(Sacrifice.nextTotalBoost);
     },
     handleYesClick() {
       sacrificeReset();

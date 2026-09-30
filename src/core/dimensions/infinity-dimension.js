@@ -157,12 +157,27 @@ class InfinityDimensionState extends DimensionState {
   get multiplier() {
     const tier = this.tier;
     if (EternityChallenge(11).isRunning) return DC.D1;
+    const formulaAmplifier = BreakInfinityUpgrade.bestIPminAmp.effectOrDefault(DC.D1);
     let mult = GameCache.infinityDimensionCommonMultiplier.value
       .timesEffectsOf(
         tier === 1 ? Achievement(94) : null,
         tier === 4 ? TimeStudy(72) : null,
         tier === 1 ? EternityChallenge(2).reward : null
       );
+    if (tier === 1) {
+      mult = mult.times(BreakInfinityUpgrade.infinitiedMult.effectOrDefault(DC.D1).pow(formulaAmplifier));
+    }
+    if (tier === 2) {
+      mult = mult.times(BreakInfinityUpgrade.slowestChallengeMult.effectOrDefault(DC.D1).pow(formulaAmplifier));
+    }
+    if (tier === 3) {
+      mult = mult.times(BreakInfinityUpgrade.infinityTimeIDMult.effectOrDefault(DC.D1).pow(formulaAmplifier));
+    }
+    if (BreakInfinityUpgrade.achievementMult.isBought) {
+      const tierExponent = 0.8 / (tier * 2.717857142857143);
+      const achievementMultiplier = new Decimal(BreakInfinityUpgrade.achievementMult.effectOrDefault(1));
+      mult = mult.times(achievementMultiplier.pow(new Decimal(tierExponent).times(formulaAmplifier)));
+    }
     mult = mult.times(Decimal.pow(this.powerMultiplier, Decimal.floor(this.baseAmount.div(DC.E1))));
 
 
@@ -216,7 +231,12 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get powerMultiplier() {
-    return new Decimal(this._powerMultiplier)
+    let multiplier = new Decimal(this._powerMultiplier);
+    if (BreakInfinityUpgrade.idPurchaseCascade.isBought && this.tier >= 2 && this.tier <= 5) {
+      const lowerTierPurchases = InfinityDimension(this.tier - 1).purchases;
+      multiplier = multiplier.times(lowerTierPurchases.add(1).log10().div(50).add(1));
+    }
+    return multiplier
       .times(this._tier === 8 ? GlyphInfo.infinity.sacrificeInfo.effect() : new Decimal(1))
       .pow(ImaginaryUpgrade(14).effectOrDefault(1));
   }
@@ -415,7 +435,7 @@ export const InfinityDimensions = {
     }
 
     if (EternityChallenge(7).isRunning) {
-      if (!NormalChallenge(10).isRunning) {
+      if (!NormalChallenge(12).isRunning) {
         InfinityDimension(1).produceDimensions(AntimatterDimension(7), diff);
       }
     } else {
@@ -448,11 +468,16 @@ export const InfinityDimensions = {
     unlockedDimensions.forEach(dimension => dimension.buyMax(false));
   },
 
-  get powerConversionRate() {
+  get basePowerConversionRate() {
     const normalChallengeCompletions = NormalChallenges.all.countWhere(c => c.isCompleted);
     const normalChallengeExponent = DC.D0_05.times(Decimal.pow(2, Math.max(normalChallengeCompletions - 4, 0) / 4));
     const fragmentBonus = Fragments.infinityPowerConversion.effect().sub(DC.D0_01.times(2)).max(0);
     return getAdjustedGlyphEffect("infinityrate").add(normalChallengeExponent).add(fragmentBonus)
-      .add(PelleUpgrade.infConversion.effectOrDefault(0)).mul(PelleRifts.paradox.milestones[2].effectOrDefault(1));
+      .add(PelleUpgrade.infConversion.effectOrDefault(0));
+  },
+
+  get powerConversionRate() {
+    return this.basePowerConversionRate.add(BreakInfinityUpgrade.idRate.effectOrDefault(DC.D0))
+      .mul(PelleRifts.paradox.milestones[2].effectOrDefault(1));
   }
 };

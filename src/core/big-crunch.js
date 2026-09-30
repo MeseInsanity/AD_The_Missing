@@ -74,6 +74,11 @@ function bigCrunchGiveRewards() {
 }
 
 function bigCrunchUpdateStatistics() {
+  player.records.bestInfinity.maxAM = Decimal.max(
+    player.records.bestInfinity.maxAM ?? DC.D0,
+    player.records.thisInfinity.maxAM
+  );
+  player.records.bestInfinity.lastAM = player.records.thisInfinity.maxAM;
   player.records.bestInfinity.bestIPminEternity =
     player.records.bestInfinity.bestIPminEternity.clampMin(player.records.thisInfinity.bestIPmin);
   player.records.thisInfinity.bestIPmin = DC.D0;
@@ -158,6 +163,7 @@ export function secondSoftReset(enteringAntimatterChallenge) {
   player.dimensionBoosts = DC.D0;
   player.galaxies = DC.D0;
   player.records.thisInfinity.maxAM = DC.D0;
+  player.records.thisInfinity.totalAntimatter = DC.D0;
   Currency.antimatter.reset();
   softReset(0, true, true, enteringAntimatterChallenge);
   InfinityDimensions.resetAmount();
@@ -166,6 +172,12 @@ export function secondSoftReset(enteringAntimatterChallenge) {
   player.records.thisInfinity.time = DC.D0;
   player.records.thisInfinity.lastBuyTime = DC.D0;
   player.records.thisInfinity.realTime = DC.D0;
+  player.chall10Purchases = 0;
+  player.chall11Pow = DC.D1;
+  player.chall11MatterBurstDuration = 0;
+  player.chall11MatterBurstRemaining = 0;
+  player.chall11MatterAnnihilations = 0;
+  player.chall11MatterGrowthTime = DC.D0;
   // Achievement 35 tracks whether autobuyers were enabled during this Infinity.
   player.records.thisInfinity.autobuyersUsed = false;
   Player.resetRequirements("infinity");
@@ -186,9 +198,12 @@ export function preProductionGenerateIP(diff) {
       genCount = Decimal.floor(player.partInfinityPoint);
       player.partInfinityPoint -= genCount.toNumber();
     }
+    const normalChallengeIPMultiplier = Math.max(1, NormalChallenges.all.countWhere(c => c.isCompleted));
     let gainedPerGen = player.records.bestInfinity.time.gte(DC.BEMAX) ? DC.D0 :
       (Achievement(41).isUnlocked
-        ? (Teresa.isRunning || V.isRunning || Pelle.isDoomed ? DC.D0 : GameCache.totalIPMult.value)
+        ? (Teresa.isRunning || V.isRunning || Pelle.isDoomed
+          ? DC.D0
+          : GameCache.totalIPMult.value.times(normalChallengeIPMultiplier))
         : InfinityUpgrade.ipGen.effectValue);
     if (Laitela.isRunning) gainedPerGen = dilatedValueOf(gainedPerGen);
     const gainedThisTick = genCount.times(gainedPerGen);

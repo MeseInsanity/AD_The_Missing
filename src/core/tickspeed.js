@@ -1,4 +1,5 @@
 import { DC } from "./constants";
+import { normalChallenge10PurchasesRemaining, recordNormalChallenge10Purchases } from "./normal-challenges";
 import { Fragments } from "./secret-formula/fragments";
 
 export function effectiveBaseGalaxies() {
@@ -73,14 +74,13 @@ export function getTickSpeedMultiplier() {
 }
 
 export function buyTickSpeed() {
-  if (!Tickspeed.isAvailableForPurchase || !Tickspeed.isAffordable) return false;
+  if (!Tickspeed.isAvailableForPurchase || !Tickspeed.isAffordable ||
+    normalChallenge10PurchasesRemaining() < 1) return false;
 
-  if (NormalChallenge(9).isRunning) {
-    Tickspeed.multiplySameCosts();
-  }
   Tutorial.turnOffEffect(TUTORIAL_STATE.TICKSPEED);
   Currency.antimatter.subtract(Tickspeed.cost);
   player.totalTickBought = player.totalTickBought.add(1);
+  recordNormalChallenge10Purchases(1);
   player.records.thisInfinity.lastBuyTime = player.records.thisInfinity.time;
   player.requirementChecks.permanent.singleTickspeed++;
   if (NormalChallenge(6).isRunning) player.chall2Pow = DC.D1;
@@ -90,38 +90,32 @@ export function buyTickSpeed() {
 
 export function buyMaxTickSpeed() {
   if (!Tickspeed.isAvailableForPurchase || !Tickspeed.isAffordable) return;
+  if (NormalChallenge(10).isRunning) {
+    while (buyTickSpeed()) {
+      // NC10 needs exact individual-purchase accounting.
+    }
+    return;
+  }
   let boughtTickspeed = false;
 
   Tutorial.turnOffEffect(TUTORIAL_STATE.TICKSPEED);
-  if (NormalChallenge(9).isRunning) {
-    const goal = Player.infinityGoal;
-    let cost = Tickspeed.cost;
-    while (Currency.antimatter.gt(cost) && cost.lt(goal)) {
-      Tickspeed.multiplySameCosts();
-      Currency.antimatter.subtract(cost);
-      player.totalTickBought = player.totalTickBought.add(1);
-      boughtTickspeed = true;
-      cost = Tickspeed.cost;
+  const purchases = Tickspeed.costScale.getMaxBought(player.totalTickBought, Currency.antimatter.value, DC.D1, true);
+  if (purchases !== null && purchases.quantity.gt(0)) {
+    if (purchases.logPrice.eq(player.antimatter.max(1).log10()) && player.dimensions.antimatter[0].amount.eq(0)) {
+      purchases.logPrice = Tickspeed.costScale.calculateCost(
+        player.totalTickBought.add(purchases.quantity).sub(1));
+      if (purchases.quantity.gt(1)) purchases.quantity = purchases.quantity.sub(1);
     }
-  } else {
-    const purchases = Tickspeed.costScale.getMaxBought(player.totalTickBought, Currency.antimatter.value, DC.D1, true);
-    if (purchases !== null && purchases.quantity.gt(0)) {
-      if (purchases.logPrice.eq(player.antimatter.max(1).log10()) && player.dimensions.antimatter[0].amount.eq(0)) {
-        purchases.logPrice = Tickspeed.costScale.calculateCost(
-          player.totalTickBought.add(purchases.quantity).sub(1));
-        if (purchases.quantity.gt(1)) purchases.quantity = purchases.quantity.sub(1);
-      }
-      Currency.antimatter.subtract(Decimal.pow10(purchases.logPrice));
-      player.totalTickBought = player.totalTickBought.add(purchases.quantity);
-    }
-
-    // eslint-disable-next-line max-len
-    for (let i = 0; i < 5 && (player.antimatter.neq(Tickspeed.cost) && player.dimensions.antimatter[0].amount.neq(0)); i++) {
-      buyTickSpeed();
-    }
-
-    boughtTickspeed = true;
+    Currency.antimatter.subtract(Decimal.pow10(purchases.logPrice));
+    player.totalTickBought = player.totalTickBought.add(purchases.quantity);
   }
+
+  // eslint-disable-next-line max-len
+  for (let i = 0; i < 5 && (player.antimatter.neq(Tickspeed.cost) && player.dimensions.antimatter[0].amount.neq(0)); i++) {
+    buyTickSpeed();
+  }
+
+  boughtTickspeed = true;
 
   if (boughtTickspeed) {
     player.records.thisInfinity.lastBuyTime = player.records.thisInfinity.time;
@@ -133,7 +127,6 @@ export function buyMaxTickSpeed() {
 
 export function resetTickspeed() {
   player.totalTickBought = DC.D0;
-  player.chall9TickspeedCostBumps = DC.D0;
 }
 
 export const Tickspeed = {
@@ -165,14 +158,11 @@ export const Tickspeed = {
     const finalTickspeed = player.dilation.active || PelleStrikes.dilation.hasStrike
       ? dilatedValueOf(tickspeed.recip()).recip()
       : tickspeed;
-    return finalTickspeed.dividedByEffectsOf(
-      InfinityUpgrade.currentInfinitySacrificeTickspeed,
-      InfinityUpgrade.currentInfinitySacrificeTickspeed.chargedEffect
-    );
+    return finalTickspeed;
   },
 
   get cost() {
-    return this.costScale.calculateCost(player.totalTickBought.add(player.chall9TickspeedCostBumps));
+    return this.costScale.calculateCost(player.totalTickBought);
   },
 
   get costScale() {
@@ -204,18 +194,14 @@ export const Tickspeed = {
     let boughtTickspeed;
     if (Laitela.continuumActive) boughtTickspeed = new Decimal(this.continuumValue);
     else boughtTickspeed = new Decimal(player.totalTickBought);
-    return boughtTickspeed.plus(player.totalTickGained);
+    return boughtTickspeed.plus(player.totalTickGained)
+      .plusEffectOf(BreakInfinityUpgrade.bestAMTickspeed);
   },
 
   get perSecond() {
     return Decimal.divide(1000, this.current);
   },
 
-  multiplySameCosts() {
-    for (const dimension of AntimatterDimensions.all) {
-      if (dimension.cost.e === this.cost.e) dimension.costBumps = dimension.costBumps.add(1);
-    }
-  }
 };
 
 

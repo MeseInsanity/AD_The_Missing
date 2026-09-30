@@ -269,10 +269,7 @@ export const normalAchievements = [
       return true;
     },
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
-    get reward() {
-      return `Each Antimatter Dimension gains a boost proportional to tier
-      (8th gets ${formatPercents(new Decimal(0.08))}, 7th gets ${formatPercents(new Decimal(0.07))}, etc.)`;
-    }
+    reward: "All first-row Achievement rewards affect all Antimatter Dimensions."
   },
   {
     id: 44,
@@ -399,9 +396,9 @@ export const normalAchievements = [
     checkRequirement: () => NormalChallenge(9).isOnlyActiveChallenge && Time.thisInfinityRealTime.totalMinutes.lte(3),
     checkEvent: GAME_EVENT.BIG_CRUNCH_BEFORE,
     get reward() {
-      return `Increase the multiplier for buying ${formatInt(10)} Antimatter Dimensions by +${formatPercents(new Decimal(0.01))}.`;
+      return `Each ${formatInt(10)} Antimatter Dimensions purchased also boosts the next tier by the Buy 10 multiplier^${format(0.1, 1, 1)}.`;
     },
-    effect: 1.01
+    effect: 0.1
   },
   {
     id: 61,

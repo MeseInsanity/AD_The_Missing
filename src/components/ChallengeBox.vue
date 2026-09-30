@@ -11,6 +11,11 @@ export default {
       type: String,
       required: true
     },
+    title: {
+      type: String,
+      required: false,
+      default: ""
+    },
     isUnlocked: {
       type: Boolean,
       required: true
@@ -53,8 +58,8 @@ export default {
       const challengeNotEnterable = !this.isUnlocked || this.isRunning || this.name === "C1";
       return {
         "o-challenge-btn": true,
-        "o-challenge-btn--broken": this.overrideLabel.length > 0 && this.name !== "C10",
-        "o-challenge-btn--broken-alt": this.overrideLabel.length > 0 && this.name === "C10",
+        "o-challenge-btn--broken": this.overrideLabel.length > 0 && this.name !== "C12",
+        "o-challenge-btn--broken-alt": this.overrideLabel.length > 0 && this.name === "C12",
         "o-challenge-btn--running": this.isRunning || this.inC1,
         "o-challenge-btn--completed": this.isCompleted && this.isUnlocked,
         "o-challenge-btn--unlocked": !this.isCompleted && this.isUnlocked,
@@ -88,7 +93,7 @@ export default {
       type="challenges"
       class="l-hint-text--challenge"
     >
-      {{ name }}
+      {{ title || name }}
     </HintText>
     <slot name="top" />
     <div class="l-challenge-box__fill" />

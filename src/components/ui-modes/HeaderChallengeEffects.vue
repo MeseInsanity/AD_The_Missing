@@ -56,9 +56,11 @@ export default {
     updateChallengePower() {
       const isC5Running = NormalChallenge(5).isRunning;
       const isC6Running = NormalChallenge(6).isRunning;
+      const isC10Running = NormalChallenge(10).isRunning;
+      const isC11Running = NormalChallenge(11).isRunning;
       const isIC6Running = InfinityChallenge(6).isRunning;
       const isIC8Running = InfinityChallenge(8).isRunning;
-      const isChallengePowerVisible = isC5Running || isC6Running || isIC6Running || isIC8Running;
+      const isChallengePowerVisible = isC5Running || isC6Running || isC10Running || isC11Running || isIC6Running || isIC8Running;
       this.isChallengePowerVisible = isChallengePowerVisible;
       if (isChallengePowerVisible) {
         const powerArray = [];
@@ -71,6 +73,16 @@ export default {
             .div(Decimal.log10(Player.infinityGoal)).clampMin(0).clampMax(1);
           powerArray.push(`Effective Tickspeed: ${formatPercents(
             new Decimal(1).sub(progress.times(player.chall2Pow)), 2, 2)}`);
+        }
+        if (isC10Running && NormalChallenge(10).config.purchaseLimit !== null) {
+          powerArray.push(`Purchases: ${formatInt(player.chall10Purchases ?? 0)}/` +
+            `${formatInt(NormalChallenge(10).config.purchaseLimit)}`);
+        }
+        if (isC11Running) {
+          const annihilationBonus = new Decimal(player.chall11Pow ?? 1).clampMin(1);
+          const matterExponent = new Decimal(0.15).div(annihilationBonus);
+          const matterPenalty = Currency.matter.value.max(1).pow(matterExponent);
+          powerArray.push(`Effect Magnitude: ^${format(matterExponent, 3, 3)}, Production: /${format(matterPenalty, 2, 2)}`);
         }
         if (isIC6Running) powerArray.push(`Matter: Antimatter Dimensions /
           ${format(new Decimal(1).timesEffectOf(InfinityChallenge(6)), 2, 2)}`);

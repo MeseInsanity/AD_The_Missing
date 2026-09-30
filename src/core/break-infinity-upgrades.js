@@ -1,4 +1,5 @@
 import { RebuyableMechanicState, SetPurchasableMechanicState } from "./game-mechanics";
+import { DC } from "./constants";
 import { SpeedrunMilestones } from "./speedrun";
 
 export class BreakInfinityUpgradeState extends SetPurchasableMechanicState {
@@ -10,9 +11,16 @@ export class BreakInfinityUpgradeState extends SetPurchasableMechanicState {
     return player.infinityUpgrades;
   }
 
+  get isAvailableForPurchase() {
+    return this.config.isAvailableForPurchase?.() ?? true;
+  }
+
   onPurchased() {
-    if (this.id === "postGalaxy") {
+    this.config.onPurchased?.();
+    if (this.id === "galaxyFormula") {
       SpeedrunMilestones(7).tryComplete();
+    }
+    if (this.id === "postGalaxy") {
       PelleStrikes.powerGalaxies.trigger();
     }
   }
@@ -24,7 +32,7 @@ class RebuyableBreakInfinityUpgradeState extends RebuyableMechanicState {
   }
 
   get boughtAmount() {
-    return player.infinityRebuyables[this.id];
+    return player.infinityRebuyables[this.id] ?? DC.D0;
   }
 
   set boughtAmount(value) {
@@ -32,7 +40,11 @@ class RebuyableBreakInfinityUpgradeState extends RebuyableMechanicState {
   }
 
   get isCapped() {
-    return this.boughtAmount.gte(this.config.maxUpgrades);
+    return this.config.isCapped?.() ?? this.boughtAmount.gte(this.config.maxUpgrades);
+  }
+
+  get isAvailableForPurchase() {
+    return this.config.isAvailableForPurchase?.() ?? true;
   }
 
   onPurchased() {

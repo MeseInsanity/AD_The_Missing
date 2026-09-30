@@ -15,13 +15,22 @@ class DimBoostRequirement {
 
 export class DimBoost {
   static get power() {
+    const infinityUpgradeBase = new Decimal(InfinityUpgrade.dimboostMult.effectOrDefault(DC.D2));
+    const adjustedInfinityUpgradeBase = NormalChallenge.isRuleBreaking
+      ? DC.D2.times(infinityUpgradeBase.div(DC.D2).pow(DC.D0_5))
+      : infinityUpgradeBase;
+    const currentInfinityMultiplier = new Decimal(
+      InfinityUpgrade.currentInfinitySacrificeDimBoost.effectOrDefault(DC.D1)
+    );
+    const adjustedCurrentInfinityMultiplier = NormalChallenge.isRuleBreaking
+      ? currentInfinityMultiplier.pow(DC.D0_5)
+      : currentInfinityMultiplier;
     let boost = new Decimal(Effects.max(
       2,
-      InfinityUpgrade.dimboostMult,
       InfinityChallenge(7).reward,
       InfinityChallenge(7),
       TimeStudy(81)
-    ))
+    )).max(adjustedInfinityUpgradeBase)
       .timesEffectsOf(
         TimeStudy(83),
         TimeStudy(231),
@@ -29,28 +38,20 @@ export class DimBoost {
         Achievement(142),
         GlyphEffect.dimBoostPower,
         PelleRifts.recursion.milestones[0]
-      ).powEffectsOf(InfinityUpgrade.dimboostMult.chargedEffect);
+      ).times(
+        adjustedCurrentInfinityMultiplier
+      ).powEffectsOf(
+        InfinityUpgrade.dimboostMult.chargedEffect,
+        InfinityUpgrade.currentInfinitySacrificeDimBoost.chargedEffect
+      );
     boost = boost.times(Achievement(22).effectOrDefault(1));
     if (GlyphAlteration.isAdded("effarig")) boost = boost.pow(getSecondaryGlyphEffect("effarigforgotten"));
     if (NormalChallenge(3).isRunning) {
       const decayExponent = Math.pow(15 / 16, DimBoost.purchasedBoosts.toNumber());
       boost = boost.pow(decayExponent);
     }
-    if (NormalChallenge(5).isRunning) {
-      const seventhDimensionLog = AntimatterDimension(7).amount.max(1).log10().max(1);
-      const penaltyExponent = DC.D1.div(seventhDimensionLog).pow(0.75);
-      const elapsedProgress = (player.chall5Pow ?? DC.D1).clampMin(0).clampMax(1);
-      const sacrificeCount = player.chall5Sacrifices ?? 0;
-      const maximumRelief = Math.pow(0.95, Math.max(0, sacrificeCount - 1));
-      const timedRelief = elapsedProgress.lte(1 / 4)
-        ? DC.D1
-        : DC.D1.sub(elapsedProgress).div(3 / 4).clampMin(0);
-      const activeRelief = timedRelief.times(maximumRelief);
-      const effectiveExponent = DC.D1.sub(DC.D1.sub(penaltyExponent).times(DC.D1.sub(activeRelief)));
-      boost = boost.pow(effectiveExponent);
-    }
     if (NormalChallenge(4).isRunning) boost = boost.pow(2.5);
-    if (NormalChallenge(8).isRunning) boost = boost.pow(DC.D0_5);
+    if (NormalChallenge(8).isRunning) boost = boost.pow(DC.D0_65);
     return boost;
   }
 
@@ -62,7 +63,7 @@ export class DimBoost {
   }
 
   static get maxDimensionsUnlockable() {
-    return NormalChallenge(10).isRunning ? 6 : 8;
+    return NormalChallenge(12).isRunning ? 6 : 8;
   }
 
   static get canUnlockNewDimension() {
@@ -114,7 +115,7 @@ export class DimBoost {
       TimeStudy(211),
       TimeStudy(222)
     );
-    if (tier === 6 && NormalChallenge(10).isRunning) {
+    if (tier === 6 && NormalChallenge(12).isRunning) {
       amount = amount.add(targetResets.sub(3).mul(DC.D20.sub(discount)).round());
     } else if (tier === 8) {
       const scalingIncrease = DC.D15;
@@ -142,7 +143,7 @@ export class DimBoost {
     let newUnlock = "";
     if (!allNDUnlocked && boosts.lt(DimBoost.maxDimensionsUnlockable - 4)) {
       newUnlock = `unlock the ${formatInt(boosts.add(5))}th Dimension`;
-    } else if (boosts.eq(4) && !NormalChallenge(10).isRunning && !EternityChallenge(3).isRunning) {
+    } else if (boosts.eq(4) && !NormalChallenge(12).isRunning && !EternityChallenge(3).isRunning) {
       newUnlock = "unlock Sacrifice";
     }
 
@@ -191,6 +192,10 @@ export function softReset(tempBulk, forcedADReset = false, forcedAMReset = false
   const bulk = Decimal.min(tempBulk, DimBoost.maxBoosts.sub(player.dimensionBoosts));
   EventHub.dispatch(GAME_EVENT.DIMBOOST_BEFORE, bulk);
   player.dimensionBoosts = (Decimal.max(DC.D0, player.dimensionBoosts.add(bulk)));
+  if (NormalChallenge(5).isRunning && bulk.neq(0)) {
+    player.chall5Sacrifices = 0;
+    player.chall5Pow = DC.D1;
+  }
   resetChallengeStuff();
   const canKeepDimensions = Pelle.isDoomed
     ? PelleUpgrade.dimBoostResetsNothing.canBeApplied
@@ -283,7 +288,7 @@ function maxBuyDimBoosts() {
     calcBoosts = decimalCubicSolution(DC.D1, DC.D1.neg(), multiplierPerDB.add(2), ad.add(18).neg());
   }
 
-  calcBoosts = calcBoosts.add(NormalChallenge(10).isRunning ? 2 : 4);
+  calcBoosts = calcBoosts.add(NormalChallenge(12).isRunning ? 2 : 4);
   // Dimension boosts 1-4 dont use 8th dims, 1-2 dont use 6th dims, so add those extras afterwards.
 
   // Add one cause (x-b)/i is off by one otherwise

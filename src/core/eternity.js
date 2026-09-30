@@ -137,6 +137,7 @@ export function eternity(force, auto, specialConditions = {}) {
   AchievementTimers.marathon2.reset();
   applyEU1();
   player.records.thisInfinity.maxAM = DC.D0;
+  player.records.thisInfinity.totalAntimatter = DC.D0;
   player.records.thisEternity.maxAM = DC.D0;
   Currency.antimatter.reset();
   ECTimeStudyState.invalidateCachedRequirements();
@@ -189,6 +190,8 @@ export function initializeResourcesAfterEternity() {
   Currency.infinities.reset();
   player.records.bestInfinity.time = DC.BEMAX;
   player.records.bestInfinity.realTime = DC.BEMAX;
+  player.records.bestInfinity.maxAM = DC.D0;
+  player.records.bestInfinity.lastAM = DC.D0;
   player.records.thisInfinity.time = DC.D0;
   player.records.thisInfinity.lastBuyTime = DC.D0;
   player.records.thisInfinity.realTime = DC.D0;
@@ -320,9 +323,13 @@ class EPMultiplierState extends GameMechanicState {
     let tempVal = DC.D0;
     let bulk = DC.D1;
     let cur = Currency.eternityPoints.value.max(1);
+    if (cur.gte(this.costIncreaseThresholds[4])) {
+      cur = Decimal.log(cur.div(this.costIncreaseThresholds[4]), 1e3);
+      return cur.add(Math.pow(1539, 1.2)).root(1.2).floor().add(1).max(1540);
+      // eslint-disable-next-line no-else-return
+    }
     if (cur.gt(this.costIncreaseThresholds[3])) {
-      cur = Decimal.log(cur.div(500), 1e3);
-      return cur.add(Math.pow(1332, 1.2)).root(1.2).floor().max(1332);
+      return cur.div(DC.E4002).log(5e9).floor().add(1334).max(1333);
       // eslint-disable-next-line no-else-return
     }
     if (cur.gt(this.costIncreaseThresholds[2])) {
@@ -380,18 +387,23 @@ class EPMultiplierState extends GameMechanicState {
   }
 
   get costIncreaseThresholds() {
-    return [DC.E100, DC.NUMMAX, DC.E1300, DC.E4000];
+    return [DC.E100, DC.NUMMAX, DC.E1300, DC.E4000, DC.E6000];
   }
 
   costAfterCount(count) {
     const costThresholds = EternityUpgrade.epMult.costIncreaseThresholds;
-    const multPerUpgrade = [50, 100, 500, 1000];
+    const multPerUpgrade = [50, 100, 500, 1000, 5e9];
     for (let i = 0; i < costThresholds.length; i++) {
-      const cost = Decimal.pow(multPerUpgrade[i], count).times(500);
+      const cost = i === 4
+        ? DC.E4002.times(
+          Decimal.pow(multPerUpgrade[i], count.sub(1333))
+        )
+        : Decimal.pow(multPerUpgrade[i], count).times(500);
       if (cost.lt(costThresholds[i])) return cost;
     }
-    // This formula is slightly weaker than base AD but who gives a fuck
-    return DC.E3.pow(count.pow(1.2).sub(Math.pow(1332, 1.2))).times(500);
+    return costThresholds[4].times(
+      DC.E3.pow(count.pow(1.2).sub(Math.pow(1539, 1.2)))
+    );
   }
 }
 

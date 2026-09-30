@@ -632,6 +632,8 @@ export function finishProcessReality(realityProps) {
   Currency.infinitiesBanked.reset();
   player.records.bestInfinity.time = DC.BEMAX;
   player.records.bestInfinity.realTime = DC.BEMAX;
+  player.records.bestInfinity.maxAM = DC.D0;
+  player.records.bestInfinity.lastAM = DC.D0;
   player.records.thisInfinity.time = DC.D0;
   player.records.thisInfinity.lastBuyTime = DC.D0;
   player.records.thisInfinity.realTime = DC.D0;
@@ -699,6 +701,7 @@ export function finishProcessReality(realityProps) {
   player.dilation.totalTachyonGalaxies = DC.D0;
   Currency.dilatedTime.reset();
   player.records.thisInfinity.maxAM = DC.D0;
+  player.records.thisInfinity.totalAntimatter = DC.D0;
   player.records.thisEternity.maxAM = DC.D0;
   player.records.thisReality.maxDT = DC.D0;
   player.dilation.lastEP = DC.DM1;

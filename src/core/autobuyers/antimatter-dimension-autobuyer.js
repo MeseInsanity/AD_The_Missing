@@ -23,6 +23,28 @@ export class AntimatterDimensionAutobuyerState extends UpgradeableAutobuyerState
     return Player.defaultStart.auto.antimatterDims.all[this.tier - 1].interval;
   }
 
+  get intervalCostScaling() {
+    return 1.5;
+  }
+
+  get interval() {
+    return BreakInfinityUpgrade.instantAutobuyers.isBought ? 0 : super.interval;
+  }
+
+  get intervalUpgradeCount() {
+    const intervalRatio = this.data.interval / this.baseInterval;
+    return Math.max(0, Math.ceil(Math.log(intervalRatio) / Math.log(this.intervalReduction) - 1e-10));
+  }
+
+  get cost() {
+    let cost = this.intervalCostScaling ** this.intervalUpgradeCount;
+    if (!this.hasMaxedInterval) return cost;
+
+    const bulkUpgrades = Math.round(Math.log2(Math.min(this.bulk, this.bulkCap)));
+    for (let i = 0; i < bulkUpgrades; i++) cost = Math.ceil(2.4 * cost);
+    return cost;
+  }
+
   get isUnlocked() {
     if (Pelle.isDisabled(`antimatterDimAutobuyer${this.tier}`)) return false;
     return this.data.isBought || this.canBeUpgraded;
@@ -127,7 +149,6 @@ export class AntimatterDimensionAutobuyerState extends UpgradeableAutobuyerState
     if (this.hasMaxedBulk) return;
     if (!Currency.infinityPoints.purchase(this.cost)) return;
     this.data.bulk = Math.clampMax(this.bulk * 2, this.bulkCap);
-    this.data.cost = Math.ceil(2.4 * this.cost);
     Achievement(61).tryUnlock();
     GameUI.update();
   }

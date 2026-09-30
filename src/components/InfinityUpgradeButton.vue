@@ -2,12 +2,15 @@
 import CostDisplay from "@/components/CostDisplay";
 import DescriptionDisplay from "@/components/DescriptionDisplay";
 import EffectDisplay from "@/components/EffectDisplay";
+import HintText from "@/components/HintText";
+import wordShift from "@/core/word-shift";
 
 export default {
   name: "InfinityUpgradeButton",
   components: {
     DescriptionDisplay,
     EffectDisplay,
+    HintText,
     CostDisplay,
   },
   props: {
@@ -18,8 +21,8 @@ export default {
   },
   data() {
     return {
-      showWorstChallenge: false,
-      worstChallengeString: "",
+      showChallengeTime: false,
+      challengeTimeString: "",
       isUseless: false,
       canBeBought: false,
       chargePossible: false,
@@ -29,7 +32,9 @@ export default {
       isDisabled: false,
       showingCharged: false,
       hasTS31: false,
-      ts31Effect: new Decimal(0)
+      ts31Effect: new Decimal(0),
+      displayName: "",
+      isForbiddenGalaxyName: false
     };
   },
   computed: {
@@ -78,6 +83,15 @@ export default {
       this.canBeBought = upgrade.canBeBought;
       this.canBeCharged = upgrade.canCharge;
       this.isCharged = upgrade.isCharged;
+      this.isForbiddenGalaxyName = upgrade === InfinityUpgrade.galaxyBoost || upgrade.config.scrambleName;
+      if (!upgrade.isBought && upgrade.config.nameCycle) {
+        this.displayName = wordShift.wordCycle(upgrade.config.nameCycle);
+      } else {
+        const shouldScrambleName = !upgrade.isBought && this.isForbiddenGalaxyName && Date.now() % 7000 < 180;
+        this.displayName = shouldScrambleName
+          ? wordShift.randomCrossWords(upgrade.config.name)
+          : upgrade.config.name;
+      }
       // A bit hacky, but the offline passive IP upgrade (the one that doesn't work online)
       // should hide its effect value if offline progress is disabled, in order to be
       // consistent with the other offline progress upgrades which hide as well.
@@ -91,11 +105,9 @@ export default {
       this.hasTS31 = TimeStudy(31).canBeApplied;
       if (!this.isDisabled && this.isImprovedByTS31) this.ts31Effect = Decimal.pow(upgrade.config.effect(), 4);
       if (upgrade.id !== "challengeMult") return;
-      this.showWorstChallenge = upgrade.effectValue !== upgrade.cap &&
+      this.showChallengeTime = upgrade.effectValue !== upgrade.cap &&
         player.challenge.normal.bestTimes.sum().lt(Number.MAX_VALUE);
-      const worstChallengeTime = GameCache.worstChallengeTime.value;
-      const worstChallengeIndex = 2 + player.challenge.normal.bestTimes.indexOf(worstChallengeTime);
-      this.worstChallengeString = `(Challenge ${worstChallengeIndex}: ${timeDisplayShort(worstChallengeTime)})`;
+      this.challengeTimeString = `(Total NC time: ${timeDisplayShort(GameCache.challengeTimeSum.value)})`;
     }
   }
 };
@@ -108,16 +120,27 @@ export default {
     @mouseleave="showingCharged = false"
     @click="upgrade.purchase()"
   >
+    <HintText
+      v-if="displayName"
+      type="realityUpgrades"
+      :class="[
+        'l-hint-text--reality-upgrade',
+        'c-hint-text--reality-upgrade',
+        { 'c-infinity-upgrade-btn__name--forbidden-galaxy': isForbiddenGalaxyName }
+      ]"
+    >
+      {{ displayName }}
+    </HintText>
     <span :class="{ 'o-pelle-disabled': isUseless }">
       <DescriptionDisplay
         :config="config"
       />
-      <span v-if="showWorstChallenge">
+      <span v-if="showChallengeTime">
         <br>
-        {{ worstChallengeString }}
+        {{ challengeTimeString }}
       </span>
       <EffectDisplay
-        v-if="!isDisabled"
+        v-if="!isDisabled && !config.hideEffect"
         br
         :config="config"
       />
@@ -126,8 +149,14 @@ export default {
         After TS31: {{ formatX(ts31Effect, 2, 2) }}
       </template>
     </span>
+    <span
+      v-if="!isBought && config.isNYI"
+      class="o-infinity-upgrade-btn__nyi"
+    >
+      <br>NYI
+    </span>
     <CostDisplay
-      v-if="!isBought"
+      v-if="!isBought && (!config.isNYI || config.showNYICost)"
       br
       :config="config"
       name="Infinity Point"
@@ -137,5 +166,60 @@ export default {
 </template>
 
 <style scoped>
+
+.o-infinity-upgrade-btn {
+  position: relative;
+}
+
+.o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard {
+  color: #d9f3ff;
+  background-color: #0e2d43;
+  border-color: #4ca9dc;
+  box-shadow: inset 0 0 0.8rem #2d98d433;
+}
+
+.o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--available {
+  color: #f2fbff;
+  background-color: #15527a;
+  border-color: #6ecbff;
+  box-shadow: inset 0 0 1rem #61c6ff66, 0 0 0.35rem #4ca9dc44;
+}
+
+.o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--available:hover {
+  color: #fff;
+  background-color: #237eae;
+  box-shadow: inset 0 0 1.2rem #8cdbff88, 0 0 0.6rem #62c5ff77;
+}
+
+.o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--unavailable {
+  color: #7696a7;
+  background-color: #071724;
+  border-color: #1c4561;
+}
+
+.o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--unavailable:hover {
+  color: #d9f3ff;
+  background-color: #123c5a;
+}
+
+.o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--bought {
+  color: #f0fbff;
+  background-color: #17638d;
+  border-color: #78c9f2;
+  box-shadow: inset 0 0 1rem #76cfff55;
+}
+
+.o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--bought:hover {
+  background-color: #2079a8;
+}
+
+.c-infinity-upgrade-btn__name--forbidden-galaxy {
+  color: #ff6b6b;
+  text-shadow: 0 0 0.4rem #ff3838aa;
+}
+
+.o-infinity-upgrade-btn__nyi {
+  color: #ff8080;
+}
 
 </style>

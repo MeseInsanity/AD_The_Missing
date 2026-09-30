@@ -2,7 +2,21 @@ import { UpgradeableAutobuyerState } from "./autobuyer";
 
 export class BigCrunchAutobuyerState extends UpgradeableAutobuyerState {
   get data() {
-    return player.auto.bigCrunch;
+    const data = player.auto.bigCrunch;
+    if (this._lastData === data) return data;
+    this._lastData = data;
+
+    // Existing saves retain the former 150-second starting interval. Preserve
+    // their number of upgrades while converting them to the new 100-second curve.
+    const oldBaseInterval = 150000;
+    const upgradeCount = Math.round(Math.log(data.interval / oldBaseInterval) / Math.log(this.intervalReduction));
+    const legacyInterval = Math.max(100, oldBaseInterval * this.intervalReduction ** upgradeCount);
+    const isLegacyInterval = upgradeCount >= 0 && Math.abs(data.interval - legacyInterval) < 1e-6;
+    if (isLegacyInterval) {
+      data.interval = Math.max(100, this.baseInterval * this.intervalReduction ** upgradeCount);
+    }
+    if (data.interval <= 100) data.cost = Math.min(data.cost, 16384);
+    return data;
   }
 
   get name() {
