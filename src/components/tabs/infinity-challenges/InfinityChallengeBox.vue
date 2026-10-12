@@ -61,13 +61,24 @@ export default {
     <template #bottom>
       <div class="l-challenge-box__bottom--infinity">
         <span>Goal: {{ format(config.goal) }} antimatter</span>
-        <DescriptionDisplay
-          :config="config.reward"
-          title="Reward:"
-        />
-        <EffectDisplay
-          :config="config.reward"
-        />
+        <span v-if="config.reward.inlineEffect">
+          <DescriptionDisplay
+            :config="config.reward"
+            title="Reward:"
+          />
+          <EffectDisplay
+            :config="config.reward"
+          />
+        </span>
+        <template v-else>
+          <DescriptionDisplay
+            :config="config.reward"
+            title="Reward:"
+          />
+          <EffectDisplay
+            :config="config.reward"
+          />
+        </template>
       </div>
     </template>
   </ChallengeBox>

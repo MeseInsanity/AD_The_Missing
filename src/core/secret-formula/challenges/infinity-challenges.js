@@ -84,7 +84,9 @@ export const infinityChallenges = [
     reward: {
       description: "2nd through 8th Antimatter Dimension multipliers are raised to",
       effect: 1.05,
-      formatEffect: value => formatPow(value, 2, 2),
+      formatEffect: value => ` ${formatPow(value, 2, 2)}`,
+      noLabel: true,
+      inlineEffect: true,
     },
     unlockAM: DC.E9000,
   },
