@@ -208,7 +208,7 @@ export const GameStorage = {
     if (save.money === undefined && save.antimatter === undefined) return "Save does not have antimatter property";
 
     if (save.version === undefined || save.version < 25) {
-      return "Save is from an earlier version of AD. Import to vanilla first."
+      return "Save is from an earlier version of AD. Import to vanilla first.";
     }
 
     // Recursively check for any NaN props and add any we find to an array

@@ -229,14 +229,13 @@ export const AD = {
     name: dim => (dim ? `Infinity Challenges (AD ${dim})` : "Infinity Challenges"),
     multValue: dim => {
       const allMult = DC.D1.timesEffectsOf(
-        InfinityChallenge(3),
-        InfinityChallenge(3).reward,
+        InfinityChallenge(4),
       );
 
       const dimMults = Array.repeat(DC.D1, 9);
       for (let tier = 1; tier <= 8; tier++) {
         dimMults[tier] = dimMults[tier].timesEffectsOf(
-          tier > 1 && tier < 8 ? InfinityChallenge(8).reward : null
+          tier > 1 && tier < 8 ? InfinityChallenge(9).reward : null
         );
       }
 
@@ -247,7 +246,10 @@ export const AD = {
       }
       return totalMult;
     },
-    powValue: () => InfinityChallenge(4).reward.effectOrDefault(1),
+    powValue: dim => {
+      if (!dim) return InfinityChallenge(5).reward.effectOrDefault(1);
+      return Number(dim) > 1 ? InfinityChallenge(5).reward.effectOrDefault(1) : 1;
+    },
     isActive: () => player.break && !EternityChallenge(11).isRunning,
     icon: MultiplierTabIcons.CHALLENGE("infinity"),
   },
@@ -368,19 +370,16 @@ export const AD = {
     icon: MultiplierTabIcons.CHALLENGE("infinity"),
   },
   nerfIC: {
-    name: dim => (dim ? `Infinity Challenge Nerf (AD ${dim})` : "Infinity Challenge Nerf"),
+    name: dim => {
+      const suffix = InfinityChallenge(3).isRunning ? " (Infinity Power and Sacrifice exempt)" : "";
+      return dim ? `Infinity Challenge Nerf (AD ${dim})${suffix}` : `Infinity Challenge Nerf${suffix}`;
+    },
     multValue: dim => {
       let dimMults = Array.repeat(DC.D1, 9);
-      if (InfinityChallenge(4).isRunning) {
-        for (let tier = 1; tier <= 8; tier++) {
-          if (player.postC4Tier !== tier) {
-            dimMults[tier] = dimMults[tier].pow(1 - InfinityChallenge(4).effectValue).reciprocal();
-          }
-        }
-      } else if (InfinityChallenge(6).isRunning) {
-        dimMults = Array.repeat(DC.D1.dividedByEffectOf(InfinityChallenge(6)), 9);
-      } else if (InfinityChallenge(8).isRunning) {
-        dimMults = Array.repeat(DC.D1.timesEffectsOf(InfinityChallenge(8)), 9);
+      if (InfinityChallenge(7).isRunning) {
+        dimMults = Array.repeat(DC.D1.dividedByEffectOf(InfinityChallenge(7)), 9);
+      } else if (InfinityChallenge(9).isRunning) {
+        dimMults = Array.repeat(DC.D1.timesEffectsOf(InfinityChallenge(9)), 9);
       }
 
       if (dim) return dimMults[dim];
@@ -390,7 +389,8 @@ export const AD = {
       }
       return totalMult;
     },
-    isActive: () => [4, 6, 8].some(ic => InfinityChallenge(ic).isRunning),
+    powValue: () => (InfinityChallenge(3).isRunning ? InfinityChallenge(3).effectValue : undefined),
+    isActive: () => [3, 5, 7, 9].some(ic => InfinityChallenge(ic).isRunning),
     icon: MultiplierTabIcons.CHALLENGE("infinity"),
   },
   nerfV: {

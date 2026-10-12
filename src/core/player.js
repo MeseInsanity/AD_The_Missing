@@ -28,7 +28,7 @@ window.player = {
       isUnlocked: false,
       bought: DC.D0,
       amount: DC.D0,
-      cost: [DC.D0, DC.E2, DC.E4, DC.E7, DC.E140, DC.E200, DC.E250, DC.E280][tier],
+      cost: [DC.D0, DC.E2, DC.E4, DC.E7, DC.E14, DC.E200, DC.E250, DC.E280][tier],
       baseAmount: DC.D0
     })),
     time: Array.range(0, 8).map(tier => ({
@@ -43,6 +43,10 @@ window.player = {
   secretAchievementBits: Array.repeat(0, 4),
   infinityUpgrades: new Set(),
   infinityRebuyables: [new Decimal(), new Decimal(), new Decimal(), new Decimal()],
+  criticalIdleIncome: {
+    elapsed: 0,
+    remaining: 0,
+  },
   challenge: {
     normal: {
       current: 0,
@@ -51,8 +55,11 @@ window.player = {
     },
     infinity: {
       current: 0,
-      bestTimes: Array.repeat(DC.BEMAX, 8),
+      bestTimes: Array.repeat(DC.BEMAX, 12),
       completedBits: 0,
+      dimBoosts: DC.D0,
+      focusTier: 1,
+      ic5AchievementTier: 0,
     },
     eternity: {
       current: 0,
@@ -306,6 +313,7 @@ window.player = {
       totalAntimatter: DC.D0,
       bestIPmin: DC.D0,
       bestIPminVal: DC.D0,
+      id5StabilityReached: false,
     },
     bestInfinity: {
       time: DC.BEMAX,
@@ -326,6 +334,7 @@ window.player = {
       bestEPmin: DC.D0,
       bestEPminVal: DC.D0,
       bestInfinitiesPerMs: DC.D0,
+      id5SacrificeHint: false,
     },
     bestEternity: {
       time: DC.BEMAX,
@@ -946,7 +955,7 @@ export const Player = {
   defaultStart: deepmergeAll([{}, player]),
 
   get isInMatterChallenge() {
-    return NormalChallenge(11).isRunning || InfinityChallenge(6).isRunning;
+    return NormalChallenge(11).isRunning || InfinityChallenge(7).isRunning;
   },
 
   get isInAntimatterChallenge() {

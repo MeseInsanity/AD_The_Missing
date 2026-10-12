@@ -5,7 +5,10 @@ export default {
     return {
       requirement: {
         tier: 1,
-        amount: new Decimal()
+        amount: new Decimal(),
+        cost: new Decimal(),
+        usesCost: false,
+        usesBought: false,
       },
       isBuyable: false,
       purchasedBoosts: new Decimal(),
@@ -21,6 +24,10 @@ export default {
     isDoomed: () => Pelle.isDoomed,
     dimName() {
       return AntimatterDimension(this.requirement.tier).shortDisplayName;
+    },
+    dimensionRequirementText() {
+      const purchased = this.requirement.usesBought ? " purchased" : "";
+      return `${formatInt(this.requirement.amount)} ${this.dimName} Antimatter D${purchased}`;
     },
     boostCountText() {
       if (this.requirementText) return this.requirementText;
@@ -48,6 +55,9 @@ export default {
       const requirement = DimBoost.requirement;
       this.requirement.tier = requirement.tier;
       this.requirement.amount.copyFrom(requirement.amount);
+      this.requirement.usesCost = requirement.cost !== null;
+      this.requirement.usesBought = requirement.usesBought;
+      if (this.requirement.usesCost) this.requirement.cost.copyFrom(requirement.cost);
       this.isBuyable = requirement.isSatisfied && DimBoost.canBeBought;
       this.purchasedBoosts.copyFrom(DimBoost.purchasedBoosts);
       this.imaginaryBoosts.copyFrom(DimBoost.imaginaryBoosts);
@@ -68,7 +78,10 @@ export default {
 <template>
   <div class="reset-container dimboost">
     <h4>Dimension Boost ({{ boostCountText }})</h4>
-    <span>Requires: {{ formatInt(requirement.amount) }} {{ dimName }} Antimatter D</span>
+    <span v-if="requirement.usesCost">Requires next {{ dimName }} cost: {{ format(requirement.cost, 2, 0) }} AM</span>
+    <span v-else>
+      Requires: {{ dimensionRequirementText }}
+    </span>
     <button
       :class="classObject"
       @click.exact="dimensionBoost(true)"

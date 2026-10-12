@@ -5,6 +5,7 @@ import {
   recordNormalChallenge10Purchases
 } from "../normal-challenges";
 import { effectiveGalaxyCount } from "../tickspeed";
+import { IC5Focus } from "../infinity-challenges";
 
 import { DimensionState } from "./dimension";
 
@@ -38,7 +39,8 @@ export function antimatterDimensionCommonMultiplier() {
   multiplier = multiplier.times(Achievements.power);
 
   if (!EternityChallenge(9).isRunning) {
-    multiplier = multiplier.times(Currency.infinityPower.value.pow(InfinityDimensions.powerConversionRate).max(1));
+    let infinityPowerMultiplier = Currency.infinityPower.value.pow(InfinityDimensions.powerConversionRate).max(1);
+    multiplier = multiplier.times(infinityPowerMultiplier);
   }
   const infinityUpgradeMultiplier = Effects.product(
     InfinityUpgrade.totalTimeMult,
@@ -65,20 +67,19 @@ export function antimatterDimensionCommonMultiplier() {
   multiplier = multiplier.times(ruleBreakingAchievementMultiplier(achievementMultiplier));
 
   multiplier = multiplier.timesEffectsOf(
-      BreakInfinityUpgrade.totalAMMult,
-      TimeStudy(91),
+    BreakInfinityUpgrade.totalAMMult,
+    TimeStudy(91),
     TimeStudy(101),
     TimeStudy(161),
     TimeStudy(193),
-    InfinityChallenge(3),
-    InfinityChallenge(3).reward,
-    InfinityChallenge(8),
+    InfinityChallenge(4),
+    InfinityChallenge(9),
     EternityChallenge(10),
     AlchemyResource.dimensionality,
     PelleUpgrade.antimatterDimensionMult
   );
 
-  multiplier = multiplier.dividedByEffectOf(InfinityChallenge(6));
+  multiplier = multiplier.dividedByEffectOf(InfinityChallenge(7));
   multiplier = multiplier.times(getAdjustedGlyphEffect("powermult"));
   multiplier = multiplier.times(Currency.realityMachines.value.powEffectOf(AlchemyResource.force));
 
@@ -203,7 +204,8 @@ function applyNDMultipliers(mult, tier) {
       .timesEffectOf(TimeStudy(234));
   }
   if (tier === 8) {
-    multiplier = multiplier.timesEffectOf(BreakInfinityUpgrade.averageAMMult).times(Sacrifice.totalBoost);
+    multiplier = multiplier.timesEffectOf(BreakInfinityUpgrade.averageAMMult)
+      .times(Sacrifice.totalBoost.div(Sacrifice.reflowDrainMultiplier));
   }
 
   const tierAchievementMultiplier = Effects.product(
@@ -214,9 +216,19 @@ function applyNDMultipliers(mult, tier) {
   multiplier = multiplier.times(ruleBreakingAchievementMultiplier(tierAchievementMultiplier)).timesEffectsOf(
     tier < 8 ? TimeStudy(71) : null,
     tier === 8 ? TimeStudy(214) : null,
-    tier > 1 && tier < 8 ? InfinityChallenge(8).reward : null
+    tier > 1 && tier < 8 ? InfinityChallenge(9).reward : null
   );
   multiplier = multiplier.clampMin(1);
+
+  if (InfinityChallenge(3).isRunning) {
+    // IC3 deliberately leaves the production chains behind Infinity Power and Sacrifice intact.
+    const infinityPower = EternityChallenge(9).isRunning
+      ? DC.D1
+      : Currency.infinityPower.value.pow(InfinityDimensions.powerConversionRate).max(1);
+    const sacrifice = tier === 8 ? Sacrifice.totalBoost.div(Sacrifice.reflowDrainMultiplier) : DC.D1;
+    const exemptMultiplier = infinityPower.times(sacrifice);
+    multiplier = multiplier.div(exemptMultiplier).pow(InfinityChallenge(3).effectValue).times(exemptMultiplier);
+  }
 
   return multiplier;
 }
@@ -226,11 +238,11 @@ function applyNDPowers(mult, tier) {
   const glyphPowMultiplier = new Decimal(getAdjustedGlyphEffect("powerpow"));
   const glyphEffarigPowMultiplier = getAdjustedGlyphEffect("effarigdimensions");
 
-  if (InfinityChallenge(4).isRunning && player.postC4Tier !== tier) {
-    multiplier = multiplier.pow(InfinityChallenge(4).effectValue);
+  if (InfinityChallenge(5).isCompleted && tier > 1) {
+    multiplier = multiplier.pow(InfinityChallenge(5).reward.effectValue);
   }
-  if (InfinityChallenge(4).isCompleted) {
-    multiplier = multiplier.pow(InfinityChallenge(4).reward.effectValue);
+  if (Achievement(81).canBeApplied && tier <= InfinityChallenge(5).ic5AchievementTier) {
+    multiplier = multiplier.pow(Achievement(81).effectValue);
   }
 
   multiplier = multiplier.pow(glyphPowMultiplier.times(glyphEffarigPowMultiplier).times(Ra.momentumValue));
@@ -401,7 +413,7 @@ export function buyMaxDimension(tier, bulk = Infinity) {
   if (bulkLeft.lte(0)) return;
 
   // Buy in a while loop in order to properly trigger abnormal price increases
-  if (InfinityChallenge(5).isRunning) {
+  if (InfinityChallenge(6).isRunning) {
     while (dimension.isAffordableUntil10 && dimension.cost.lt(goal) && bulkLeft.gt(0)) {
       // We can use dimension.currencyAmount or Currency.antimatter here, they're the same,
       // but it seems safest to use dimension.currencyAmount for consistency.
@@ -442,9 +454,10 @@ class AntimatterDimensionState extends DimensionState {
    * @returns {ExponentialCostScaling}
    */
   get costScale() {
+    const useNC9Costs = NormalChallenge(9).isOnlyActiveChallenge;
     return new ExponentialCostScaling({
-      baseCost: NormalChallenge(9).isRunning ? this._nc9BaseCost : this._baseCost,
-      baseIncrease: NormalChallenge(9).isRunning ? this._nc9BaseCostMultiplier : this._baseCostMultiplier,
+      baseCost: useNC9Costs ? this._nc9BaseCost : this._baseCost,
+      baseIncrease: useNC9Costs ? this._nc9BaseCostMultiplier : this._baseCostMultiplier,
       costScale: new Decimal(Player.dimensionMultDecrease),
       scalingCostThreshold: DC.NUMMAX
     });
@@ -454,7 +467,8 @@ class AntimatterDimensionState extends DimensionState {
    * @returns {Decimal}
    */
   get cost() {
-    if (NormalChallenge(9).isRunning) {
+    const useNC9Costs = NormalChallenge(9).isOnlyActiveChallenge;
+    if (useNC9Costs) {
       const purchases = this.bought.div(DC.E1).floor().add(this.costBumps);
       const cost = this._nc9BaseCost.times(this._nc9BaseCostMultiplier.pow(purchases));
       return this.tier === 8 ? cost.div(Sacrifice.totalBoost) : cost;
@@ -623,6 +637,7 @@ class AntimatterDimensionState extends DimensionState {
   }
 
   get isAvailableForPurchase() {
+    if (InfinityChallenge(5).isRunning) return IC5Focus.isDimensionUnlocked(this.tier);
     if (!EternityMilestone.unlockAllND.isReached && DimBoost.totalBoosts.add(4).lt(this.tier)) return false;
     const hasPrevTier = this.tier === 1 || AntimatterDimension(this.tier - 1).totalAmount.gt(0);
     if (!EternityMilestone.unlockAllND.isReached && !hasPrevTier) return false;
@@ -640,7 +655,7 @@ class AntimatterDimensionState extends DimensionState {
   }
 
   challengeCostBump() {
-    if (InfinityChallenge(5).isRunning) this.multiplyIC5Costs();
+    if (InfinityChallenge(6).isRunning) this.multiplyIC5Costs();
   }
 
   multiplyIC5Costs() {
@@ -758,7 +773,14 @@ export const AntimatterDimensions = {
     } else {
       AntimatterDimension(1).produceCurrency(Currency.antimatter, diff);
     }
-    // Production may overshoot the goal on the final tick of the challenge
-    if (hasBigCrunchGoal) Currency.antimatter.dropTo(Player.infinityGoal);
+    // NC9 displays the current 1st AD production rather than accumulated antimatter. Once its
+    // production reaches a challenge goal, keep the displayed value at that goal until Crunch.
+    if (hasBigCrunchGoal && player.records.thisInfinity.maxAM.gte(Player.infinityGoal)) {
+      // Challenge goals are UI-observed game-data Decimals, so never place their reference in player data.
+      Currency.antimatter.value = new Decimal(Player.infinityGoal);
+    } else if (hasBigCrunchGoal) {
+      // Production may overshoot the goal on the final tick of the challenge.
+      Currency.antimatter.dropTo(Player.infinityGoal);
+    }
   }
 };

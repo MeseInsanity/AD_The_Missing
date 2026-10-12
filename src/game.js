@@ -83,7 +83,7 @@ export function breakInfinity() {
   GameUI.update();
 }
 
-export function gainedInfinityPoints() {
+export function gainedInfinityPoints(includeDominoesDividend = true) {
   const div = new Decimal(Effects.min(
     308,
     Achievement(103),
@@ -114,6 +114,8 @@ export function gainedInfinityPoints() {
   if (GlyphAlteration.isAdded("infinity")) {
     ip = ip.pow(getSecondaryGlyphEffect("infinityIP"));
   }
+
+  if (includeDominoesDividend) ip = ip.times(DimensionalDominoes.multiplier);
 
   return ip.floor();
 }
@@ -547,6 +549,7 @@ export function gameLoop(passedDiff, options = {}) {
     player.records.thisReality.trueTime += trueDiff;
   }
 
+  CriticalIdleIncome.tick(trueDiff);
   DeltaTimeState.update(trueDiff, realDiff, diff);
 
   updateNormalAndInfinityChallenges(diff);

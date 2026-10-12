@@ -216,15 +216,16 @@ window.TimeSpan = class TimeSpan {
       addComponent(value, name);
     }
     function addComponent(value, name) {
-      parts.push(value.eq(1) ? `${formatInt(value)} ${name}` : `${formatInt(value)} ${name}s`);
+      const suffix = name === "sec" || value.eq(1) ? "" : "s";
+      parts.push(`${formatInt(value)} ${name}${suffix}`);
     }
     addCheckedComponent(this.years, "year");
     addCheckedComponent(this.days, "day");
     addCheckedComponent(this.hours, "hour");
     addCheckedComponent(this.minutes, "minute");
-    addCheckedComponent(this.seconds, "second");
+    addCheckedComponent(this.seconds, "sec");
     // Join with commas and 'and' in the end.
-    if (parts.length === 0) return `${formatInt(0)} seconds`;
+    if (parts.length === 0) return `${formatInt(0)} sec`;
     return [parts.slice(0, -1).join(", "), parts.slice(-1)[0]].join(parts.length < 2 ? "" : " and ");
   }
 
@@ -256,10 +257,10 @@ window.TimeSpan = class TimeSpan {
       return `${format(totalSeconds.times(1000))} ms`;
     }
     if (totalSeconds.lt(10)) {
-      return `${format(totalSeconds, 0, 3)} seconds`;
+      return `${format(totalSeconds, 0, 3)} sec`;
     }
     if (totalSeconds.lt(60)) {
-      return `${format(totalSeconds, 0, 2)} seconds`;
+      return `${format(totalSeconds, 0, 2)} sec`;
     }
     if (this.totalHours.lt(100) || (isSpeedrun && this.totalHours.lt(1000))) {
       if (useHMS && !Notations.current.isPainful) {
@@ -292,7 +293,7 @@ window.TimeSpan = class TimeSpan {
 
   toTimeEstimate() {
     const seconds = this.totalSeconds;
-    if (seconds.lt(1)) return `< ${formatInt(1)} second`;
+    if (seconds.lt(1)) return `< ${formatInt(1)} sec`;
     if (seconds.gt(86400 * 365.25)) return `> ${formatInt(1)} year`;
     return this.toStringShort();
   }

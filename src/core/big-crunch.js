@@ -82,7 +82,7 @@ function bigCrunchUpdateStatistics() {
   player.records.bestInfinity.bestIPminEternity =
     player.records.bestInfinity.bestIPminEternity.clampMin(player.records.thisInfinity.bestIPmin);
   player.records.thisInfinity.bestIPmin = DC.D0;
-  player.records.bestInfinity.trueTime = Math.min(player.records.bestInfinity.trueTime, player.records.thisInfinity.trueTime)
+  player.records.bestInfinity.trueTime = Math.min(player.records.bestInfinity.trueTime, player.records.thisInfinity.trueTime);
 
   player.records.thisEternity.bestInfinitiesPerMs = player.records.thisEternity.bestInfinitiesPerMs.clampMin(
     gainedInfinities().round().dividedBy(Decimal.clampMin(33, player.records.thisInfinity.realTime))
@@ -162,6 +162,8 @@ function bigCrunchCheckUnlocks() {
 export function secondSoftReset(enteringAntimatterChallenge) {
   player.dimensionBoosts = DC.D0;
   player.galaxies = DC.D0;
+  player.challenge.infinity.dimBoosts = DC.D0;
+  player.challenge.infinity.focusTier = 1;
   player.records.thisInfinity.maxAM = DC.D0;
   player.records.thisInfinity.totalAntimatter = DC.D0;
   Currency.antimatter.reset();
@@ -199,8 +201,8 @@ export function preProductionGenerateIP(diff) {
       player.partInfinityPoint -= genCount.toNumber();
     }
     const normalChallengeIPMultiplier = Math.max(1, NormalChallenges.all.countWhere(c => c.isCompleted));
-    let gainedPerGen = player.records.bestInfinity.time.gte(DC.BEMAX) ? DC.D0 :
-      (Achievement(41).isUnlocked
+    let gainedPerGen = player.records.bestInfinity.time.gte(DC.BEMAX) ? DC.D0
+      : (Achievement(41).isUnlocked
         ? (Teresa.isRunning || V.isRunning || Pelle.isDoomed
           ? DC.D0
           : GameCache.totalIPMult.value.times(normalChallengeIPMultiplier))
@@ -209,5 +211,7 @@ export function preProductionGenerateIP(diff) {
     const gainedThisTick = genCount.times(gainedPerGen);
     Currency.infinityPoints.add(gainedThisTick);
   }
-  Currency.infinityPoints.add(BreakInfinityUpgrade.ipGen.effectOrDefault(DC.D0).times(diff.div(60000)));
+  const idleIncome = BreakInfinityUpgrade.ipGen.effectOrDefault(DC.D0)
+    .times(CriticalIdleIncome.multiplier);
+  Currency.infinityPoints.add(idleIncome.times(diff.div(60000)));
 }

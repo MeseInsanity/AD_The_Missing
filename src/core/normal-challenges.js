@@ -16,7 +16,7 @@ export function updateNormalAndInfinityChallenges(diff) {
     player.chall11MatterGrowthTime = (player.chall11MatterGrowthTime ?? DC.D0).add(diff);
   }
 
-  if (NormalChallenge(11).isRunning || InfinityChallenge(6).isRunning) {
+  if (NormalChallenge(11).isRunning || InfinityChallenge(7).isRunning) {
     const matterActivationTier = 2;
     const matterCanActivate = AntimatterDimension(matterActivationTier).amount.neq(0);
     if (matterCanActivate) {
@@ -54,17 +54,6 @@ export function updateNormalAndInfinityChallenges(diff) {
     player.chall5Pow = (player.chall5Pow ?? DC.D1).add(diff.div(4000)).clampMax(1);
   }
 
-  if (InfinityChallenge(2).isRunning) {
-    if (player.ic2Count >= 400) {
-      if (AntimatterDimension(8).amount.gt(0)) {
-        sacrificeReset();
-      }
-      player.ic2Count %= 400;
-    } else {
-      // Do not change to diff, as this may lead to a sacrifice softlock with high gamespeed
-      player.ic2Count += Math.clamp(Date.now() - player.lastUpdate, 1, 21600000);
-    }
-  }
 }
 
 export function normalChallenge10PurchasesRemaining() {
@@ -88,7 +77,7 @@ class NormalChallengeState extends GameMechanicState {
   }
 
   get isRunning() {
-    const isPartOfIC1 = this.id !== 9 && this.id !== 12;
+    const isPartOfIC1 = this.id !== 10 && this.id !== 12;
     return player.challenge.normal.current === this.id || (isPartOfIC1 && InfinityChallenge(1).isRunning);
   }
 

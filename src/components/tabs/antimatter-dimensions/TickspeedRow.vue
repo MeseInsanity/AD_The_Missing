@@ -27,8 +27,6 @@ export default {
       };
     },
     multiplierDisplay() {
-      if (InfinityChallenge(3).isRunning) return `Multiply all Antimatter Dimensions by
-        ${formatX(this.galaxyCount.times(0.005).add(1.05))}`;
       const tickmult = this.mult;
       return `${formatX(tickmult.reciprocal(), 2, 3)} faster / upgrade.`;
     },
@@ -49,7 +47,9 @@ export default {
     update() {
       this.hasRealityButton = PlayerProgress.realityUnlocked() || TimeStudy.reality.isBought;
       this.purchasedTickspeed.copyFrom(player.totalTickBought);
-      this.freeTickspeed.copyFrom(FreeTickspeed.amount);
+      this.freeTickspeed.copyFrom(player.totalTickGained
+        .plusEffectOf(BreakInfinityUpgrade.bestAMTickspeed)
+        .plusEffectOf(InfinityChallenge(4).reward));
       this.isEC9 = EternityChallenge(9).isRunning;
       this.isVisible = Tickspeed.isUnlocked || this.isEC9;
       if (!this.isVisible) return;

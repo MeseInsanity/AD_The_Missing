@@ -84,7 +84,7 @@ export const multiplierTabTree = {
     ["tickspeed_base", "tickspeed_upgrades", "tickspeed_galaxies", "tickspeed_pelleTickspeedPow"]
   ],
   tickspeed_upgrades: [
-    ["tickspeedUpgrades_purchased", "tickspeedUpgrades_free"]
+    ["tickspeedUpgrades_purchased", "tickspeedUpgrades_free", "tickspeedUpgrades_infinityChallenge4"]
   ],
   tickspeed_galaxies: [
     ["galaxies_antimatter", "galaxies_replicanti", "galaxies_tachyon", "galaxies_nerfPelle"]
@@ -118,7 +118,7 @@ const singleRes = ["IP", "EP", "DT", "infinities", "replicanti"];
 const targetedEffects = {
   achievement: {
     checkFn: MultiplierTabHelper.achievementDimCheck,
-    AD: [23, 28, 31, 34, 43, 48, 56, 64, 65, 68, 71, 72, 73, 74, 76, 84, 91, 92, 183],
+    AD: [23, 28, 31, 34, 43, 48, 56, 64, 65, 68, 71, 72, 73, 74, 76, 81, 84, 91, 92, 183],
     TD: [105, 128],
     IP: [85, 93, 116, 125, 141],
     DT: [132, 137],
@@ -135,7 +135,7 @@ const targetedEffects = {
   },
   infinityChallenge: {
     checkFn: MultiplierTabHelper.ICDimCheck,
-    AD: [3, 4, 8],
+    AD: [3, 4, 5, 8],
     ID: [1, 6],
   },
   eternityChallenge: {

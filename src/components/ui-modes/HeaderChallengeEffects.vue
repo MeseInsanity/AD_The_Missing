@@ -1,4 +1,8 @@
 <script>
+import { DC } from "@/core/constants";
+import { IC5Focus } from "@/core/infinity-challenges";
+import { getIC4TickspeedSoftcapCoefficient } from "@/core/tickspeed";
+
 export default {
   name: "HeaderChallengeEffects",
   data() {
@@ -13,6 +17,15 @@ export default {
       isInLaitela: false,
       laitelaTimer: 0,
       laitelaEntropy: "",
+      isIC4Running: false,
+      ic4DimBoosts: new Decimal(0),
+      ic4TickspeedCoefficient: new Decimal(0),
+      isIC5Running: false,
+      ic5LowestUnlockedTier: 8,
+      ic5GalaxyCount: new Decimal(0),
+      ic5DescentProgress: new Decimal(0),
+      ic5NextGalaxyTier: 8,
+      ic5NextGalaxyAmount: new Decimal(0),
       waitingforHint: false,
       enslavedTimer: "",
     };
@@ -48,6 +61,21 @@ export default {
         }
       }
 
+      this.isIC4Running = InfinityChallenge(4).isRunning;
+      if (this.isIC4Running) {
+        this.ic4DimBoosts.copyFrom(player.challenge.infinity.dimBoosts ?? DC.D0);
+        this.ic4TickspeedCoefficient.copyFrom(getIC4TickspeedSoftcapCoefficient());
+      }
+      this.isIC5Running = InfinityChallenge(5).isRunning;
+      if (this.isIC5Running) {
+        this.ic5LowestUnlockedTier = IC5Focus.lowestUnlockedTier;
+        this.ic5GalaxyCount.copyFrom(player.galaxies);
+        this.ic5DescentProgress.copyFrom(player.galaxies.clampMax(7));
+        const requirement = Galaxy.requirement;
+        this.ic5NextGalaxyTier = requirement.tier;
+        this.ic5NextGalaxyAmount.copyFrom(requirement.amount);
+      }
+
       this.waitingforHint = Enslaved.canTickHintTimer;
       const rawMsUntilHints = 5 * 3600 * 1000 - player.celestials.enslaved.hintUnlockProgress;
       this.enslavedTimer = TimeSpan.fromMilliseconds(new Decimal(rawMsUntilHints / (Enslaved.isRunning ? 1 : 0.4)))
@@ -58,9 +86,9 @@ export default {
       const isC6Running = NormalChallenge(6).isRunning;
       const isC10Running = NormalChallenge(10).isRunning;
       const isC11Running = NormalChallenge(11).isRunning;
-      const isIC6Running = InfinityChallenge(6).isRunning;
-      const isIC8Running = InfinityChallenge(8).isRunning;
-      const isChallengePowerVisible = isC5Running || isC6Running || isC10Running || isC11Running || isIC6Running || isIC8Running;
+      const isIC7Running = InfinityChallenge(7).isRunning;
+      const isIC9Running = InfinityChallenge(9).isRunning;
+      const isChallengePowerVisible = isC5Running || isC6Running || isC10Running || isC11Running || isIC7Running || isIC9Running;
       this.isChallengePowerVisible = isChallengePowerVisible;
       if (isChallengePowerVisible) {
         const powerArray = [];
@@ -84,10 +112,10 @@ export default {
           const matterPenalty = Currency.matter.value.max(1).pow(matterExponent);
           powerArray.push(`Effect Magnitude: ^${format(matterExponent, 3, 3)}, Production: /${format(matterPenalty, 2, 2)}`);
         }
-        if (isIC6Running) powerArray.push(`Matter: Antimatter Dimensions /
-          ${format(new Decimal(1).timesEffectOf(InfinityChallenge(6)), 2, 2)}`);
-        if (isIC8Running) powerArray.push(`Production: /
-          ${format(new Decimal(1).timesEffectOf(InfinityChallenge(8)).reciprocal(), 2, 2)}`);
+        if (isIC7Running) powerArray.push(`Matter: Antimatter Dimensions /
+          ${format(new Decimal(1).timesEffectOf(InfinityChallenge(7)), 2, 2)}`);
+        if (isIC9Running) powerArray.push(`Production: /
+          ${format(new Decimal(1).timesEffectOf(InfinityChallenge(9)).reciprocal(), 2, 2)}`);
         this.challengePower = powerArray.join(", ");
       }
     },
@@ -110,6 +138,18 @@ export default {
     </div>
     <div v-if="isInMatterChallenge">
       There is {{ format(matter, 2, 1) }} matter.
+    </div>
+    <div v-if="isIC4Running">
+      Tickspeed Recovery: {{ formatInt(ic4DimBoosts) }} Dimension Boosts
+      (softcap coefficient: {{ format(ic4TickspeedCoefficient, 2, 2) }}/10)
+    </div>
+    <div v-if="isIC5Running">
+      Dimensional Descent: {{ formatInt(ic5DescentProgress) }}/7;
+      Next Galaxy: {{ format(ic5NextGalaxyAmount, 2, 0) }} AD {{ formatInt(ic5NextGalaxyTier) }}
+      <span v-if="ic5LowestUnlockedTier > 1">(unlocks AD {{ formatInt(ic5LowestUnlockedTier - 1) }})</span>
+      <span v-else-if="ic5GalaxyCount.gte(9)">(Challenge goal comes before Galaxy 10)</span>
+      <span v-else-if="ic5GalaxyCount.gte(8)">(final push)</span>
+      <span v-else>(all Antimatter Dimensions unlocked)</span>
     </div>
     <div v-if="isChallengePowerVisible">
       {{ challengePower }}

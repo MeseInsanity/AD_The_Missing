@@ -300,7 +300,7 @@ function updateRealityRecords(realityProps) {
     player.records.bestReality.realTime = player.records.thisReality.realTime;
     player.records.bestReality.speedSet = Glyphs.copyForRecords(Glyphs.active.filter(g => g !== null));
   }
-  player.records.bestReality.trueTime = Math.min(player.records.bestReality.trueTime, player.records.thisReality.trueTime)
+  player.records.bestReality.trueTime = Math.min(player.records.bestReality.trueTime, player.records.thisReality.trueTime);
 }
 
 function giveRealityRewards(realityProps) {
@@ -703,6 +703,7 @@ export function finishProcessReality(realityProps) {
   player.records.thisInfinity.maxAM = DC.D0;
   player.records.thisInfinity.totalAntimatter = DC.D0;
   player.records.thisEternity.maxAM = DC.D0;
+  player.records.thisEternity.id5SacrificeHint = false;
   player.records.thisReality.maxDT = DC.D0;
   player.dilation.lastEP = DC.DM1;
   Currency.antimatter.reset();

@@ -60,7 +60,8 @@ export default {
     },
     rootClassObject() {
       return {
-        "l-expanding-control-box--controls-width": this.widthSource !== undefined
+        "l-expanding-control-box--controls-width": this.widthSource !== undefined,
+        "l-expanding-control-box--open": this.state?.visibility
       };
     },
     containerStyle() {
@@ -217,7 +218,11 @@ export default {
 <style scoped>
 .l-expanding-control-box {
   position: relative;
-  z-index: 3;
+  z-index: 1;
+}
+
+.l-expanding-control-box--open {
+  z-index: 4;
 }
 
 .l-expanding-control-box--controls-width {

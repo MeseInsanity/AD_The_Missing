@@ -83,5 +83,12 @@ export const tickspeedUpgrades = {
     multValue: () => Decimal.pow10(player.totalTickGained.plusEffectOf(BreakInfinityUpgrade.bestAMTickspeed)),
     isActive: () => Currency.timeShards.gt(0) || BreakInfinityUpgrade.bestAMTickspeed.isBought,
     icon: MultiplierTabIcons.SPECIFIC_GLYPH("time"),
+  },
+  infinityChallenge4: {
+    name: "Infinity Challenge 4",
+    displayOverride: () => formatInt(InfinityChallenge(4).reward.effectOrDefault(0)),
+    multValue: () => Decimal.pow10(InfinityChallenge(4).reward.effectOrDefault(0)),
+    isActive: () => InfinityChallenge(4).isCompleted,
+    icon: MultiplierTabIcons.CHALLENGE("infinity"),
   }
 };

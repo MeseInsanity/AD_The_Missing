@@ -416,7 +416,7 @@ export const normalAchievements = [
     id: 62,
     name: "Oh, hey... You're still here?",
     get description() { return `Reach ${format(DC.E8)} Infinity Points per minute.`; },
-    checkRequirement: () => Player.bestRunIPPM.gte(1e8),
+    checkRequirement: () => player.records.bestInfinity.bestIPminEternity.gte(1e8),
     checkEvent: GAME_EVENT.BIG_CRUNCH_AFTER
   },
   {
@@ -562,9 +562,15 @@ export const normalAchievements = [
   {
     id: 81,
     name: "Game Design Is My Passion",
-    get description() { return `Beat Infinity Challenge 5 in ${formatInt(15)} seconds or less.`; },
-    checkRequirement: () => InfinityChallenge(5).isRunning && Time.thisInfinityRealTime.totalSeconds.lte(15),
-    checkEvent: GAME_EVENT.BIG_CRUNCH_BEFORE
+    description: "Complete Infinity Challenge 5 while one or more Antimatter Dimensions remain locked.",
+    checkRequirement: () => InfinityChallenge(5).isRunning && InfinityChallenge(5).ic5AchievementTier > 0,
+    checkEvent: GAME_EVENT.INFINITY_CHALLENGE_COMPLETED,
+    reward: "Your highest locked Antimatter Dimension in IC5 and all lower Dimensions are raised to ^1.05.",
+    effect: 1.05,
+    formatEffect: () => {
+      const tier = InfinityChallenge(5).ic5AchievementTier;
+      return tier === 0 ? "None" : `AD${tier} or lower`;
+    },
   },
   {
     id: 82,
@@ -1360,8 +1366,8 @@ export const normalAchievements = [
   {
     id: 183,
     name: "Déjà vOoM",
-    description: "Complete Infinity Challenge 5 while Doomed.",
-    checkRequirement: () => Pelle.isDoomed && InfinityChallenge(5).isCompleted,
+    description: "Complete Infinity Challenge 6 while Doomed.",
+    checkRequirement: () => Pelle.isDoomed && InfinityChallenge(6).isCompleted,
     checkEvent: GAME_EVENT.INFINITY_CHALLENGE_COMPLETED,
     // Weirdly specific reward? Yes, its V's ST bonus because we forgot to disable it
     // when balancing Pelle and only realised too late.

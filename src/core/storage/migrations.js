@@ -431,6 +431,62 @@ export const migrations = {
     83: player => {
       beMigration(player);
     },
+    100: player => {
+      player.records.thisEternity.id5SacrificeHint = false;
+    },
+    101: player => {
+      // ID5's early-Break cost scaling changed from x1e15 to x1e14. Its next cost
+      // is persisted, so recompute it from bought ID5 purchases for existing saves.
+      const id5 = player.dimensions.infinity[4];
+      const purchases = new Decimal(id5.baseAmount).div(10);
+      id5.cost = new Decimal("1e14").times(Decimal.pow("1e14", purchases));
+    },
+    102: player => {
+      migrations.shiftInfinityChallengeIds(player);
+    },
+    103: player => {
+      player.challenge.infinity.dimBoosts = new Decimal(0);
+    },
+    104: player => {
+      player.challenge.infinity.focusTier = 1;
+    },
+    105: player => {
+      // Achievement 81 now records the deepest limited IC5 clear. Its former
+      // IC6 speed-clear condition had no comparable persistent progress.
+      player.challenge.infinity.ic5AchievementTier = 0;
+      player.achievementBits[7] &= ~1;
+    },
+  },
+
+  // IC3 was inserted ahead of the former IC3-8 sequence. The best-time array is
+  // the layout marker: old saves have eight entries, whereas current saves have twelve.
+  shiftInfinityChallengeIds(player) {
+    const infinity = player.challenge.infinity;
+    if (infinity.bestTimes.length >= 12) return;
+
+    const oldTimes = infinity.bestTimes;
+    const uncompleted = new Decimal("1e1000000");
+    infinity.bestTimes = [
+      oldTimes[0] ?? uncompleted,
+      oldTimes[1] ?? uncompleted,
+      uncompleted,
+      oldTimes[2] ?? uncompleted,
+      oldTimes[3] ?? uncompleted,
+      oldTimes[4] ?? uncompleted,
+      oldTimes[5] ?? uncompleted,
+      oldTimes[6] ?? uncompleted,
+      oldTimes[7] ?? uncompleted,
+      uncompleted,
+      uncompleted,
+      uncompleted,
+    ];
+
+    let completedBits = infinity.completedBits & 0b111;
+    for (let id = 3; id <= 8; id++) {
+      if ((infinity.completedBits & (1 << id)) !== 0) completedBits |= 1 << (id + 1);
+    }
+    infinity.completedBits = completedBits;
+    if (infinity.current >= 3 && infinity.current <= 8) infinity.current += 1;
   },
 
   normalizeTimespans(player) {

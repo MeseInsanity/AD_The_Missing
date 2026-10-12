@@ -21,6 +21,11 @@ export function effectiveBaseGalaxies() {
   return Decimal.max(player.galaxies.add(GalaxyGenerator.galaxies).add(replicantiGalaxies).add(freeGalaxies), 0);
 }
 
+export function getIC4TickspeedSoftcapCoefficient() {
+  const boosts = player.challenge.infinity.dimBoosts ?? DC.D0;
+  return Decimal.min(DC.D10, boosts.div(DC.D1_07).pow(DC.D0_3).add(DC.D0_5));
+}
+
 // The Galaxy count after all effects which directly strengthen Galaxies. This intentionally does
 // not include the Fragment divider, which is specific to the improved Galaxy Formula.
 export function effectiveGalaxyCount() {
@@ -33,7 +38,7 @@ export function effectiveGalaxyCount() {
     TimeStudy(232),
     Achievement(86),
     Achievement(178),
-    InfinityChallenge(5).reward,
+    InfinityChallenge(6).reward,
     PelleUpgrade.galaxyPower,
     PelleRifts.decay.milestones[1]
   );
@@ -57,7 +62,6 @@ function applyNC4TickspeedPenalty(multiplier) {
 }
 
 export function getTickSpeedMultiplier() {
-  if (InfinityChallenge(3).isRunning) return DC.D1;
   if (Ra.isRunning) return DC.C1D1_1245;
   const galaxies = effectiveGalaxyCount();
   const fragmentEffect = Fragments.galaxyPower.effect();
@@ -132,7 +136,7 @@ export function resetTickspeed() {
 export const Tickspeed = {
 
   get isUnlocked() {
-    return AntimatterDimension(2).bought.gt(0) || EternityMilestone.unlockAllND.isReached ||
+    return InfinityChallenge(5).isRunning || AntimatterDimension(2).bought.gt(0) || EternityMilestone.unlockAllND.isReached ||
       PlayerProgress.realityUnlocked();
   },
 
@@ -194,8 +198,13 @@ export const Tickspeed = {
     let boughtTickspeed;
     if (Laitela.continuumActive) boughtTickspeed = new Decimal(this.continuumValue);
     else boughtTickspeed = new Decimal(player.totalTickBought);
-    return boughtTickspeed.plus(player.totalTickGained)
-      .plusEffectOf(BreakInfinityUpgrade.bestAMTickspeed);
+    const upgrades = boughtTickspeed.plus(player.totalTickGained)
+      .plusEffectOf(BreakInfinityUpgrade.bestAMTickspeed)
+      .plusEffectOf(InfinityChallenge(4).reward);
+    if (!InfinityChallenge(4).isRunning || upgrades.lte(0)) return upgrades;
+    const softcapped = upgrades.times(getIC4TickspeedSoftcapCoefficient())
+      .times(Decimal.log2(upgrades.max(DC.D2))).sqrt();
+    return Decimal.min(upgrades, softcapped);
   },
 
   get perSecond() {

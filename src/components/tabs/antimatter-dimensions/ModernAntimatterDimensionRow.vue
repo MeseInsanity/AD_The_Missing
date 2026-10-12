@@ -32,6 +32,7 @@ export default {
       isCostsAD: false,
       amountDisplay: "",
       hasTutorial: false,
+      isIC5Focus: false,
     };
   },
   computed: {
@@ -96,9 +97,10 @@ export default {
       this.buyUntil10 = buyUntil10;
       this.isContinuumActive = Laitela.continuumActive;
       if (this.isContinuumActive) this.continuumValue.copyFrom(dimension.continuumValue);
-      this.isShown =
+      this.isShown = InfinityChallenge(5).isRunning ||
         (DimBoost.totalBoosts.gt(0) && DimBoost.totalBoosts.add(3).gte(tier)) || PlayerProgress.infinityUnlocked();
       this.isCostsAD = NormalChallenge(9).isRunning && tier > 1;
+      this.isIC5Focus = false;
       this.amountDisplay = this.tier < 8 ? format(this.amount, 2) : formatInt(this.amount);
       this.hasTutorial = (tier === 1 && Tutorial.isActive(TUTORIAL_STATE.DIM1)) ||
         (tier === 2 && Tutorial.isActive(TUTORIAL_STATE.DIM2));
@@ -143,6 +145,7 @@ export default {
       :multiplier-text="formatX(multiplier, 2, 2)"
       :amount-text="amountDisplay"
       :rate="rateOfChange"
+      :is-focus="isIC5Focus"
     />
     <div class="l-dim-row-multi-button-container c-modern-dim-tooltip-container">
       <div class="c-modern-dim-purchase-count-tooltip">

@@ -22,6 +22,10 @@ export default {
       type: Object,
       required: true
     },
+    isFocus: {
+      type: Boolean,
+      default: false
+    },
   },
   data() {
     return {
@@ -58,6 +62,12 @@ export default {
 <template>
   <div class="l-dimension-text-container">
     <div :class="adjustableTextClass()">
+      <span
+        v-if="isFocus"
+        class="c-dim-row__focus"
+      >
+        FOCUS
+      </span>
       <span class="c-dim-row__large">
         {{ name }}
       </span>
@@ -85,6 +95,7 @@ export default {
   height: 3.5rem;
   align-content: center;
   grid-column: 1 / 5;
+  position: relative;
 }
 
 .l-narrow-box {
@@ -108,6 +119,15 @@ export default {
 .c-dim-row__large {
   text-align: left;
   margin-right: 1rem;
+}
+
+.c-dim-row__focus {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  color: var(--color-good);
+  font-weight: bold;
 }
 
 .c-dim-row__small {

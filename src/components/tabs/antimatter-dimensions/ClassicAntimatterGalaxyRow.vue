@@ -16,7 +16,9 @@ export default {
       },
       requirement: {
         tier: 1,
-        amount: new Decimal()
+        amount: new Decimal(),
+        cost: new Decimal(),
+        usesCost: false,
       },
       canBeBought: false,
       distantStart: new Decimal(),
@@ -98,12 +100,14 @@ export default {
       this.galaxies.dilation.copyFrom(player.dilation.totalTachyonGalaxies);
       const requirement = Galaxy.requirement;
       this.requirement.amount.copyFrom(requirement.amount);
+      this.requirement.usesCost = requirement.cost !== null;
+      if (this.requirement.usesCost) this.requirement.cost.copyFrom(requirement.cost);
       this.requirement.tier = requirement.tier;
       this.canBeBought = requirement.isSatisfied && Galaxy.canBeBought;
       this.distantStart.copyFrom(Galaxy.costScalingStart);
       this.remoteStart.copyFrom(Galaxy.remoteStart);
       this.lockText = Galaxy.lockText;
-      this.canBulkBuy = EternityMilestone.autobuyMaxGalaxies.isReached || BreakInfinityUpgrade.galaxyBulk.isBought;
+      this.canBulkBuy = Galaxy.canBulkBuy;
       this.creditsClosed = GameEnd.creditsEverClosed;
       this.hasTutorial = Tutorial.isActive(TUTORIAL_STATE.GALAXY);
     },
@@ -124,7 +128,8 @@ export default {
       class="l-dim-row__prestige-text c-dim-row__label c-dim-row__label--amount l-text-wrapper"
     >
       {{ typeName }} ({{ sumText }}):
-      requires {{ formatInt(requirement.amount) }} {{ dimName }} Dimensions
+      <template v-if="requirement.usesCost">requires next {{ dimName }} cost: {{ format(requirement.cost, 2, 0) }} AM</template>
+      <template v-else>requires {{ formatInt(requirement.amount) }} {{ dimName }} Dimensions</template>
       <div class="l-scaling-text-wrapper">
         {{ hasIncreasedScaling ? costScalingText : "" }}
       </div>

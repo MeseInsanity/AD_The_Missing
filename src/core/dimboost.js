@@ -1,15 +1,19 @@
 import { DC } from "./constants";
 import { EternityChallenge } from "./eternity-challenge";
+import { IC5Focus } from "./infinity-challenges";
 
 class DimBoostRequirement {
-  constructor(tier, amount) {
+  constructor(tier, amount, { cost = null, usesBought = false } = {}) {
     this.tier = tier;
     this.amount = amount;
+    this.cost = cost;
+    this.usesBought = usesBought;
   }
 
   get isSatisfied() {
     const dimension = AntimatterDimension(this.tier);
-    return dimension.totalAmount.gte(this.amount);
+    if (this.cost) return dimension.cost.gte(this.cost);
+    return (this.usesBought ? dimension.bought : dimension.totalAmount).gte(this.amount);
   }
 }
 
@@ -27,8 +31,8 @@ export class DimBoost {
       : currentInfinityMultiplier;
     let boost = new Decimal(Effects.max(
       2,
-      InfinityChallenge(7).reward,
-      InfinityChallenge(7),
+      InfinityChallenge(8).reward,
+      InfinityChallenge(8),
       TimeStudy(81)
     )).max(adjustedInfinityUpgradeBase)
       .timesEffectsOf(
@@ -76,15 +80,6 @@ export class DimBoost {
       // when giving initial boosts, so the player will still get those.
       return DC.D0;
     }
-    if (InfinityChallenge(1).isRunning) {
-      // Usually, in Challenge 8, the only boosts that are useful are the first 5
-      // (the fifth unlocks sacrifice). In IC1 (Challenge 8 and Challenge 10
-      // combined, among other things), only the first 2 are useful
-      // (they unlock new dimensions).
-      // There's no actual problem with bulk letting the player get
-      // more boosts than this; it's just that boosts beyond this are pointless.
-      return DC.D2;
-    }
     return DC.BEMAX;
   }
 
@@ -97,8 +92,8 @@ export class DimBoost {
 
   static get lockText() {
     if (DimBoost.purchasedBoosts.gte(this.maxBoosts)) {
+      if (InfinityChallenge(5).isRunning) return "Locked (All Antimatter Dimensions unlocked)";
       if (Ra.isRunning) return "Locked (Ra's Reality)";
-      if (InfinityChallenge(1).isRunning) return "Locked (Infinity Challenge 1)";
     }
     return null;
   }
@@ -107,15 +102,42 @@ export class DimBoost {
     return this.bulkRequirement(1);
   }
 
+  static get ic5BoostBulk() {
+    if (!InfinityChallenge(5).isRunning || !this.requirement.isSatisfied) return DC.D0;
+
+    const frontierBought = AntimatterDimension(IC5Focus.lowestUnlockedTier).bought;
+    const chargedMultiplier = InfinityUpgrade.resetBoost.chargedEffect.effectOrDefault(1);
+    let unscaledBought = frontierBought.div(chargedMultiplier).add(Effects.sum(InfinityUpgrade.resetBoost));
+    if (InfinityChallenge(6).isCompleted) unscaledBought = unscaledBought.add(1);
+
+    const targetBoosts = unscaledBought.lte(20)
+      ? DC.D5
+      : unscaledBought.sub(20).div(15).add(5).floor();
+    let bulk = targetBoosts.sub(this.purchasedBoosts).max(1).floor();
+
+    // Rounding the requirement after all reductions can move the analytical
+    // inverse by one. Correct it with at most a few exact checks.
+    while (bulk.gt(1) && !this.bulkRequirement(bulk).isSatisfied) bulk = bulk.sub(1);
+    while (this.bulkRequirement(bulk.add(1)).isSatisfied) bulk = bulk.add(1);
+    return bulk;
+  }
+
   static bulkRequirement(bulk) {
     const targetResets = DimBoost.purchasedBoosts.add(bulk);
-    const tier = Decimal.min(targetResets.add(3), this.maxDimensionsUnlockable).toNumber();
+    const isIC5 = InfinityChallenge(5).isRunning;
+    const tier = isIC5
+      ? IC5Focus.lowestUnlockedTier
+      : Decimal.min(targetResets.add(3), this.maxDimensionsUnlockable).toNumber();
     let amount = DC.D20;
     const discount = Effects.sum(
       TimeStudy(211),
       TimeStudy(222)
     );
-    if (tier === 6 && NormalChallenge(12).isRunning) {
+    if (isIC5) {
+      // Each Boost resets the frontier's purchases, so these cannot be
+      // safely bulk-bought from the count before the first reset.
+      amount = amount.add(targetResets.sub(5).max(0).mul(DC.D15));
+    } else if (tier === 6 && NormalChallenge(12).isRunning) {
       amount = amount.add(targetResets.sub(3).mul(DC.D20.sub(discount)).round());
     } else if (tier === 8) {
       const scalingIncrease = DC.D15;
@@ -126,13 +148,13 @@ export class DimBoost {
     }
 
     amount = amount.sub(Effects.sum(InfinityUpgrade.resetBoost));
-    if (InfinityChallenge(5).isCompleted) amount = amount.sub(1);
+    if (InfinityChallenge(6).isCompleted) amount = amount.sub(1);
 
     amount = amount.times(InfinityUpgrade.resetBoost.chargedEffect.effectOrDefault(1));
 
     amount = Decimal.round(amount);
 
-    return new DimBoostRequirement(tier, amount);
+    return new DimBoostRequirement(tier, amount, { usesBought: isIC5 });
   }
 
   static get unlockedByBoost() {
@@ -157,7 +179,7 @@ export class DimBoost {
     else boostEffects = `${newUnlock} and ${formattedMultText} ${dimensionRange}`;
 
     if (boostEffects === "") return "Dimension Boosts are currently useless";
-    const areDimensionsKept = (Perk.antimatterNoReset.isBought || Achievement(111).canBeApplied) &&
+    const areDimensionsKept = Perk.antimatterNoReset.isBought &&
       (!Pelle.isDoomed || PelleUpgrade.dimBoostResetsNothing.isBought);
     if (areDimensionsKept) return boostEffects[0].toUpperCase() + boostEffects.substring(1);
     return `Reset your Dimensions to ${boostEffects}`;
@@ -192,6 +214,9 @@ export function softReset(tempBulk, forcedADReset = false, forcedAMReset = false
   const bulk = Decimal.min(tempBulk, DimBoost.maxBoosts.sub(player.dimensionBoosts));
   EventHub.dispatch(GAME_EVENT.DIMBOOST_BEFORE, bulk);
   player.dimensionBoosts = (Decimal.max(DC.D0, player.dimensionBoosts.add(bulk)));
+  if (InfinityChallenge(4).isRunning && bulk.gt(0)) {
+    player.challenge.infinity.dimBoosts = (player.challenge.infinity.dimBoosts ?? DC.D0).add(bulk);
+  }
   if (NormalChallenge(5).isRunning && bulk.neq(0)) {
     player.chall5Sacrifices = 0;
     player.chall5Pow = DC.D1;
@@ -247,6 +272,11 @@ export function requestDimensionBoost(bulk) {
 }
 
 function maxBuyDimBoosts() {
+  if (InfinityChallenge(5).isRunning) {
+    const bulk = DimBoost.ic5BoostBulk;
+    if (bulk.gt(0)) softReset(bulk);
+    return;
+  }
   // Boosts that unlock new dims are bought one at a time, unlocking the next dimension
   if (DimBoost.canUnlockNewDimension) {
     if (DimBoost.requirement.isSatisfied) softReset(1);
@@ -274,7 +304,7 @@ function maxBuyDimBoosts() {
   }
 
   amount = amount.sub(Effects.sum(InfinityUpgrade.resetBoost));
-  if (InfinityChallenge(5).isCompleted) amount = amount.sub(1);
+  if (InfinityChallenge(6).isCompleted) amount = amount.sub(1);
 
   multiplierPerDB = multiplierPerDB.times(InfinityUpgrade.resetBoost.chargedEffect.effectOrDefault(1));
   amount = amount.times(InfinityUpgrade.resetBoost.chargedEffect.effectOrDefault(1));

@@ -1,5 +1,6 @@
 import { DC } from "../constants";
 import { GameMechanicState } from "../game-mechanics";
+
 import { SteamRuntime } from "@/steam";
 
 class AchievementState extends GameMechanicState {

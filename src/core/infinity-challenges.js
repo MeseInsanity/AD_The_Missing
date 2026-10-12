@@ -1,4 +1,20 @@
+import { DC } from "./constants";
 import { GameMechanicState } from "./game-mechanics";
+
+export const IC5Focus = {
+  // Temporary name retained while the reverse Galaxy-ladder probe is iterated.
+  get lowestUnlockedTier() {
+    return Decimal.max(1, DC.D8.sub(player.galaxies)).toNumber();
+  },
+
+  isDimensionUnlocked(tier) {
+    return tier >= this.lowestUnlockedTier;
+  },
+
+  get highestLockedTier() {
+    return Math.max(0, this.lowestUnlockedTier - 1);
+  }
+};
 
 export function tryCompleteInfinityChallenges() {
   if (EternityMilestone.autoIC.isReached) {
@@ -62,7 +78,17 @@ class InfinityChallengeState extends GameMechanicState {
     return (player.challenge.infinity.completedBits & (1 << this.id)) !== 0;
   }
 
+  get ic5AchievementTier() {
+    return player.challenge.infinity.ic5AchievementTier ?? 0;
+  }
+
   complete() {
+    if (this.id === 5 && this.isRunning) {
+      player.challenge.infinity.ic5AchievementTier = Math.max(
+        this.ic5AchievementTier,
+        IC5Focus.highestLockedTier
+      );
+    }
     player.challenge.infinity.completedBits |= 1 << this.id;
     EventHub.dispatch(GAME_EVENT.INFINITY_CHALLENGE_COMPLETED);
   }

@@ -8,10 +8,12 @@ export default {
       hasIPUnlock: true,
       amRequirement: new Decimal(0),
       ipRequirement: 0,
+      unlockHint: "",
     };
   },
   computed: {
     text() {
+      if (this.unlockHint) return this.unlockHint;
       const dimensionText = `a new ${this.hasIPUnlock ? "type of Dimension" : "Infinity Dimension"}.`;
       if (this.canUnlock) {
         return `Unlock ${dimensionText}`;
@@ -40,8 +42,13 @@ export default {
         return;
       }
       const nextDimension = InfinityDimensions.next();
+      this.unlockHint = nextDimension.unlockHint;
       this.isVisible = nextDimension.isVisible;
       if (!this.isVisible) return;
+      if (this.unlockHint) {
+        this.canUnlock = false;
+        return;
+      }
       this.canUnlock = nextDimension.canUnlock;
       this.hasIPUnlock = nextDimension.hasIPUnlock;
       this.amRequirement = nextDimension.amRequirement;

@@ -28,7 +28,7 @@ export const MultiplierTabHelper = {
       TimeStudy(232),
       Achievement(86),
       Achievement(178),
-      InfinityChallenge(5).reward,
+      InfinityChallenge(6).reward,
       PelleUpgrade.galaxyPower,
       PelleRifts.decay.milestones[1]
     ).mul(Pelle.specialGlyphEffect.power);
@@ -122,6 +122,10 @@ export const MultiplierTabHelper = {
         return dimStr.substr(0, 2) === "AD" && Number(dimStr.charAt(2)) !== 8;
       case 64:
         return dimStr.substr(0, 2) === "AD" && Number(dimStr.charAt(2)) <= 4;
+      case 81:
+        // The multiplier-tab tree is constructed before player state exists. Keep all AD entries in the
+        // static tree; general.achievement resolves the current affected tier at display time.
+        return dimStr.substr(0, 2) === "AD";
       default:
         return true;
     }
@@ -157,6 +161,7 @@ export const MultiplierTabHelper = {
         return dimStr.substr(0, 2) === "ID";
       case 3:
       case 4:
+      case 5:
         return dimStr.substr(0, 2) === "AD";
       case 8:
         return dimStr.substr(0, 2) === "AD" && Number(dimStr.charAt(2)) > 1 && Number(dimStr.charAt(2)) < 8;

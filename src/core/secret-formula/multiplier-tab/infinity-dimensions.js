@@ -120,7 +120,8 @@ export const ID = {
   },
   achievementMult: {
     name: "Achievement Multiplier",
-    multValue: dim => Decimal.pow(Achievements.power, dim ? 1 : MultiplierTabHelper.activeDimCount("ID")),
+    multValue: dim => Decimal.pow(Achievement(75).effectOrDefault(DC.D1), InfinityDimensions.id5Stability)
+      .pow(dim ? 1 : MultiplierTabHelper.activeDimCount("ID")),
     isActive: () => Achievement(75).canBeApplied && !Pelle.isDoomed,
     icon: MultiplierTabIcons.ACHIEVEMENT,
   },
@@ -187,7 +188,7 @@ export const ID = {
     multValue: dim => {
       const allMult = DC.D1.timesEffectsOf(
         InfinityChallenge(1).reward,
-        InfinityChallenge(6).reward,
+        InfinityChallenge(7).reward,
       );
       return Decimal.pow(allMult, dim ? 1 : MultiplierTabHelper.activeDimCount("ID"));
     },

@@ -58,9 +58,9 @@ export const speedrunMilestones = [
   {
     id: 8,
     key: "completeIC5",
-    name: "Infinity Challenge 5",
-    description: "Complete Infinity Challenge 5",
-    checkRequirement: () => InfinityChallenge(5).isCompleted,
+    name: "Infinity Challenge 6",
+    description: "Complete Infinity Challenge 6",
+    checkRequirement: () => InfinityChallenge(6).isCompleted,
     checkEvent: GAME_EVENT.BIG_CRUNCH_AFTER,
   },
   {

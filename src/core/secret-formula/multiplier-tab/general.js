@@ -16,6 +16,16 @@ export const general = {
       // There is also a buy10 effect, but we don't track that in the multiplier tab
       if (ach === 141) return Achievement(141).canBeApplied ? Achievement(141).effects.ipGain.effectOrDefault(1) : 1;
       if (ach === 183) return 1;
+      if (ach === 81) {
+        const pow = Achievement(81).effectOrDefault(1);
+        const affected = tier => tier <= InfinityChallenge(5).ic5AchievementTier;
+        const mults = AntimatterDimensions.all.map(ad => (affected(ad.tier)
+          ? ad.multiplier.pow((pow - 1) / pow)
+          : DC.D1));
+        if (dim?.length === 2) return mults.reduce((x, y) => x.times(y), DC.D1);
+        if (!dim) return mults.reduce((x, y) => x.times(y), DC.D1);
+        return mults[Number(dim.charAt(2)) - 1];
+      }
       if (!dim) return Achievement(ach).canBeApplied ? Achievement(ach).effectOrDefault(1) : 1;
 
       if (dim?.length === 2) {
@@ -34,7 +44,7 @@ export const general = {
       return (MultiplierTabHelper.achievementDimCheck(ach, dim) && Achievement(ach).canBeApplied)
         ? Achievement(ach).effectOrDefault(1) : 1;
     },
-    // 183 is the only time a power effect is in an Achievement, so we special-case it here and return a x1 multiplier
+    // These power effects use their final multiplier as a display proxy in multValue().
     powValue: ach => (ach === 183 ? Achievement(183).effectOrDefault(1) : 1),
     isActive: ach => Achievement(ach).canBeApplied,
     icon: ach => {
@@ -83,13 +93,14 @@ export const general = {
   },
   infinityChallenge: {
     name: ic => `Infinity Challenge ${ic}`,
-    displayOverride: ic => (ic === 4 ? formatPow(InfinityChallenge(4).reward.effectValue, 0, 3) : ""),
+    displayOverride: ic => (ic === 5 ? formatPow(InfinityChallenge(5).reward.effectValue, 0, 3) : ""),
     multValue: (ic, dim) => {
-      // We cheat here by actually giving IC4 a multiplier of a value equal to its effect on the final
-      // value in order to represent its proportion accurately. It's hidden by displayOverride
-      if (ic === 4) {
-        const ic4Pow = InfinityChallenge(4).reward.effectValue;
-        const mults = AntimatterDimensions.all.map(ad => ad.multiplier.pow((ic4Pow - 1) / ic4Pow));
+      // Use each final multiplier as a display proxy for IC5's targeted power effect.
+      if (ic === 5) {
+        const ic5Pow = InfinityChallenge(5).reward.effectValue;
+        const mults = AntimatterDimensions.all.map(ad => (ad.tier > 1
+          ? ad.multiplier.pow((ic5Pow - 1) / ic5Pow)
+          : DC.D1));
         if (dim?.length === 2) return mults.reduce((x, y) => x.times(y), DC.D1);
         return mults[Number(dim.charAt(2)) - 1];
       }

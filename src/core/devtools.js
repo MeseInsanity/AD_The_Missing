@@ -6,6 +6,8 @@ import { sha512_256 } from "js-sha512";
 import { Player } from "./player";
 import { DC } from "./constants";
 import FullScreenAnimationHandler from "./full-screen-animation-handler";
+import { IC5Focus } from "./infinity-challenges";
+import { getIC4TickspeedSoftcapCoefficient } from "./tickspeed";
 
 export const dev = {};
 
@@ -263,6 +265,408 @@ dev.printResourceTotals = function() {
   console.log(`TT: e${Math.round(player.timestudy.theorem.log10())}`);
   console.log(`DT: e${Math.round(player.dilation.dilatedTime.log10())}`);
   console.log(`TP: e${Math.round(player.dilation.tachyonParticles.log10())}`);
+};
+
+// Temporary balance instrumentation for the Break Infinity long-run tests. The
+// snapshots are deliberately kept out of the save so a run can be measured from
+// the browser console without changing the player state.
+const dominoesTelemetry = {
+  active: false,
+  checkpoints: [],
+  history: [],
+  nextCheckpoint: 0,
+  run: 0,
+  crossedReferenceRate: false,
+  lastGalaxyCount: DC.D0,
+  lastLoggedPeak: DC.D0,
+  eventTarget: {},
+};
+// Clean A-branch rapid peak from the 5e17 acquisition-state master save.
+const DOMINOES_REFERENCE_IP_RATE = new Decimal("1.717e16");
+
+function dominoesTelemetrySnapshot(label) {
+  const infinityTime = Time.thisInfinityRealTime;
+  const gainedIP = gainedInfinityPoints();
+  const baseIP = gainedInfinityPoints(false);
+  const currentIPRate = gainedIP.div(infinityTime.totalMinutes.clampMin(0.0005));
+  const isIC4Running = InfinityChallenge(4).isRunning;
+
+  return {
+    label,
+    infinityTime: format(infinityTime.totalSeconds, 3, 3),
+    antimatter: format(Currency.antimatter.value, 3, 3),
+    baseIP: format(baseIP, 3, 3),
+    dividendMultiplier: formatX(DimensionalDominoes.multiplier, 3, 3),
+    pendingIP: format(gainedIP, 3, 3),
+    currentIPPerMinute: format(currentIPRate, 3, 3),
+    referenceRateRatio: format(currentIPRate.div(DOMINOES_REFERENCE_IP_RATE), 3, 3),
+    peakIPPerMinute: format(player.records.thisInfinity.bestIPmin, 3, 3),
+    peakReferenceRateRatio: format(player.records.thisInfinity.bestIPmin.div(DOMINOES_REFERENCE_IP_RATE), 3, 3),
+    peakAtIP: format(player.records.thisInfinity.bestIPminVal, 3, 3),
+    infinityPower: format(Currency.infinityPower.value, 3, 3),
+    nextDividendThreshold: DimensionalDominoes.hasNextThreshold
+      ? format(DimensionalDominoes.nextThreshold, 3, 3)
+      : "complete",
+    galaxies: format(player.galaxies, 0, 0),
+    ic4DimBoosts: isIC4Running ? format(player.challenge.infinity.dimBoosts ?? DC.D0, 0, 0) : "—",
+    ic4TickspeedCoefficient: isIC4Running ? format(getIC4TickspeedSoftcapCoefficient(), 3, 3) : "—",
+    deepReserve: format(InfinityUpgrade.unspentIPMult.effectOrDefault(DC.D1), 3, 3),
+    temporalTenacity: format(BreakInfinityUpgrade.infinityTimeIDMult.effectOrDefault(DC.D1), 3, 3),
+    sacrificeMultiplier: format(Sacrifice.totalBoost, 3, 3),
+    nextSacrificeMultiplier: format(Sacrifice.nextBoost, 3, 3),
+    id5Stability: formatPow(InfinityDimensions.id5Stability, 3, 3),
+    achievement75Multiplier: formatX(Achievement(75).effectOrDefault(DC.D1).pow(InfinityDimensions.id5Stability), 3, 3),
+  };
+}
+
+dev.logDominoesTelemetry = function(label = "manual") {
+  const snapshot = dominoesTelemetrySnapshot(label);
+  dominoesTelemetry.history.push(snapshot);
+  console.log(`[Dominoes telemetry: ${label}]`, snapshot);
+  return snapshot;
+};
+
+function dominoesTelemetryCell(value) {
+  return String(value).replaceAll("|", "\\|");
+}
+
+dev.getDominoesTelemetryReport = function() {
+  const report = [
+    "| Label | Time | AM | Base IP | Dividend | Final IP | Current IP/min | Ref. ratio | Peak IP/min | Peak ref. ratio | Galaxy | IC4 Dim Boosts | IC4 Tickspeed K | Infinity Power | Next Dividend | Deep Reserve | Temporal | Sacrifice | Next Sacrifice | ID5 stability | Ach #75 |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...dominoesTelemetry.history.map(snapshot => [
+      snapshot.label,
+      snapshot.infinityTime,
+      snapshot.antimatter,
+      snapshot.baseIP,
+      snapshot.dividendMultiplier,
+      snapshot.pendingIP,
+      snapshot.currentIPPerMinute,
+      snapshot.referenceRateRatio,
+      snapshot.peakIPPerMinute,
+      snapshot.peakReferenceRateRatio,
+      snapshot.galaxies,
+      snapshot.ic4DimBoosts,
+      snapshot.ic4TickspeedCoefficient,
+      snapshot.infinityPower,
+      snapshot.nextDividendThreshold,
+      snapshot.deepReserve,
+      snapshot.temporalTenacity,
+      snapshot.sacrificeMultiplier,
+      snapshot.nextSacrificeMultiplier,
+      snapshot.id5Stability,
+      snapshot.achievement75Multiplier,
+    ].map(dominoesTelemetryCell).join(" | ").replace(/^/, "| ").concat(" |")),
+  ].join("\n");
+  console.log(report);
+  return report;
+};
+
+dev.copyDominoesTelemetryReport = async function() {
+  const report = dev.getDominoesTelemetryReport();
+  try {
+    await navigator.clipboard.writeText(report);
+    console.info("Dominoes telemetry report copied to the clipboard.");
+  } catch {
+    console.warn("Clipboard access was unavailable; the Markdown report was printed above instead.");
+  }
+  return report;
+};
+
+dev.setDominoesDividendEnabled = function(enabled = true) {
+  DimensionalDominoes.setEnabledForTesting(enabled);
+  console.info(`Dimensional Dominoes dividend ${enabled ? "enabled" : "disabled"} for this session.`);
+};
+
+function resetDominoesTelemetryCheckpoints() {
+  const elapsedSeconds = Time.thisInfinityRealTime.totalSeconds.toNumber();
+  dominoesTelemetry.nextCheckpoint = dominoesTelemetry.checkpoints
+    .findIndex(checkpoint => checkpoint > elapsedSeconds);
+  if (dominoesTelemetry.nextCheckpoint === -1) {
+    dominoesTelemetry.nextCheckpoint = dominoesTelemetry.checkpoints.length;
+  }
+}
+
+function logDominoesTelemetryCheckpoints() {
+  const elapsedSeconds = Time.thisInfinityRealTime.totalSeconds.toNumber();
+  while (dominoesTelemetry.nextCheckpoint < dominoesTelemetry.checkpoints.length &&
+    elapsedSeconds >= dominoesTelemetry.checkpoints[dominoesTelemetry.nextCheckpoint]) {
+    const checkpoint = dominoesTelemetry.checkpoints[dominoesTelemetry.nextCheckpoint];
+    dev.logDominoesTelemetry(`${checkpoint}s checkpoint (run ${dominoesTelemetry.run})`);
+    dominoesTelemetry.nextCheckpoint += 1;
+  }
+}
+
+function resetDominoesTelemetryEvents() {
+  dominoesTelemetry.crossedReferenceRate = false;
+  dominoesTelemetry.lastGalaxyCount = new Decimal(player.galaxies);
+  dominoesTelemetry.lastLoggedPeak = DC.D0;
+}
+
+function logDominoesTelemetryEvents() {
+  const currentRate = gainedInfinityPoints().div(Time.thisInfinityRealTime.totalMinutes.clampMin(0.0005));
+  if (player.galaxies.gt(dominoesTelemetry.lastGalaxyCount)) {
+    dominoesTelemetry.lastGalaxyCount = new Decimal(player.galaxies);
+    dev.logDominoesTelemetry(`Galaxy ${format(player.galaxies, 0, 0)} reached (run ${dominoesTelemetry.run})`);
+  }
+  if (!dominoesTelemetry.crossedReferenceRate && currentRate.gte(DOMINOES_REFERENCE_IP_RATE)) {
+    dominoesTelemetry.crossedReferenceRate = true;
+    dev.logDominoesTelemetry(`Reference IP/min crossed (run ${dominoesTelemetry.run})`);
+  }
+  const peakRate = player.records.thisInfinity.bestIPmin;
+  if (peakRate.gte(DOMINOES_REFERENCE_IP_RATE) && peakRate.gt(dominoesTelemetry.lastLoggedPeak.times(1.1))) {
+    dominoesTelemetry.lastLoggedPeak = new Decimal(peakRate);
+    dev.logDominoesTelemetry(`New peak above reference (run ${dominoesTelemetry.run})`);
+  }
+}
+
+dev.stopDominoesTelemetry = function() {
+  EventHub.logic.offAll(dominoesTelemetry.eventTarget);
+  dominoesTelemetry.active = false;
+  console.info("Dominoes telemetry stopped.");
+};
+
+dev.startDominoesTelemetry = function(checkpoints = [1, 2, 3, 5, 10, 15, 30, 45, 60, 90, 120, 180, 240, 300, 600]) {
+  dev.stopDominoesTelemetry();
+  dominoesTelemetry.checkpoints = [...new Set(checkpoints)]
+    .filter(checkpoint => Number.isFinite(checkpoint) && checkpoint > 0)
+    .sort((left, right) => left - right);
+  dominoesTelemetry.history = [];
+  dominoesTelemetry.active = true;
+  dominoesTelemetry.run = 1;
+  resetDominoesTelemetryCheckpoints();
+  resetDominoesTelemetryEvents();
+
+  EventHub.logic.on(GAME_EVENT.GAME_TICK_AFTER, () => {
+    logDominoesTelemetryCheckpoints();
+    logDominoesTelemetryEvents();
+  }, dominoesTelemetry.eventTarget);
+  EventHub.logic.on(GAME_EVENT.BIG_CRUNCH_BEFORE, () => {
+    dev.logDominoesTelemetry(`Big Crunch (run ${dominoesTelemetry.run})`);
+  }, dominoesTelemetry.eventTarget);
+  EventHub.logic.on(GAME_EVENT.BIG_CRUNCH_AFTER, () => {
+    dominoesTelemetry.run += 1;
+    resetDominoesTelemetryCheckpoints();
+    resetDominoesTelemetryEvents();
+    dev.logDominoesTelemetry(`run ${dominoesTelemetry.run} start`);
+  }, dominoesTelemetry.eventTarget);
+  EventHub.logic.on(GAME_EVENT.SACRIFICE_RESET_AFTER, () => {
+    dev.logDominoesTelemetry(`Sacrifice (run ${dominoesTelemetry.run})`);
+  }, dominoesTelemetry.eventTarget);
+
+  dev.logDominoesTelemetry(`monitor start (run ${dominoesTelemetry.run})`);
+  console.info(`Dominoes telemetry started; checkpoints: ${dominoesTelemetry.checkpoints.join(", ")} seconds.`);
+};
+
+// Temporary instrumentation for the IC5 reverse Galaxy-ladder probe. Unlike
+// the Dominoes report, this records the state around every Galaxy phase so the
+// next frontier requirement can be tuned from the tier which it just unlocked.
+const ic5Telemetry = {
+  active: false,
+  hasStarted: false,
+  history: [],
+  pendingCheckpoints: [],
+  currentBoostBatch: null,
+  pendingBoostRecovery: false,
+  hasReachedGoal: false,
+  eventTarget: {},
+};
+const IC5_TELEMETRY_CHECKPOINTS = [1, 5, 15, 30, 60, 90, 120];
+
+function ic5TelemetrySeconds() {
+  return Time.thisInfinityRealTime.totalSeconds.toNumber();
+}
+
+function ic5TelemetrySnapshot(label) {
+  const dimensions = AntimatterDimensions.all.map(dimension => ({
+    amount: format(dimension.amount, 3, 3),
+    bought: format(dimension.bought, 0, 0),
+    production: format(dimension.productionPerSecond, 3, 3),
+    multiplier: formatX(dimension.multiplier, 3, 3),
+    nextCost: format(dimension.cost, 3, 3),
+  }));
+  const lowestUnlockedTier = IC5Focus.lowestUnlockedTier;
+  const boostRequirement = DimBoost.requirement;
+  const galaxyRequirement = Galaxy.requirement;
+  const galaxyProgress = AntimatterDimension(galaxyRequirement.tier).totalAmount.max(1);
+
+  return {
+    label,
+    time: format(ic5TelemetrySeconds(), 3, 3),
+    antimatter: format(Currency.antimatter.value, 3, 3),
+    antimatterPerSecond: format(Currency.antimatter.productionPerSecond, 3, 3),
+    galaxies: format(player.galaxies, 0, 0),
+    dimensionBoosts: format(DimBoost.totalBoosts, 0, 0),
+    boostBatch: ic5Telemetry.currentBoostBatch ?? "",
+    frontierBought: format(AntimatterDimension(lowestUnlockedTier).bought, 0, 0),
+    frontierAmount: format(AntimatterDimension(lowestUnlockedTier).totalAmount, 3, 3),
+    nextBoost: `${format(boostRequirement.amount, 0, 0)} AD ${boostRequirement.tier} purchased`,
+    nextGalaxyShortfall: formatX(galaxyRequirement.amount.div(galaxyProgress).max(1), 3, 3),
+    unlockedRange: `AD${lowestUnlockedTier}–AD8`,
+    purchasedTickspeed: format(player.totalTickBought, 0, 0),
+    sacrifice: format(Sacrifice.totalBoost, 3, 3),
+    dimensions,
+  };
+}
+
+dev.logIC5Telemetry = function(label = "manual") {
+  const snapshot = ic5TelemetrySnapshot(label);
+  ic5Telemetry.history.push(snapshot);
+  console.log(`[IC5 telemetry: ${label}]`, snapshot);
+  return snapshot;
+};
+
+function ic5TelemetryCell(value) {
+  return String(value).replaceAll("|", "\\|");
+}
+
+function ic5TelemetryRow(values) {
+  return `| ${values.map(ic5TelemetryCell).join(" | ")} |`;
+}
+
+dev.getIC5TelemetryReport = function() {
+  const summary = [
+    "| Label | Time | AM | AM/s | Galaxy | Dim Boosts | Boost batch | Unlocked range | Frontier bought | Frontier amount | Next Boost | Next Galaxy shortfall | Purchased Tickspeed | Sacrifice |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- | ---: | ---: | ---: |",
+    ...ic5Telemetry.history.map(snapshot => ic5TelemetryRow([
+      snapshot.label,
+      snapshot.time,
+      snapshot.antimatter,
+      snapshot.antimatterPerSecond,
+      snapshot.galaxies,
+      snapshot.dimensionBoosts,
+      snapshot.boostBatch,
+      snapshot.unlockedRange,
+      snapshot.frontierBought,
+      snapshot.frontierAmount,
+      snapshot.nextBoost,
+      snapshot.nextGalaxyShortfall,
+      snapshot.purchasedTickspeed,
+      snapshot.sacrifice,
+    ]),
+  ),
+  ].join("\n");
+  const dimensions = [
+    "| Label | AD | Amount | Bought | Production/s | Multiplier | Next cost |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    ...ic5Telemetry.history.flatMap(snapshot => snapshot.dimensions.map((dimension, index) => ic5TelemetryRow([
+      snapshot.label,
+      index + 1,
+      dimension.amount,
+      dimension.bought,
+      dimension.production,
+      dimension.multiplier,
+      dimension.nextCost,
+    ]))),
+  ].join("\n");
+  const report = `${summary}\n\n${dimensions}`;
+  console.log(report);
+  return report;
+};
+
+dev.copyIC5TelemetryReport = async function() {
+  const report = dev.getIC5TelemetryReport();
+  try {
+    await navigator.clipboard.writeText(report);
+    console.info("IC5 telemetry report copied to the clipboard.");
+  } catch {
+    console.warn("Clipboard access was unavailable; the Markdown report was printed above instead.");
+  }
+  return report;
+};
+
+function logPendingIC5TelemetryCheckpoints() {
+  if (!ic5Telemetry.hasStarted) return;
+  const elapsedSeconds = ic5TelemetrySeconds();
+  while (ic5Telemetry.pendingCheckpoints.length > 0 &&
+    elapsedSeconds >= ic5Telemetry.pendingCheckpoints[0].at) {
+    const checkpoint = ic5Telemetry.pendingCheckpoints.shift();
+    dev.logIC5Telemetry(`${checkpoint.phase} +${checkpoint.seconds}s`);
+  }
+}
+
+function logIC5GoalIfReached() {
+  if (!ic5Telemetry.hasStarted || ic5Telemetry.hasReachedGoal || !InfinityChallenge(5).isRunning) return;
+  if (!Currency.antimatter.value.gte(InfinityChallenge(5).goal)) return;
+  ic5Telemetry.hasReachedGoal = true;
+  dev.logIC5Telemetry("IC5 goal reached");
+}
+
+function logIC5BoostRecoveryTick() {
+  if (!ic5Telemetry.pendingBoostRecovery || !ic5Telemetry.hasStarted) return;
+  ic5Telemetry.pendingBoostRecovery = false;
+  dev.logIC5Telemetry("Dimension Boost +first productive tick");
+}
+
+function startIC5TelemetryIfReady() {
+  if (ic5Telemetry.hasStarted || !InfinityChallenge(5).isRunning) return;
+  ic5Telemetry.hasStarted = true;
+  dev.logIC5Telemetry("IC5 start");
+  queueIC5TelemetryCheckpoints(`Galaxy ${format(player.galaxies, 0, 0)}`);
+}
+
+function queueIC5TelemetryCheckpoints(phase) {
+  const elapsedSeconds = ic5TelemetrySeconds();
+  ic5Telemetry.pendingCheckpoints.push(...IC5_TELEMETRY_CHECKPOINTS.map(seconds => ({
+    phase,
+    seconds,
+    at: elapsedSeconds + seconds,
+  })));
+}
+
+dev.stopIC5Telemetry = function() {
+  EventHub.logic.offAll(ic5Telemetry.eventTarget);
+  ic5Telemetry.active = false;
+  console.info("IC5 telemetry stopped.");
+};
+
+dev.startIC5Telemetry = function() {
+  dev.stopIC5Telemetry();
+  ic5Telemetry.history = [];
+  ic5Telemetry.pendingCheckpoints = [];
+  ic5Telemetry.currentBoostBatch = null;
+  ic5Telemetry.pendingBoostRecovery = false;
+  ic5Telemetry.hasReachedGoal = false;
+  ic5Telemetry.active = true;
+  ic5Telemetry.hasStarted = false;
+
+  EventHub.logic.on(GAME_EVENT.GAME_TICK_AFTER, () => {
+    startIC5TelemetryIfReady();
+    logPendingIC5TelemetryCheckpoints();
+    logIC5GoalIfReached();
+    logIC5BoostRecoveryTick();
+  }, ic5Telemetry.eventTarget);
+  EventHub.logic.on(GAME_EVENT.GALAXY_RESET_BEFORE, () => {
+    if (!ic5Telemetry.hasStarted) return;
+    const nextGalaxy = player.galaxies.add(1);
+    dev.logIC5Telemetry(`Galaxy ${format(nextGalaxy, 0, 0)} before`);
+  }, ic5Telemetry.eventTarget);
+  EventHub.logic.on(GAME_EVENT.GALAXY_RESET_AFTER, () => {
+    if (!ic5Telemetry.hasStarted) return;
+    dev.logIC5Telemetry(`Galaxy ${format(player.galaxies, 0, 0)} +0s`);
+    queueIC5TelemetryCheckpoints(`Galaxy ${format(player.galaxies, 0, 0)}`);
+  }, ic5Telemetry.eventTarget);
+  EventHub.logic.on(GAME_EVENT.DIMBOOST_BEFORE, ([bulk]) => {
+    // Galaxy resets dispatch the same event with a zero Boost. Galaxy has its
+    // own telemetry rows, so retaining this would mislabel reset bookkeeping
+    // as a Boost batch.
+    if (!ic5Telemetry.hasStarted || Decimal.eq(bulk, 0)) return;
+    ic5Telemetry.currentBoostBatch = formatInt(bulk);
+    dev.logIC5Telemetry("Dimension Boost before");
+  }, ic5Telemetry.eventTarget);
+  EventHub.logic.on(GAME_EVENT.DIMBOOST_AFTER, ([bulk]) => {
+    if (!ic5Telemetry.hasStarted || Decimal.eq(bulk, 0)) return;
+    dev.logIC5Telemetry("Dimension Boost +0s");
+    ic5Telemetry.currentBoostBatch = null;
+    ic5Telemetry.pendingBoostRecovery = true;
+  }, ic5Telemetry.eventTarget);
+  EventHub.logic.on(GAME_EVENT.BIG_CRUNCH_BEFORE, () => {
+    if (!ic5Telemetry.hasStarted) return;
+    dev.logIC5Telemetry("Big Crunch");
+  }, ic5Telemetry.eventTarget);
+
+  startIC5TelemetryIfReady();
+  console.info("IC5 telemetry armed; Galaxy samples: before, +0, +1, +5, +15, +30, +60, +90, +120 seconds.");
 };
 
 dev.unlockCelestialQuotes = function(celestial) {

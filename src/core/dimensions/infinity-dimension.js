@@ -4,6 +4,27 @@ import { Fragments } from "../secret-formula/fragments";
 
 import { DimensionState } from "./dimension";
 
+const ID5_UNLOCK_REQUIREMENT = DC.E1500;
+const ID5_INITIAL_COST = DC.E14;
+const ID6_UNLOCK_REQUIREMENT = new Decimal("6.66e6666");
+const ID6_INITIAL_COST = new Decimal("1e66");
+const ID5_SACRIFICE_HINT_REQUIREMENT = new Decimal("2e13");
+const ID5_IP_HINT_REQUIREMENT = DC.E15;
+const ID5_STABILITY_REQUIREMENT = DC.E15;
+const ID5_STABILITY_BASE = DC.E10;
+const ID5_MIN_STABILITY = DC.D0_1;
+
+function id5Stability() {
+  if (BreakInfinityUpgrade.sacrificeAutobuyer.isBought || player.records.thisInfinity.id5StabilityReached) return DC.D1;
+  const progress = Sacrifice.totalBoost.div(ID5_STABILITY_BASE).max(1).log10()
+    .div(ID5_STABILITY_REQUIREMENT.div(ID5_STABILITY_BASE).log10()).clampMax(1);
+  return progress.times(DC.D1.sub(ID5_MIN_STABILITY)).add(ID5_MIN_STABILITY);
+}
+
+function id5AchievementMultiplier() {
+  return Achievement(75).effectOrDefault(DC.D1).pow(id5Stability());
+}
+
 export function infinityDimensionCommonMultiplier() {
   let mult = new Decimal(1)
     .timesEffectsOf(
@@ -11,7 +32,7 @@ export function infinityDimensionCommonMultiplier() {
       TimeStudy(92),
       TimeStudy(162),
       InfinityChallenge(1).reward,
-      InfinityChallenge(6).reward,
+      InfinityChallenge(7).reward,
       EternityChallenge(4).reward,
       EternityChallenge(9).reward,
       EternityUpgrade.idMultEP,
@@ -20,7 +41,9 @@ export function infinityDimensionCommonMultiplier() {
       AlchemyResource.dimensionality,
       ImaginaryUpgrade(8),
       PelleRifts.recursion.milestones[1]
-    );
+    )
+    // Achievement 75 awakens alongside ID5 instead of arriving fully formed.
+    .times(id5AchievementMultiplier());
 
   if (Replicanti.areUnlocked && Replicanti.amount.gt(1)) {
     mult = mult.times(replicantiMult());
@@ -45,19 +68,19 @@ class InfinityDimensionState extends DimensionState {
       DC.E1900,
       DC.E2400,
       DC.E10500,
-      DC.E30000,
-      DC.E45000,
+      ID5_UNLOCK_REQUIREMENT,
+      ID6_UNLOCK_REQUIREMENT,
       DC.E54000,
       DC.E60000,
     ];
     this._unlockRequirement = UNLOCK_REQUIREMENTS[tier];
-    const COST_MULTS = [null, 10, 1e2, 1e3, 1e4, 1e15, 1e20, 1e25, 1e30];
+    const COST_MULTS = [null, 10, 1e2, 1e3, 1e4, DC.E14, 1e20, 1e25, 1e30];
     this._costMultiplier = COST_MULTS[tier];
     // Keep all early Infinity Dimension buy-10 multipliers at the common baseline.
     // Later progression will improve this formula through dedicated upgrades.
     const POWER_MULTS = [null, 5, 5, 5, 5, 5, 5, 5, 5];
     this._powerMultiplier = POWER_MULTS[tier];
-    const BASE_COSTS = [null, 1, 1e2, 1e4, 1e7, 1e140, 1e200, 1e250, 1e280];
+    const BASE_COSTS = [null, 1, 1e2, 1e4, 1e7, ID5_INITIAL_COST, ID6_INITIAL_COST, 1e250, 1e280];
     this._baseCost = new Decimal(BASE_COSTS[tier]);
     this.ipRequirement = BASE_COSTS[1];
   }
@@ -68,6 +91,7 @@ class InfinityDimensionState extends DimensionState {
     // first purchase so cost changes apply to existing saves as well as new games.
     return this.purchases.eq(0) ? this.baseCost : this.data.cost;
   }
+
   /** @param {Decimal} value */
   set cost(value) { this.data.cost = value; }
 
@@ -86,7 +110,29 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get isVisible() {
-    return this.tier <= 4 || InfinityChallenge(8).isCompleted;
+    if (this.tier === 5) return this.antimatterRequirementReached || this.id5HintDiscovered;
+    return this.tier <= 4 || InfinityChallenge(4).isUnlocked;
+  }
+
+  get id5HintDiscovered() {
+    return this.tier === 5 && (player.records.thisEternity.id5SacrificeHint ||
+      player.records.thisEternity.maxIP.gte(ID5_IP_HINT_REQUIREMENT));
+  }
+
+  get unlockHint() {
+    if (this.tier !== 5 || this.isUnlocked || this.antimatterRequirementReached) return "";
+    const hasIPHint = player.records.thisEternity.maxIP.gte(ID5_IP_HINT_REQUIREMENT);
+    const hasSacrificeHint = player.records.thisEternity.id5SacrificeHint;
+    if (hasIPHint && hasSacrificeHint) {
+      return "More Antimatter is needed to unlock a New Dimension.";
+    }
+    if (hasIPHint) {
+      return "Something stirs beyond the known dimensions. Perhaps the power of Sacrifice can reach it.";
+    }
+    if (hasSacrificeHint) {
+      return "The power of Sacrifice has reached a New Dimension.";
+    }
+    return "";
   }
 
   set isUnlocked(value) {
@@ -151,13 +197,15 @@ class InfinityDimensionState extends DimensionState {
     if (EternityChallenge(7).isRunning) {
       production = production.times(Tickspeed.perSecond);
     }
-    return production.times(this.multiplier);
+    production = production.times(this.multiplier);
+    // ID5 and Achievement 75 are deliberately unstable until Sacrifice has built enough power.
+    // The production already created before a later reset of Sacrifice remains in the ID4 amount.
+    return this.tier === 5 ? production.pow(id5Stability()) : production;
   }
 
   get multiplier() {
     const tier = this.tier;
     if (EternityChallenge(11).isRunning) return DC.D1;
-    const formulaAmplifier = BreakInfinityUpgrade.bestIPminAmp.effectOrDefault(DC.D1);
     let mult = GameCache.infinityDimensionCommonMultiplier.value
       .timesEffectsOf(
         tier === 1 ? Achievement(94) : null,
@@ -165,18 +213,19 @@ class InfinityDimensionState extends DimensionState {
         tier === 1 ? EternityChallenge(2).reward : null
       );
     if (tier === 1) {
-      mult = mult.times(BreakInfinityUpgrade.infinitiedMult.effectOrDefault(DC.D1).pow(formulaAmplifier));
+      mult = mult.times(BreakInfinityUpgrade.infinitiedMult.effectOrDefault(DC.D1));
     }
     if (tier === 2) {
-      mult = mult.times(BreakInfinityUpgrade.slowestChallengeMult.effectOrDefault(DC.D1).pow(formulaAmplifier));
+      mult = mult.times(BreakInfinityUpgrade.slowestChallengeMult.effectOrDefault(DC.D1));
     }
     if (tier === 3) {
-      mult = mult.times(BreakInfinityUpgrade.infinityTimeIDMult.effectOrDefault(DC.D1).pow(formulaAmplifier));
+      mult = mult.times(BreakInfinityUpgrade.infinityTimeIDMult.effectOrDefault(DC.D1));
     }
+    if (tier === 4) mult = mult.times(Sacrifice.reflowMultiplier);
     if (BreakInfinityUpgrade.achievementMult.isBought) {
       const tierExponent = 0.8 / (tier * 2.717857142857143);
       const achievementMultiplier = new Decimal(BreakInfinityUpgrade.achievementMult.effectOrDefault(1));
-      mult = mult.times(achievementMultiplier.pow(new Decimal(tierExponent).times(formulaAmplifier)));
+      mult = mult.times(achievementMultiplier.pow(tierExponent));
     }
     mult = mult.times(Decimal.pow(this.powerMultiplier, Decimal.floor(this.baseAmount.div(DC.E1))));
 
@@ -232,9 +281,10 @@ class InfinityDimensionState extends DimensionState {
 
   get powerMultiplier() {
     let multiplier = new Decimal(this._powerMultiplier);
-    if (BreakInfinityUpgrade.idPurchaseCascade.isBought && this.tier >= 2 && this.tier <= 5) {
-      const lowerTierPurchases = InfinityDimension(this.tier - 1).purchases;
-      multiplier = multiplier.times(lowerTierPurchases.add(1).log10().div(50).add(1));
+    // ID1 has no lower tier for the purchase cascade to draw from. IC completions instead
+    // gradually restore its Buy 10 multiplier from x5 to x20.
+    if (this.tier === 1) {
+      multiplier = multiplier.add(1.25 * InfinityChallenges.completed.length);
     }
     return multiplier
       .times(this._tier === 8 ? GlyphInfo.infinity.sacrificeInfo.effect() : new Decimal(1))
@@ -372,10 +422,31 @@ export const InfinityDimensions = {
   all: InfinityDimension.index.compact(),
   HARDCAP_PURCHASES: new Decimal(2000000),
 
+  get id5Stability() {
+    return id5Stability();
+  },
+
+  get id5StabilityRequirement() {
+    return ID5_STABILITY_REQUIREMENT;
+  },
+
+  get isID5StabilityLimited() {
+    return InfinityDimension(5).isUnlocked && this.id5Stability.lt(1);
+  },
+
+  get hasID5StabilityReached() {
+    return !this.isID5PermanentlyStable && InfinityDimension(5).isUnlocked &&
+      player.records.thisInfinity.id5StabilityReached;
+  },
+
+  get isID5PermanentlyStable() {
+    return BreakInfinityUpgrade.sacrificeAutobuyer.isBought;
+  },
+
   get basePurchaseCap() {
     const completions = InfinityChallenges.completed.length;
     if (completions <= 7) {
-      return new Decimal(5 + (20 * completions) / 7).floor();
+      return new Decimal(5 + 3 * completions);
     }
     if (completions <= 11) {
       return Decimal.floor(Decimal.pow(4, (completions - 7) / 4).times(25));
@@ -400,6 +471,7 @@ export const InfinityDimensions = {
 
   resetAmount() {
     Currency.infinityPower.reset();
+    player.records.thisInfinity.id5StabilityReached = false;
     for (const dimension of InfinityDimensions.all) {
       dimension.resetAmount();
     }
@@ -481,3 +553,16 @@ export const InfinityDimensions = {
       .mul(PelleRifts.paradox.milestones[2].effectOrDefault(1));
   }
 };
+
+function recordID5SacrificeHint() {
+  if (Sacrifice.totalBoost.gte(ID5_SACRIFICE_HINT_REQUIREMENT)) {
+    player.records.thisEternity.id5SacrificeHint = true;
+  }
+  if (Sacrifice.totalBoost.gte(ID5_STABILITY_REQUIREMENT)) {
+    player.records.thisInfinity.id5StabilityReached = true;
+  }
+}
+
+EventHub.logic.on(GAME_EVENT.SACRIFICE_RESET_AFTER, recordID5SacrificeHint);
+EventHub.logic.on(GAME_EVENT.GAME_TICK_AFTER, recordID5SacrificeHint);
+EventHub.logic.on(GAME_EVENT.GAME_LOAD, recordID5SacrificeHint);

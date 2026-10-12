@@ -31,6 +31,9 @@ export default {
       isContinuumActive: false,
       multiplierText: "",
       isFullyAutomated: false,
+      id5Stability: new Decimal(1),
+      id5StabilityRequirement: new Decimal(0),
+      isID5StabilityLimited: false,
     };
   },
   computed: {
@@ -94,6 +97,9 @@ export default {
       this.currentSacrifice.copyFrom(Sacrifice.totalBoost);
       this.sacrificeBoost.copyFrom(Sacrifice.nextBoost);
       this.disabledCondition = Sacrifice.disabledCondition;
+      this.id5Stability.copyFrom(InfinityDimensions.id5Stability);
+      this.id5StabilityRequirement.copyFrom(InfinityDimensions.id5StabilityRequirement);
+      this.isID5StabilityLimited = InfinityDimensions.isID5StabilityLimited;
       const sacText = this.isSacrificeUnlocked
         ? ` | Dimensional Sacrifice multiplier: ${formatX(this.currentSacrifice, 2, 2)}`
         : "";
@@ -133,6 +139,11 @@ export default {
       </button>
     </div>
     <span>{{ multiplierText }}</span>
+    <div v-if="isID5StabilityLimited">
+      The 5th Infinity Dimension remains unstable. Its production and Achievement 75 bonus operate at
+      {{ formatPow(id5Stability, 2, 3) }}; Sacrifice dimensions to stabilize it at
+      {{ formatX(id5StabilityRequirement, 2, 2) }}.
+    </div>
     <TickspeedRow />
     <div class="l-dimensions-container">
       <AntimatterDimensionRow

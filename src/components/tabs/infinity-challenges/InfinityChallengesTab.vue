@@ -49,6 +49,10 @@ export default {
       An active Big Crunch Autobuyer will Crunch immediately when
       reaching an Infinity Challenge's antimatter goal, regardless of settings.
     </div>
+    <div>
+      Each completed Infinity Challenge raises Infinity Dimension purchase caps and increases the
+      Power Transfer purchase cap by 5.
+    </div>
     <div>{{ nextAtDisplay }}</div>
     <ChallengeGrid
       v-slot="{ challenge }"

@@ -82,7 +82,6 @@ export default {
 </template>
 
 <style scoped>
-
 .c-break-infinity-ip-mult-group {
   width: 19rem;
 }
@@ -100,5 +99,4 @@ export default {
   border-color: #78c9f2;
   box-shadow: inset 0 0 0.8rem #6ecbff55;
 }
-
 </style>

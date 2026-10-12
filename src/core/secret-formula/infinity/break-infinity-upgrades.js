@@ -1,5 +1,8 @@
 import { DC } from "../../constants";
 
+const PEAK_PERFORMANCE_SACRIFICE_DRAIN_RATE = new Decimal(0.25);
+const PEAK_PERFORMANCE_ID4_REFLOW_RATE = new Decimal(0.25);
+
 function rebuyable(config) {
   const effectFunction = config.effect || (x => x);
   const { id, maxUpgrades, name, description, isDisabled, noLabel, onPurchased } = config;
@@ -40,7 +43,7 @@ function nyi(description, cost = DC.D0, showCost = false) {
 
 function infinityIPMultiplier() {
   const progress = Currency.infinitiesTotal.value.max(1).log10().div(Math.log10(2e6));
-  if (progress.lte(1)) return Decimal.pow10(progress.pow(2).times(4));
+  if (progress.lte(1)) return Decimal.pow10(progress.times(4));
   const postSoftcapExponent = 4 + 2 * (1 - Math.exp(-2 * progress.sub(1).toNumber()));
   return Decimal.pow10(postSoftcapExponent);
 }
@@ -59,7 +62,7 @@ export const breakInfinityUpgrades = {
     cost: DC.E4.mul(5),
     name: "Present Power",
     description: "1st Antimatter Dimension gains a multiplier based on current antimatter",
-    effect: () => Decimal.pow(Currency.antimatter.value.max(1).log10().add(1), 3),
+    effect: () => Decimal.pow(Currency.antimatter.value.max(1).log10().add(1), 3.5),
     formatEffect: value => formatX(value, 2, 2)
   },
   averageAMMult: {
@@ -70,7 +73,7 @@ export const breakInfinityUpgrades = {
     effect: () => {
       const total = player.records.thisInfinity.totalAntimatter ?? DC.D0;
       const average = total.div(Time.thisInfinity.totalSeconds.max(1));
-      return Decimal.pow(average.max(1).log10().add(1), 2);
+      return Decimal.pow(average.max(1).log10().add(1), 2.25);
     },
     formatEffect: value => formatX(value, 2, 2)
   },
@@ -81,7 +84,7 @@ export const breakInfinityUpgrades = {
     description: "Gain free Tickspeed based on your best antimatter from past Infinities",
     effect: () => {
       const bestAM = (player.records.bestInfinity.maxAM ?? DC.D0).max(1);
-      const rawTickspeed = bestAM.log10().div(Decimal.log10(Decimal.pow(2, 1024)));
+      const rawTickspeed = bestAM.log10().div(Decimal.log10(Decimal.pow(2, 256)));
       const softcapped = rawTickspeed.lte(308)
         ? rawTickspeed
         : new Decimal(308).times(rawTickspeed.div(308).sqrt());
@@ -91,7 +94,7 @@ export const breakInfinityUpgrades = {
   },
   previousAMSacrifice: {
     id: "previousAMSacrifice",
-    cost: DC.E7,
+    cost: DC.E10,
     name: "Back 2 Back",
     description: "Sacrificed Dimensions are strengthened based on antimatter from your previous Infinity",
     effect: () => Decimal.pow((player.records.bestInfinity.lastAM ?? DC.D0).max(1).log10().add(1), 24),
@@ -100,17 +103,18 @@ export const breakInfinityUpgrades = {
   },
   galaxyBoost: {
     id: "postGalaxy",
-    cost: DC.E15,
+    cost: new Decimal("6.66e13"),
+    formatCost: () => "6.66e13",
     name: "Galaxy Glitch",
     scrambleName: true,
-    description: "All Galaxies are 50% stronger.",
-    effect: 1.5
+    description: "All Galaxies are 66.6% stronger.",
+    effect: 5 / 3
   },
   infinitiedMult: {
     id: "infinitiedMult",
     cost: new Decimal("5e9"),
     name: "Infinite Impact",
-    description: "Infinity Dimension 1 gains a multiplier based on total Infinities",
+    description: "1st Infinity Dimension gains a multiplier based on total Infinities",
     effect: () => {
       const infinities = Currency.infinitiesTotal.value.max(1);
       const exponent = Math.min(infinities.log10().toNumber() / 4, 1) * 0.75;
@@ -130,7 +134,7 @@ export const breakInfinityUpgrades = {
     id: "challengeMult",
     cost: new Decimal("2e11"),
     name: "Challenge Chronometer",
-    description: "Infinity Dimension 2 gains a multiplier based on total NC completion time",
+    description: "2nd Infinity Dimension gains a multiplier based on total NC completion time",
     effect: () => Decimal.clampMin(
       new Decimal(500).div(Time.challengeSum.totalMinutes).sub(1).div(10).add(1),
       1
@@ -143,20 +147,36 @@ export const breakInfinityUpgrades = {
     id: "infinityTimeIDMult",
     cost: DC.E15,
     name: "Temporal Tenacity",
-    description: "Infinity Dimension 3 gains a multiplier based on this Infinity's time",
-    effect: () => Time.thisInfinity.totalSeconds.times(0.01).add(1),
+    description: "3rd Infinity Dimension gains a rapidly increasing multiplier based on this Infinity's time",
+    effect: () => {
+      const seconds = Time.thisInfinity.totalSeconds;
+      const halfHour = 30 * 60;
+      if (seconds.lte(halfHour)) return seconds.times(0.05).add(1);
+      if (seconds.lte(2 * 60 * 60)) {
+        const elapsed = seconds.sub(halfHour);
+        const secondStage = Decimal.min(elapsed, halfHour);
+        const thirdStage = Decimal.min(elapsed.sub(halfHour).max(0), halfHour);
+        const fourthStage = elapsed.sub(2 * halfHour).max(0);
+        return new Decimal(91).add(secondStage.times(0.04)).add(thirdStage.times(0.03)).add(fourthStage.times(0.02));
+      }
+      const elapsed = seconds.sub(2 * 60 * 60);
+      // This begins at x253 after two hours and reaches x2000 after a further six hours.
+      const acceleration = 1315 / (6 * 60 * 60) ** 2;
+      return new Decimal(253).add(elapsed.times(0.02)).add(elapsed.pow(2).times(acceleration));
+    },
     formatEffect: value => formatX(value, 2, 2)
   },
   bestIPminAmp: {
     id: "bestIPminAmp",
     cost: DC.E20,
     name: "Peak Performance",
-    description: "Amplify Formula upgrades based on your best Infinity Points per minute",
-    effect: () => {
-      const bestIPmin = (player.records.bestInfinity.bestIPminEternity ?? DC.D0).max(2);
-      return bestIPmin.log2().max(1).log2().div(40).add(1);
-    },
-    formatEffect: value => formatPow(value, 3, 3)
+    description: "Divert Sacrifice power above ×1e10 from AD8 to ID4",
+    // The accepted reflow moves equal logarithmic strength from AD8 to ID4.
+    sacrificeDrainRate: PEAK_PERFORMANCE_SACRIFICE_DRAIN_RATE,
+    id4ReflowRate: PEAK_PERFORMANCE_ID4_REFLOW_RATE,
+    effect: PEAK_PERFORMANCE_ID4_REFLOW_RATE,
+    formatEffect: () => `${formatPercents(PEAK_PERFORMANCE_SACRIFICE_DRAIN_RATE, 0)} diverted; ` +
+      `${formatPercents(PEAK_PERFORMANCE_ID4_REFLOW_RATE, 0)} returned to ID4`
   },
   infinitiedGen: {
     id: "infinitiedGeneration",
@@ -181,7 +201,7 @@ export const breakInfinityUpgrades = {
   },
   autobuyMaxDimboosts: {
     id: "autobuyMaxDimboosts",
-    cost: new Decimal(5e9),
+    cost: new Decimal(2e9),
     name: "Boost Batch",
     description: "Unlock the buy max Dimension Boost Autobuyer mode"
   },
@@ -192,15 +212,15 @@ export const breakInfinityUpgrades = {
     scrambleName: true,
     nameCycle: ["DORMANT GALAXY", "STIRRING GALAXY", "WAKING GALAXY"],
     description: () => (BreakInfinityUpgrade.galaxyFormula.isBought
-      ? "Antimatter Galaxies are improved."
+      ? "Antimatter Galaxies are awakening. Their effect on Tickspeed now scales exponentially."
       : "Antimatter Galaxies are *."),
     scrambleText: ["i̸m̷p̶r̸o̵v̴e̶d̴", "c̸o̷r̶r̷u̶p̸t̸e̵d̶", "u̷n̸s̶e̵a̴l̴e̵d̶", "???"]
   },
   idPurchaseCascade: {
     id: "idPurchaseCascade",
-    cost: DC.E20,
-    name: "Dimensional Dominoes",
-    description: "Purchases of lower Infinity Dimensions improve higher-tier Buy 10 multipliers",
+    cost: new Decimal("5e14"),
+    name: "Dimensional Dividend",
+    description: "Infinity Power builds a dividend which multiplies Infinity Points gained on Big Crunch.",
     hideEffect: true
   },
   achievementFormula: {
@@ -213,7 +233,7 @@ export const breakInfinityUpgrades = {
   },
   infinityIPMult: {
     id: "infinityIPMult",
-    cost: DC.E8,
+    cost: DC.E7,
     name: "Infinite Interest",
     description: "Infinity Point gain increases based on total Infinities",
     effect: () => infinityIPMultiplier(),
@@ -227,13 +247,13 @@ export const breakInfinityUpgrades = {
   },
   sacrificeAutobuyer: {
     id: "sacrificeAutobuyer",
-    cost: new Decimal("2e16"),
+    cost: DC.E28,
     name: "Sacrificial Servant",
     description: "Unlock the Dimensional Sacrifice Autobuyer"
   },
   galaxyBulk: {
     id: "galaxyBulk",
-    cost: new Decimal("5e25"),
+    cost: DC.E45,
     name: "Galactic Gathering",
     description: "Unlock bulk Antimatter Galaxy purchases"
   },
@@ -255,7 +275,7 @@ export const breakInfinityUpgrades = {
     id: 1,
     initialCost: new Decimal(1e7),
     name: "Dimensional Economy",
-    costIncrease: new Decimal(5e3),
+    costIncrease: new Decimal(100),
     maxUpgrades: new Decimal(7),
     description: "Reduce post-infinity Antimatter Dimension cost multiplier scaling",
     afterEC: () => (EternityChallenge(6).completions > 0
@@ -270,7 +290,7 @@ export const breakInfinityUpgrades = {
     initialCost: new Decimal(1e7),
     name: "Idle Income",
     costIncrease: DC.E1,
-    maxUpgrades: DC.E1,
+    maxUpgrades: DC.D20,
     effect: value => Player.bestRunIPPM.times(value.div(20)),
     description: () => {
       let generation = `Generate ${format(player.infinityRebuyables[2].mul(5))}%`;
@@ -283,6 +303,20 @@ export const breakInfinityUpgrades = {
     formatEffect: value => `${format(value, 2, 1)} IP/min`,
     noLabel: false
   }),
+  criticalIdleIncome: {
+    id: "criticalIdleIncome",
+    cost: DC.E20,
+    name: "Critical Idle Income",
+    isAvailableForPurchase: () => BreakInfinityUpgrade.ipGen.isCapped,
+    description: () => {
+      if (CriticalIdleIncome.isActive) {
+        return `Idle Income is ${format(CriticalIdleIncome.multiplier.times(100), 2, 2)}% for
+          ${TimeSpan.fromMilliseconds(CriticalIdleIncome.remaining).toStringShort()}`;
+      }
+      return "Every 700 seconds, roll 1d20. On a natural 20, Idle Income is 7.77 times stronger for 7 seconds";
+    },
+    hideEffect: true
+  },
   idRate: {
     rebuyable: true,
     id: 3,
@@ -290,13 +324,13 @@ export const breakInfinityUpgrades = {
     maxUpgrades: DC.D68,
     cost: () => {
       const purchases = (player.infinityRebuyables[3] ?? DC.D0).toNumber();
-      const stage = purchases < 8 ? 0 : Math.floor((purchases - 8) / 5) + 1;
-      let exponent = 5;
-      for (let index = 0; index <= stage; index++) {
-        const start = index === 0 ? 0 : 8 + 5 * (index - 1);
-        const capacity = index === 0 ? 8 : 5;
-        const stagePurchases = Math.clamp(purchases - start, 0, capacity);
-        exponent += stagePurchases * Math.log10(15 * 2 ** index);
+      const initialPurchases = Math.min(purchases, 7);
+      let exponent = 5 + initialPurchases * Math.log10(5);
+      let remainingPurchases = Math.max(purchases - 7, 0);
+      for (let stage = 1; remainingPurchases > 0; stage++) {
+        const stagePurchases = Math.min(remainingPurchases, 5);
+        exponent += stagePurchases * Math.log10(5 * (stage + 1));
+        remainingPurchases -= stagePurchases;
       }
       return Decimal.pow10(exponent);
     },
@@ -310,7 +344,7 @@ export const breakInfinityUpgrades = {
       const cap = 8 + 5 * Math.min(InfinityChallenges.completed.length, 12);
       return purchases.gte(cap);
     },
-    effect: value => DC.D0_1.times(value),
+    effect: () => DC.D0_1.times(player.infinityRebuyables[3] ?? DC.D0),
     description: "Increase Infinity Power conversion exponent by 0.1",
     formatEffect: value => {
       const cap = DC.D0_1.times(8 + 5 * Math.min(InfinityChallenges.completed.length, 12));

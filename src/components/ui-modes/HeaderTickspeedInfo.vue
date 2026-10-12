@@ -20,8 +20,6 @@ export default {
       return `Total Tickspeed: ${format(this.tickspeed, 2, 3)} / sec`;
     },
     perUpgrade() {
-      if (InfinityChallenge(3).isRunning) return `Tickspeed upgrades give
-        ${formatX(this.galaxyCount.times(0.005).add(1.05))} to all ADs`;
       return `ADs produce ${formatX(this.mult.reciprocal(), 2, 3)} faster per Tickspeed upgrade`;
     },
   },
@@ -31,7 +29,7 @@ export default {
       this.tickspeed.copyFrom(Tickspeed.perSecond);
       this.galaxyCount.copyFrom(player.galaxies);
       this.purchasedTickspeed.copyFrom(player.totalTickBought);
-      this.freeTickspeed.copyFrom(FreeTickspeed.amount);
+      this.freeTickspeed.copyFrom(player.totalTickGained.plusEffectOf(BreakInfinityUpgrade.bestAMTickspeed));
     },
   },
 };

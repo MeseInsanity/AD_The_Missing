@@ -1,6 +1,10 @@
 import { DC } from "./constants";
 
 export class Sacrifice {
+  static get hasImprovedFormula() {
+    return InfinityChallenge(2).isCompleted || InfinityChallenge(2).isRunning;
+  }
+
   // This is tied to the "buying an 8th dimension" achievement in order to hide it from new players before they reach
   // sacrifice for the first time.
   static get isVisible() {
@@ -8,7 +12,8 @@ export class Sacrifice {
   }
 
   static get canSacrifice() {
-    return DimBoost.purchasedBoosts.gt(4) && !EternityChallenge(3).isRunning && this.nextBoost.gt(1) &&
+    const requiredBoosts = 5;
+    return DimBoost.purchasedBoosts.gte(requiredBoosts) && !EternityChallenge(3).isRunning && this.nextBoost.gt(1) &&
       AntimatterDimension(8).totalAmount.gt(0) && Currency.antimatter.lt(Player.infinityLimit) &&
       !Enslaved.isRunning;
   }
@@ -16,7 +21,10 @@ export class Sacrifice {
   static get disabledCondition() {
     if (NormalChallenge(12).isRunning) return "8th Dimensions are disabled";
     if (EternityChallenge(3).isRunning) return "Eternity Challenge 3";
-    if (DimBoost.purchasedBoosts.lt(5)) return `Requires ${formatInt(5)} Dimension Boosts`;
+    const requiredBoosts = 5;
+    if (DimBoost.purchasedBoosts.lt(requiredBoosts)) {
+      return `Requires ${formatInt(requiredBoosts)} Dimension Boosts`;
+    }
     if (AntimatterDimension(8).totalAmount.eq(0)) return "No 8th Antimatter Dimensions";
     if (this.nextBoost.lte(1)) return `${formatX(1)} multiplier`;
     if (Player.isInAntimatterChallenge) return "Challenge goal reached";
@@ -28,7 +36,7 @@ export class Sacrifice {
     let factor = 2;
     let places = 1;
     let base = `(log₁₀(AD1)/${formatInt(10)})`;
-    if (f("InfinityChallenge2isCompleted", InfinityChallenge(2).isCompleted)) {
+    if (f("InfinityChallenge2isCompleted", this.hasImprovedFormula)) {
       factor = 1 / 120;
       places = 3;
       base = "AD1";
@@ -53,7 +61,7 @@ export class Sacrifice {
   static get sacrificeExponent() {
     let base;
     // Pre-Reality this was 100; having ach32/57 results in 1.2x, which is brought back in line by changing to 120
-    if (InfinityChallenge(2).isCompleted) base = DC.D1.div(120);
+    if (this.hasImprovedFormula) base = DC.D1.div(120);
     else base = DC.D2;
 
     // All the factors which go into the multiplier have to combine this way in order to replicate legacy behavior
@@ -76,7 +84,7 @@ export class Sacrifice {
     if (sacrificedDimensions.eq(0)) return DC.D1;
     const sacrificed = sacrificedDimensions.clampMin(1);
     let prePowerSacrificeMult;
-    if (InfinityChallenge(2).isCompleted) {
+    if (this.hasImprovedFormula) {
       prePowerSacrificeMult = AntimatterDimension(1).amount.plus(sacrificed).dividedBy(sacrificed);
     } else {
       prePowerSacrificeMult = new Decimal(
@@ -93,7 +101,7 @@ export class Sacrifice {
     if (NormalChallenge.isRuleBreaking) tickspeedSacrifice = tickspeedSacrifice.pow(DC.D0_5);
     let prePowerBoost;
 
-    if (InfinityChallenge(2).isCompleted) {
+    if (this.hasImprovedFormula) {
       prePowerBoost = sacrificed.times(tickspeedSacrifice);
     } else {
       // This is equivalent to applying Total Tickspeed to AD1 when sacrificing: it contributes log10(Tickspeed)
@@ -106,6 +114,24 @@ export class Sacrifice {
 
   static get totalBoost() {
     return this.totalBoostFor(player.sacrificed);
+  }
+
+  static reflowFactor(rate) {
+    if (rate.eq(0)) return DC.D1;
+    const transferablePower = this.totalBoost.div(DC.E10).clampMin(1);
+    return transferablePower.pow(rate);
+  }
+
+  static get reflowDrainMultiplier() {
+    const upgrade = BreakInfinityUpgrade.bestIPminAmp;
+    if (!upgrade.isBought) return DC.D1;
+    return this.reflowFactor(upgrade.config.sacrificeDrainRate ?? DC.D0);
+  }
+
+  static get reflowMultiplier() {
+    const upgrade = BreakInfinityUpgrade.bestIPminAmp;
+    if (!upgrade.isBought) return DC.D1;
+    return this.reflowFactor(upgrade.config.id4ReflowRate ?? DC.D0);
   }
 }
 

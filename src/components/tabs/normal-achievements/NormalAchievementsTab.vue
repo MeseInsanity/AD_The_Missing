@@ -13,6 +13,8 @@ export default {
   data() {
     return {
       achievementPower: 0,
+      infinityAchievementPower: new Decimal(1),
+      isID5PermanentlyStable: false,
       achTPEffect: 0,
       achCountdown: new Decimal(),
       totalCountdown: new Decimal(),
@@ -41,11 +43,13 @@ export default {
 
       const boostList = [];
 
-      const dimMultList = [];
-      dimMultList.push("Antimatter");
-      if (this.achMultToIDS) dimMultList.push("Infinity");
+      const dimMultList = ["Antimatter"];
+      if (this.achMultToIDS && this.isID5PermanentlyStable) dimMultList.push("Infinity");
       if (this.achMultToTDS) dimMultList.push("Time");
       boostList.push(`${makeEnumeration(dimMultList)} Dimensions: ${achievementPower}`);
+      if (this.achMultToIDS && !this.isID5PermanentlyStable) {
+        boostList.push(`Infinity Dimensions: ${formatX(this.infinityAchievementPower, 2, 3)}`);
+      }
 
       if (this.achMultToTP) boostList.push(`Tachyon Particles: ${achTPEffect}`);
       if (this.achMultToBH) boostList.push(`Black Hole Power: ${achievementPower}`);
@@ -72,6 +76,9 @@ export default {
     update() {
       const gameSpeedupFactor = getGameSpeedupFactor();
       this.achievementPower = Achievements.power;
+      this.infinityAchievementPower.copyFrom(
+        Achievement(75).effectOrDefault(new Decimal(1)).pow(InfinityDimensions.id5Stability)
+      );
       this.achTPEffect = RealityUpgrade(8).config.effect();
       this.achCountdown = Achievements.timeToNextAutoAchieve.div(gameSpeedupFactor);
       this.totalCountdown = (new Decimal((Achievements.preReality.countWhere(a => !a.isUnlocked)))
@@ -83,6 +90,7 @@ export default {
       this.hideCompletedRows = player.options.hideCompletedAchievementRows;
       this.achMultBreak = BreakInfinityUpgrade.achievementMult.canBeApplied;
       this.achMultToIDS = Achievement(75).isUnlocked;
+      this.isID5PermanentlyStable = InfinityDimensions.isID5PermanentlyStable;
       this.achMultToTDS = EternityUpgrade.tdMultAchs.isBought;
       this.achMultToTP = RealityUpgrade(8).isBought;
       this.achMultToBH = VUnlocks.achievementBH.canBeApplied;

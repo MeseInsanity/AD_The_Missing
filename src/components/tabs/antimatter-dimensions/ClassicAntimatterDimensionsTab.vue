@@ -26,7 +26,10 @@ export default {
       buy10Mult: new Decimal(0),
       currentSacrifice: new Decimal(0),
       hasRealityButton: false,
-      multiplierText: ""
+      multiplierText: "",
+      id5Stability: new Decimal(1),
+      id5StabilityRequirement: new Decimal(0),
+      isID5StabilityLimited: false,
     };
   },
   methods: {
@@ -39,6 +42,9 @@ export default {
       this.buy10Mult.copyFrom(AntimatterDimensions.buyTenMultiplier);
       this.currentSacrifice.copyFrom(Sacrifice.totalBoost);
       this.hasRealityButton = PlayerProgress.realityUnlocked() || TimeStudy.reality.isBought;
+      this.id5Stability.copyFrom(InfinityDimensions.id5Stability);
+      this.id5StabilityRequirement.copyFrom(InfinityDimensions.id5StabilityRequirement);
+      this.isID5StabilityLimited = InfinityDimensions.isID5StabilityLimited;
       const sacText = this.isSacrificeUnlocked
         ? ` | Dimensional Sacrifice multiplier: ${formatX(this.currentSacrifice, 2, 2)}`
         : "";
@@ -55,6 +61,11 @@ export default {
   <div class="l-old-ui-antimatter-dim-tab">
     <AntimatterDimensionsTabHeader />
     {{ multiplierText }}
+    <div v-if="isID5StabilityLimited">
+      The 5th Infinity Dimension remains unstable. Its production and Achievement 75 bonus operate at
+      {{ formatPow(id5Stability, 2, 3) }}; Sacrifice dimensions to stabilize it at
+      {{ formatX(id5StabilityRequirement, 2, 2) }}.
+    </div>
     <TickspeedRow />
     <div class="l-dimensions-container">
       <AntimatterDimensionRow

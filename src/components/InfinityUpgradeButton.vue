@@ -17,6 +17,10 @@ export default {
     upgrade: {
       type: Object,
       required: true
+    },
+    replacementUpgrade: {
+      type: Object,
+      default: undefined
     }
   },
   data() {
@@ -38,8 +42,13 @@ export default {
     };
   },
   computed: {
+    displayedUpgrade() {
+      return this.replacementUpgrade && this.upgrade.isCapped
+        ? this.replacementUpgrade
+        : this.upgrade;
+    },
     isBasedOnInfinities() {
-      return /(18|27|36|45)Mult/u.test(this.upgrade.id) || this.upgrade.id === "infinitiedMult";
+      return /(18|27|36|45)Mult/u.test(this.displayedUpgrade.id) || this.displayedUpgrade.id === "infinitiedMult";
     },
     shiftDown() {
       return ui.view.shiftDown;
@@ -48,10 +57,15 @@ export default {
       return this.chargePossible && (this.isCharged || this.showingCharged || this.shiftDown);
     },
     config() {
-      const config = this.upgrade.config;
+      const config = this.displayedUpgrade.config;
       return this.showChargedEffect
         ? config.charged
         : config;
+    },
+    effectConfig() {
+      return this.displayedUpgrade.id === "criticalIdleIncome" && this.displayedUpgrade.isBought
+        ? this.upgrade.config
+        : this.config;
     },
     classObject() {
       return {
@@ -64,6 +78,7 @@ export default {
         "o-infinity-upgrade-btn--chargeable": !this.isCharged && this.chargePossible &&
           (this.showingCharged || this.shiftDown),
         "o-infinity-upgrade-btn--charged": this.isCharged,
+        "o-infinity-upgrade-btn--critical-idle-income": this.displayedUpgrade.id === "criticalIdleIncome",
         "o-pelle-disabled-pointer": this.isUseless
       };
     },
@@ -76,7 +91,7 @@ export default {
       // Note that this component is used by both infinity upgrades and break infinity upgrades
       // (putting this comment here rather than at the top of the component since this function
       // seems more likely to be read).
-      const upgrade = this.upgrade;
+      const upgrade = this.displayedUpgrade;
       this.isBought = upgrade.isBought || upgrade.isCapped;
       this.chargePossible = Ra.unlocks.chargedInfinityUpgrades.canBeApplied &&
         upgrade.hasChargeEffect && !Pelle.isDoomed;
@@ -107,7 +122,7 @@ export default {
       if (upgrade.id !== "challengeMult") return;
       this.showChallengeTime = upgrade.effectValue !== upgrade.cap &&
         player.challenge.normal.bestTimes.sum().lt(Number.MAX_VALUE);
-      this.challengeTimeString = `(Total NC time: ${timeDisplayShort(GameCache.challengeTimeSum.value)})`;
+      this.challengeTimeString = `(Total Time: ${timeDisplayShort(GameCache.challengeTimeSum.value)})`;
     }
   }
 };
@@ -118,7 +133,7 @@ export default {
     :class="classObject"
     @mouseenter="showingCharged = canBeCharged"
     @mouseleave="showingCharged = false"
-    @click="upgrade.purchase()"
+    @click="displayedUpgrade.purchase()"
   >
     <HintText
       v-if="displayName"
@@ -140,9 +155,9 @@ export default {
         {{ challengeTimeString }}
       </span>
       <EffectDisplay
-        v-if="!isDisabled && !config.hideEffect"
+        v-if="!isDisabled && !effectConfig.hideEffect"
         br
-        :config="config"
+        :config="effectConfig"
       />
       <template v-if="!isDisabled && isImprovedByTS31">
         <br>
@@ -166,7 +181,6 @@ export default {
 </template>
 
 <style scoped>
-
 .o-infinity-upgrade-btn {
   position: relative;
 }
@@ -179,38 +193,73 @@ export default {
 }
 
 .o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--available {
-  color: #f2fbff;
-  background-color: #15527a;
-  border-color: #6ecbff;
-  box-shadow: inset 0 0 1rem #61c6ff66, 0 0 0.35rem #4ca9dc44;
+  color: #f5fcff;
+  background-color: #12628f;
+  border-color: #83d9ff;
+  box-shadow: inset 0 0 1.1rem #71d3ff88, 0 0 0.45rem #56c5ff66;
 }
 
 .o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--available:hover {
   color: #fff;
-  background-color: #237eae;
-  box-shadow: inset 0 0 1.2rem #8cdbff88, 0 0 0.6rem #62c5ff77;
+  background-color: #1a83bb;
+  box-shadow: inset 0 0 1.3rem #9be2ffbb, 0 0 0.7rem #62c5ffaa;
 }
 
 .o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--unavailable {
-  color: #7696a7;
-  background-color: #071724;
-  border-color: #1c4561;
+  color: #81909a;
+  background-color: #151c21;
+  border-color: #35434c;
+  box-shadow: inset 0 0 0.5rem #53616a22;
 }
 
 .o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--unavailable:hover {
-  color: #d9f3ff;
-  background-color: #123c5a;
+  color: #b8c6cd;
+  background-color: #26333a;
 }
 
 .o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--bought {
-  color: #f0fbff;
-  background-color: #17638d;
-  border-color: #78c9f2;
-  box-shadow: inset 0 0 1rem #76cfff55;
+  color: #a9c6d4;
+  background-color: #12384e;
+  border-color: #31637a;
+  box-shadow: inset 0 0 0.7rem #3c789933;
 }
 
 .o-infinity-upgrade-btn.c-break-infinity-upgrade-grid__cell--standard.o-infinity-upgrade-btn--bought:hover {
-  background-color: #2079a8;
+  background-color: #12384e;
+}
+
+.o-infinity-upgrade-btn:is(.c-break-infinity-upgrade-grid__cell--standard):is(
+  .o-infinity-upgrade-btn--critical-idle-income
+) {
+  color: #fff3c4;
+  background-color: #49380d;
+  border-color: #d5a630;
+  box-shadow: inset 0 0 0.9rem #dcae2877, 0 0 0.5rem #e7b82c55;
+}
+
+.o-infinity-upgrade-btn:is(.c-break-infinity-upgrade-grid__cell--standard):is(
+  .o-infinity-upgrade-btn--critical-idle-income
+):is(.o-infinity-upgrade-btn--available) {
+  color: #fffbe8;
+  background-color: #9a6810;
+  border-color: #ffdd6b;
+  box-shadow: inset 0 0 1.2rem #ffe078bb, 0 0 0.85rem #f3ba32cc;
+}
+
+.o-infinity-upgrade-btn:is(.c-break-infinity-upgrade-grid__cell--standard):is(
+  .o-infinity-upgrade-btn--critical-idle-income
+):is(.o-infinity-upgrade-btn--available):hover {
+  background-color: #bd8618;
+  box-shadow: inset 0 0 1.4rem #ffed9dcc, 0 0 1.1rem #ffd65baa;
+}
+
+.o-infinity-upgrade-btn:is(.c-break-infinity-upgrade-grid__cell--standard):is(
+  .o-infinity-upgrade-btn--critical-idle-income
+):is(.o-infinity-upgrade-btn--bought) {
+  color: #ead98a;
+  background-color: #473c1c;
+  border-color: #9f8434;
+  box-shadow: inset 0 0 0.8rem #c7a44455;
 }
 
 .c-infinity-upgrade-btn__name--forbidden-galaxy {
@@ -221,5 +270,4 @@ export default {
 .o-infinity-upgrade-btn__nyi {
   color: #ff8080;
 }
-
 </style>

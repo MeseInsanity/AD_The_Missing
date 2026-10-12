@@ -1533,6 +1533,36 @@ export const devMigrations = {
     player => {
       player.options.lightGlyphs = !player.options.forceDarkGlyphs;
       delete player.options.forceDarkGlyphs;
+    },
+    player => {
+      if (player.records.thisEternity.id5SacrificeHint === undefined) {
+        player.records.thisEternity.id5SacrificeHint = false;
+      }
+      if (player.records.thisInfinity.id5StabilityReached === undefined) {
+        player.records.thisInfinity.id5StabilityReached = false;
+      }
+    },
+    player => {
+      // ID5's early-Break cost scaling changed from x1e15 to x1e14. Its next cost
+      // is persisted, so recompute it from bought ID5 purchases for existing saves.
+      const id5 = player.dimensions.infinity[4];
+      if (!id5) return;
+      const purchases = new Decimal(id5.baseAmount).div(10);
+      id5.cost = new Decimal("1e14").times(Decimal.pow("1e14", purchases));
+    },
+    migrations.shiftInfinityChallengeIds,
+    player => {
+      player.challenge.infinity.dimBoosts = new Decimal(0);
+    },
+    player => {
+      player.challenge.infinity.focusTier = 1;
+    },
+    player => {
+      player.challenge.infinity.ic5AchievementTier = 0;
+      player.achievementBits[7] &= ~1;
+    },
+    player => {
+      player.criticalIdleIncome ??= { elapsed: 0, remaining: 0 };
     }
   ],
 

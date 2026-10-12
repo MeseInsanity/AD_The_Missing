@@ -1,7 +1,8 @@
 <script>
+import IpMultiplierButton from "../infinity-upgrades/IpMultiplierButton";
+
 import BreakInfinityButton from "./BreakInfinityButton";
 import InfinityUpgradeButton from "@/components/InfinityUpgradeButton";
-import IpMultiplierButton from "../infinity-upgrades/IpMultiplierButton";
 
 export default {
   name: "BreakInfinityTab",
@@ -96,6 +97,11 @@ export default {
         "c-break-infinity-upgrade-grid__cell--standard": true
       };
     },
+    replacementUpgrade(upgrade) {
+      return upgrade === BreakInfinityUpgrade.ipGen
+        ? BreakInfinityUpgrade.criticalIdleIncome
+        : undefined;
+    },
     timeDisplayShort(time) {
       return timeDisplayShort(time);
     }
@@ -141,6 +147,7 @@ export default {
             v-for="upgrade in row.upgrades"
             :key="upgrade.id"
             :upgrade="upgrade"
+            :replacement-upgrade="replacementUpgrade(upgrade)"
             :class="btnClassObject(columnId, upgrade)"
           />
         </div>
@@ -150,7 +157,6 @@ export default {
 </template>
 
 <style scoped>
-
 .c-break-infinity-upgrade-grid__row {
   display: flex;
   position: relative;
@@ -221,5 +227,4 @@ export default {
     box-shadow: inset 0 0 1.8rem #ff005988, 0 0 0.65rem #d4005f77;
   }
 }
-
 </style>

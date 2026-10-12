@@ -1,6 +1,7 @@
 /* eslint-disable line-comment-position */
 /* eslint-disable no-inline-comments */
 import { DC } from "./constants";
+import { ic5GalaxyRequirements } from "./secret-formula/challenges/infinity-challenges";
 
 export const GALAXY_TYPE = {
   NORMAL: 0,
@@ -9,14 +10,15 @@ export const GALAXY_TYPE = {
 };
 
 class GalaxyRequirement {
-  constructor(tier, amount) {
+  constructor(tier, amount, cost = null) {
     this.tier = tier;
     this.amount = amount;
+    this.cost = cost;
   }
 
   get isSatisfied() {
     const dimension = AntimatterDimension(this.tier);
-    return dimension.totalAmount.gte(this.amount);
+    return this.cost ? dimension.cost.gte(this.cost) : dimension.totalAmount.gte(this.amount);
   }
 }
 
@@ -39,7 +41,7 @@ export class Galaxy {
     const dis = Galaxy.costScalingStart;
     const scale = Galaxy.costMult;
     let base = Galaxy.baseCost.sub(Effects.sum(InfinityUpgrade.resetBoost));
-    if (InfinityChallenge(5).isCompleted) base = base.sub(1);
+    if (InfinityChallenge(6).isCompleted) base = base.sub(1);
     // eslint-disable-next-line max-len
     // Plz no ask how exponential math work i dont know i just code, see https://discord.com/channels/351476683016241162/439241762603663370/1210707188964659230m
     const minV = Galaxy.costScalingStart.min(Galaxy.remoteStart); // Take the smallest of the two values
@@ -112,6 +114,16 @@ export class Galaxy {
   }
 
   static requirementAt(galaxies) {
+    if (InfinityChallenge(5).isRunning) {
+      // Galaxy 10 remains visible as the natural boundary. The IC5 goal is
+      // reached before its matching AD1 requirement can be met.
+      if (galaxies.eq(ic5GalaxyRequirements.length)) {
+        return new GalaxyRequirement(1, InfinityChallenge(5).goal);
+      }
+      const index = Decimal.min(galaxies, ic5GalaxyRequirements.length - 1).toNumber();
+      const requirement = ic5GalaxyRequirements[index];
+      return new GalaxyRequirement(requirement.tier, requirement.amount);
+    }
     // Beyond 1e6 (or further if remote is beyond that) the other effects are so small in changes that it doesn't matter
     // This does technically make it slightly weaker than vanilla, but its so minor you would rarely ever notice, and it
     // allows the inverse to be correct beyond 1e6 without using any really annoying math methods that i dont understand
@@ -130,7 +142,7 @@ export class Galaxy {
     }
 
     amount = amount.sub(Effects.sum(InfinityUpgrade.resetBoost));
-    if (InfinityChallenge(5).isCompleted) amount = amount.sub(1);
+    if (InfinityChallenge(6).isCompleted) amount = amount.sub(1);
 
     if (GlyphAlteration.isAdded("power")) amount = amount.mul(getSecondaryGlyphEffect("powerpow"));
 
@@ -140,10 +152,13 @@ export class Galaxy {
   }
 
   static get costMult() {
-    return new Decimal(Effects.min(NormalChallenge(12).isRunning ? 90 : 60, TimeStudy(42)));
+    if (InfinityChallenge(3).isRunning) return DC.D50;
+    const baseScaling = (NormalChallenge(12).isRunning ? 90 : 60) - InfinityChallenge(3).reward.effectOrDefault(0);
+    return new Decimal(Effects.min(baseScaling, TimeStudy(42)));
   }
 
   static get baseCost() {
+    if (InfinityChallenge(3).isRunning) return DC.D70;
     return NormalChallenge(12).isRunning ? DC.D99 : DC.D80;
   }
 
@@ -153,16 +168,29 @@ export class Galaxy {
 
   static get canBeBought() {
     if (EternityChallenge(6).isRunning && !Enslaved.isRunning) return false;
-    if (NormalChallenge(8).isRunning || InfinityChallenge(7).isRunning) return false;
+    if (NormalChallenge(8).isRunning || InfinityChallenge(8).isRunning) {
+      return false;
+    }
+    if (InfinityChallenge(2).isRunning && player.galaxies.gte(1)) return false;
+    if (InfinityChallenge(5).isRunning && player.galaxies.gte(ic5GalaxyRequirements.length + 1)) return false;
     if (player.records.thisInfinity.maxAM.gt(Player.infinityGoal) &&
        (!player.break || Player.isInAntimatterChallenge)) return false;
     return true;
   }
 
+  static get canBulkBuy() {
+    return !InfinityChallenge(4).isRunning && !InfinityChallenge(5).isRunning &&
+      (EternityMilestone.autobuyMaxGalaxies.isReached || BreakInfinityUpgrade.galaxyBulk.isBought);
+  }
+
   static get lockText() {
     if (this.canBeBought) return null;
     if (EternityChallenge(6).isRunning) return "Locked (Eternity Challenge 6)";
-    if (InfinityChallenge(7).isRunning) return "Locked (Infinity Challenge 7)";
+    if (InfinityChallenge(2).isRunning) return "Locked (Infinity Challenge 2: 1 Galaxy limit)";
+    if (InfinityChallenge(5).isRunning && player.galaxies.gte(ic5GalaxyRequirements.length + 1)) {
+      return "Locked (IC5 maximum Galaxy reached)";
+    }
+    if (InfinityChallenge(8).isRunning) return "Locked (Infinity Challenge 8)";
     if (InfinityChallenge(1).isRunning) return "Locked (Infinity Challenge 1)";
     if (NormalChallenge(8).isRunning) return "Locked (Normal Challenge 8)";
     return null;
@@ -200,7 +228,8 @@ export function galaxyReset() {
     player.chall5Sacrifices = 0;
     player.chall5Pow = DC.D1;
   }
-  if (!Achievement(143).isUnlocked || (Pelle.isDoomed && !PelleUpgrade.galaxyNoResetDimboost.canBeApplied)) {
+  if (InfinityChallenge(5).isRunning || !Achievement(143).isUnlocked ||
+    (Pelle.isDoomed && !PelleUpgrade.galaxyNoResetDimboost.canBeApplied)) {
     player.dimensionBoosts = DC.D0;
   }
   softReset(0);
@@ -220,7 +249,7 @@ export function manualRequestGalaxyReset(bulk) {
   }
   if (player.options.confirmations.antimatterGalaxy) {
     Modal.antimatterGalaxy.show({
-      bulk: bulk && (EternityMilestone.autobuyMaxGalaxies.isReached || BreakInfinityUpgrade.galaxyBulk.isBought)
+      bulk: bulk && Galaxy.canBulkBuy
     });
     return;
   }
@@ -230,9 +259,9 @@ export function manualRequestGalaxyReset(bulk) {
 // All galaxy reset requests, both automatic and manual, eventually go through this function; therefore it suffices
 // to restrict galaxy count for RUPG7's requirement here and nowhere else
 export function requestGalaxyReset(bulk, limit = Number.MAX_VALUE) {
-  const challengeLimit = NormalChallenge(8).isRunning ? DC.D0 : limit;
+  const challengeLimit = NormalChallenge(8).isRunning ? DC.D0 : InfinityChallenge(2).isRunning ? DC.D1 : limit;
   const restrictedLimit = RealityUpgrade(7).isLockingMechanics ? DC.D1 : challengeLimit;
-  if ((EternityMilestone.autobuyMaxGalaxies.isReached || BreakInfinityUpgrade.galaxyBulk.isBought) && bulk) {
+  if (Galaxy.canBulkBuy && bulk) {
     return maxBuyGalaxies(restrictedLimit);
   }
   if (player.galaxies.gte(restrictedLimit) || !Galaxy.canBeBought || !Galaxy.requirement.isSatisfied) return false;
@@ -250,6 +279,7 @@ function maxBuyGalaxies(limit = DC.BEMAX) {
   if (Galaxy.buyableGalaxies(Decimal.round(dim.totalAmount)).lte(player.galaxies)) return false;
   const newGalaxies = Decimal.min(
     Galaxy.buyableGalaxies(Decimal.round(dim.totalAmount)), limit);
+  const boughtGalaxies = newGalaxies.sub(player.galaxies);
   if (Notations.current === Notation.emoji) {
     player.requirementChecks.permanent.emojiGalaxies = player.requirementChecks.permanent.emojiGalaxies
       .add(newGalaxies.sub(player.galaxies));

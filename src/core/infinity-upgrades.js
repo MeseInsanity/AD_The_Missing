@@ -140,7 +140,7 @@ export function disChargeAll() {
 // by a Fragment-adjustable post-scaling curve.
 class InfinityIPMultUpgrade extends GameMechanicState {
   get baseCostExponent() {
-    return 3;
+    return Math.log10(200);
   }
 
   get fragmentStrength() {

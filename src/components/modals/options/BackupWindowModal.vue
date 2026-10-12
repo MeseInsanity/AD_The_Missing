@@ -16,7 +16,7 @@ export default {
   data() {
     return {
       // Used to force a key-swap whenever a save happens, to make unused slots immediately update
-      nextSave: 0,
+      nextSave: "",
       ignoreOffline: false,
     };
   },
@@ -31,7 +31,9 @@ export default {
   },
   methods: {
     update() {
-      this.nextSave = Object.values(GameStorage.lastBackupTimes).map(t => t && t.backupTimer).sum();
+      this.nextSave = Object.values(GameStorage.lastBackupTimes)
+        .map(t => t?.backupTimer?.toString() ?? "0")
+        .join(",");
       this.ignoreOffline = player.options.loadBackupWithoutOffline;
     },
     offlineOptionClass() {

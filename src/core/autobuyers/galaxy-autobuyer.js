@@ -69,6 +69,6 @@ export class GalaxyAutobuyerState extends UpgradeableAutobuyerState {
   tick() {
     super.tick();
     const limit = this.limitGalaxies ? this.maxGalaxies : DC.BEMAX;
-    requestGalaxyReset(this.isBuyMaxUnlocked, limit);
+    requestGalaxyReset(Galaxy.canBulkBuy, limit);
   }
 }

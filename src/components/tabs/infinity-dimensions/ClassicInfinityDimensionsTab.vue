@@ -30,6 +30,16 @@ export default {
       creditsClosed: false,
       showLockedDimCostNote: true,
       isEighthDimensionUnlocked: false,
+      dominoesBought: false,
+      dividendCount: 0,
+      dominoesMultiplier: new Decimal(1),
+      dominoesNextThreshold: new Decimal(0),
+      dividendStepMultiplier: new Decimal(1),
+      dividendThresholdMultiplier: new Decimal(1),
+      id5Stability: new Decimal(1),
+      id5StabilityRequirement: new Decimal(0),
+      isID5StabilityLimited: false,
+      hasID5StabilityReached: false,
     };
   },
   computed: {
@@ -66,6 +76,16 @@ export default {
       this.boughtTesseracts.copyFrom(Tesseracts.bought);
       this.extraTesseracts.copyFrom(Tesseracts.extra);
       this.creditsClosed = GameEnd.creditsEverClosed;
+      this.dominoesBought = DimensionalDominoes.isBought;
+      this.dividendCount = DimensionalDominoes.dividendCount;
+      this.dominoesMultiplier.copyFrom(DimensionalDominoes.multiplier);
+      this.dominoesNextThreshold.copyFrom(DimensionalDominoes.nextThreshold);
+      this.dividendStepMultiplier.copyFrom(DimensionalDominoes.stepMultiplier);
+      this.dividendThresholdMultiplier.copyFrom(DimensionalDominoes.thresholdMultiplier);
+      this.id5Stability.copyFrom(InfinityDimensions.id5Stability);
+      this.id5StabilityRequirement.copyFrom(InfinityDimensions.id5StabilityRequirement);
+      this.isID5StabilityLimited = InfinityDimensions.isID5StabilityLimited;
+      this.hasID5StabilityReached = InfinityDimensions.hasID5StabilityReached;
     },
     maxAll() {
       InfinityDimensions.buyMax();
@@ -116,6 +136,29 @@ export default {
         multiplier on all
         <span v-if="!isEC9Running">Antimatter Dimensions.</span>
         <span v-else>Time Dimensions due to Eternity Challenge 9.</span>
+      </p>
+      <p v-if="dominoesBought">
+        Dimensional Dividend has granted
+        <span class="c-infinity-dim-description__accent">{{ formatInt(dividendCount) }}</span>
+        {{ pluralize("Dividend", dividendCount) }}, multiplying Infinity Point gain on Big Crunch by
+        <span class="c-infinity-dim-description__accent">{{ formatX(dominoesMultiplier, 2, 2) }}</span>
+        <br>
+        Next Dividend at
+        <span class="c-infinity-dim-description__accent">{{ format(dominoesNextThreshold, 2, 1) }}</span>
+        Infinity Power, increasing by
+        <span class="c-infinity-dim-description__accent">{{ formatX(dividendThresholdMultiplier, 2, 2) }}</span>
+        per Dividend gained.
+        <br>
+        Each Dividend after the first multiplies Infinity Point gain by
+        {{ formatX(dividendStepMultiplier, 2, 2) }}.
+      </p>
+      <p v-if="isID5StabilityLimited">
+        The 5th Infinity Dimension is unstable. Its production and Achievement 75 bonus operate at
+        <span class="c-infinity-dim-description__accent">{{ formatPow(id5Stability, 2, 3) }}</span>.
+        Sacrifice dimensions to stabilize it at {{ formatX(id5StabilityRequirement, 2, 2) }}.
+      </p>
+      <p v-else-if="hasID5StabilityReached">
+        The 5th Infinity Dimension is stabilized for this Infinity.
       </p>
     </div>
     <div

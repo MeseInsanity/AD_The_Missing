@@ -26,10 +26,10 @@ export default {
         "o-pelle-disabled-pointer": this.creditsClosed
       };
     },
-    // Show IP/min below this threshold, color the IP number above it
-    rateThreshold: () => 5e11,
+    // Color the IP number above this threshold; IP/min remains visible through the Infinity layer.
+    colorThreshold: () => 5e11,
     amountStyle() {
-      if (!this.headerTextColored || this.currentIP.lt(this.rateThreshold)) return {
+      if (!this.headerTextColored || this.currentIP.lt(this.colorThreshold)) return {
         "transition-duration": "0s"
       };
       if (this.hover) return {
@@ -87,7 +87,8 @@ export default {
       this.currentIPRate.copyFrom(gainedIP.div(Decimal.max(0.0005, Time.thisInfinityRealTime.totalMinutes)));
       this.peakIPRate.copyFrom(player.records.thisInfinity.bestIPmin);
       this.peakIPRateVal.copyFrom(player.records.thisInfinity.bestIPminVal);
-      this.showIPRate = this.peakIPRate.lte(this.rateThreshold);
+      this.showIPRate = DimensionalDominoes.dividendCount === 0 &&
+        !(Player.canEternity || PlayerProgress.eternityUnlocked());
     },
     switchToInfinity() {
       Tab.dimensions.infinity.show(true);
@@ -155,7 +156,3 @@ export default {
     </b>
   </button>
 </template>
-
-<style scoped>
-
-</style>

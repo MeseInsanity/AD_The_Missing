@@ -107,9 +107,9 @@ export const normalChallenges = [
     legacyId: 4,
     title: "Budget Cuts",
     isQuickResettable: false,
-    description: () => NC10_PURCHASE_LIMIT === null
+    description: () => (NC10_PURCHASE_LIMIT === null
       ? "AD and Tickspeed purchases are unrestricted."
-      : `AD and Tickspeed purchases are limited to ${formatInt(NC10_PURCHASE_LIMIT)} total.`,
+      : `AD and Tickspeed purchases are limited to ${formatInt(NC10_PURCHASE_LIMIT)} total.`),
     purchaseLimit: NC10_PURCHASE_LIMIT,
     name: "Automated Dimension Boosts",
     reward: "Dimension Boosts Autobuyer",
