@@ -26,10 +26,10 @@ export function getIC4TickspeedSoftcapCoefficient() {
   return Decimal.min(DC.D10, boosts.div(DC.D1_07).pow(DC.D0_3).add(DC.D0_5));
 }
 
-// The Galaxy count after all effects which directly strengthen Galaxies. This intentionally does
-// not include the Fragment divider, which is specific to the improved Galaxy Formula.
+// The Galaxy count after all effects which directly strengthen Galaxies. The Drain's future Fragment strength uses
+// the improved Galaxy Formula's sqrt(f / 4) factor, while 11j directly strengthens the effective Galaxy count.
 export function effectiveGalaxyCount() {
-  let galaxies = effectiveBaseGalaxies();
+  const galaxies = effectiveBaseGalaxies();
   const effects = Effects.product(
     InfinityUpgrade.galaxyBoost,
     InfinityUpgrade.galaxyBoost.chargedEffect,
@@ -42,12 +42,16 @@ export function effectiveGalaxyCount() {
     PelleUpgrade.galaxyPower,
     PelleRifts.decay.milestones[1]
   );
-  if (Pelle.isDoomed) galaxies = galaxies.div(2);
-  galaxies = galaxies.times(Pelle.specialGlyphEffect.power);
-  galaxies = galaxies.times(getAdjustedGlyphEffect("cursedgalaxies"));
-  galaxies = galaxies.times(getAdjustedGlyphEffect("realitygalaxies"));
-  galaxies = galaxies.times(ImaginaryUpgrade(9).effectOrDefault(DC.D0).add(1));
-  return galaxies.times(effects);
+  let modifier = effects;
+  modifier = modifier.times(Fragments.galaxyPower.effect().div(4).sqrt());
+  modifier = modifier.times(Fragments.galacticThresholdJMultiplier);
+  if (Pelle.isDoomed) modifier = modifier.div(2);
+  modifier = modifier.times(Pelle.specialGlyphEffect.power);
+  modifier = modifier.times(getAdjustedGlyphEffect("cursedgalaxies"));
+  modifier = modifier.times(getAdjustedGlyphEffect("realitygalaxies"));
+  modifier = modifier.times(ImaginaryUpgrade(9).effectOrDefault(DC.D0).add(1));
+  if (InfinityChallenge(12).isRunning) modifier = modifier.pow(0.05);
+  return galaxies.times(modifier);
 }
 
 function applyNC6TickspeedPenalty(multiplier) {
@@ -63,18 +67,17 @@ function applyNC4TickspeedPenalty(multiplier) {
 
 export function getTickSpeedMultiplier() {
   if (Ra.isRunning) return DC.C1D1_1245;
+  if (InfinityChallenge(7).isRunning) return DC.D1.div(1.08);
   const galaxies = effectiveGalaxyCount();
-  const fragmentEffect = Fragments.galaxyPower.effect();
 
   if (!BreakInfinityUpgrade.galaxyFormula.isBought) {
     const multiplier = DC.D1.div(DC.D1_1245.add(galaxies.times(0.01)));
-    return applyNC6TickspeedPenalty(applyNC4TickspeedPenalty(multiplier));
+    return applyNC6TickspeedPenalty(applyNC4TickspeedPenalty(multiplier.powEffectOf(InfinityChallenge(12).reward)));
   }
   const baseMultiplier = DC.C1D1_1245;
   const perGalaxy = DC.D0_965;
-  const fragmentDivider = DC.D4.div(fragmentEffect).sqrt();
-  const multiplier = baseMultiplier.times(perGalaxy.pow(galaxies.div(fragmentDivider)));
-  return applyNC6TickspeedPenalty(applyNC4TickspeedPenalty(multiplier));
+  const multiplier = baseMultiplier.times(perGalaxy.pow(galaxies));
+  return applyNC6TickspeedPenalty(applyNC4TickspeedPenalty(multiplier.powEffectOf(InfinityChallenge(12).reward)));
 }
 
 export function buyTickSpeed() {
@@ -82,7 +85,8 @@ export function buyTickSpeed() {
     normalChallenge10PurchasesRemaining() < 1) return false;
 
   Tutorial.turnOffEffect(TUTORIAL_STATE.TICKSPEED);
-  Currency.antimatter.subtract(Tickspeed.cost);
+  // IC10 treats Antimatter as a production-rate threshold, not a banked currency.
+  if (!InfinityChallenge(10).isRunning) Currency.antimatter.subtract(Tickspeed.cost);
   player.totalTickBought = player.totalTickBought.add(1);
   recordNormalChallenge10Purchases(1);
   player.records.thisInfinity.lastBuyTime = player.records.thisInfinity.time;
@@ -94,9 +98,9 @@ export function buyTickSpeed() {
 
 export function buyMaxTickSpeed() {
   if (!Tickspeed.isAvailableForPurchase || !Tickspeed.isAffordable) return;
-  if (NormalChallenge(10).isRunning) {
+  if (NormalChallenge(10).isRunning || InfinityChallenge(10).isRunning) {
     while (buyTickSpeed()) {
-      // NC10 needs exact individual-purchase accounting.
+      // NC10 needs exact individual-purchase accounting; IC10 does not spend its AM/s threshold.
     }
     return;
   }
@@ -174,7 +178,7 @@ export const Tickspeed = {
       baseCost: DC.E3,
       baseIncrease: DC.E1,
       costScale: new Decimal(Player.tickSpeedMultDecrease),
-      scalingCostThreshold: DC.NUMMAX
+      scalingCostThreshold: Decimal.pow10(DC.NUMMAX.log10().add(EternityUpgrade.costScaling.effectOrDefault(0)))
     });
   },
 
@@ -218,8 +222,9 @@ export const FreeTickspeed = {
   BASE_SOFTCAP: new Decimal(3e5),
   GROWTH_RATE: new Decimal(6e-6).add(1),
   GROWTH_EXP: DC.D2,
-  tickmult: () => DC.D1.add(Effects.min(1.33, TimeStudy(171)).sub(1)).mul(
-    Decimal.max(getAdjustedGlyphEffect("cursedtickspeed"), 1)),
+  tickmult: () => DC.D1.add(Effects.min(1.33, TimeStudy(171)).sub(1))
+    .sub(Fragments.freeTickspeedJReduction)
+    .mul(Decimal.max(getAdjustedGlyphEffect("cursedtickspeed"), 1)),
 
   get amount() {
     return player.totalTickGained;

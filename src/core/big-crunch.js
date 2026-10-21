@@ -1,4 +1,5 @@
 import { DC } from "./constants";
+import { Fragments } from "./secret-formula/fragments";
 import FullScreenAnimationHandler from "./full-screen-animation-handler";
 
 export function bigCrunchAnimation() {
@@ -68,6 +69,8 @@ function bigCrunchGiveRewards() {
   const infinityPoints = gainedInfinityPoints();
   Currency.infinityPoints.add(infinityPoints);
   Currency.infinities.add(gainedInfinities().round());
+  Fragments.checkForDiscovery();
+  Fragments.recordBigCrunch();
 
   bigCrunchTabChange(!PlayerProgress.infinityUnlocked());
   bigCrunchCheckUnlocks();
@@ -126,7 +129,6 @@ function bigCrunchTabChange(firstInfinity) {
 }
 
 export function bigCrunchResetValues(enteringAntimatterChallenge) {
-  const currentReplicanti = Replicanti.amount;
   const currentReplicantiGalaxies = player.replicanti.galaxies;
   // For unknown reasons, everything but keeping of RGs (including resetting of RGs)
   // is done in the function called below. For now, we're just trying to keep
@@ -135,13 +137,8 @@ export function bigCrunchResetValues(enteringAntimatterChallenge) {
 
   let remainingGalaxies = DC.D0;
   if (Achievement(95).isUnlocked && !Pelle.isDoomed) {
-    Replicanti.amount = currentReplicanti;
     remainingGalaxies = remainingGalaxies.add(Decimal.min(currentReplicantiGalaxies, 1));
   }
-  if (TimeStudy(33).isBought && !Pelle.isDoomed) {
-    remainingGalaxies = remainingGalaxies.add(Decimal.floor(currentReplicantiGalaxies.div(2)));
-  }
-
   if (PelleUpgrade.replicantiGalaxyNoReset.canBeApplied) {
     remainingGalaxies = currentReplicantiGalaxies;
   }
@@ -164,6 +161,9 @@ export function secondSoftReset(enteringAntimatterChallenge) {
   player.galaxies = DC.D0;
   player.challenge.infinity.dimBoosts = DC.D0;
   player.challenge.infinity.focusTier = 1;
+  player.challenge.infinity.ic9PreviousContinuum = DC.D0;
+  player.challenge.infinity.ic9ResidualRatio = DC.D1;
+  player.challenge.infinity.ic9ResidualResource = 0;
   player.records.thisInfinity.maxAM = DC.D0;
   player.records.thisInfinity.totalAntimatter = DC.D0;
   Currency.antimatter.reset();

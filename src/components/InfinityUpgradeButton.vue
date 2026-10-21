@@ -3,6 +3,7 @@ import CostDisplay from "@/components/CostDisplay";
 import DescriptionDisplay from "@/components/DescriptionDisplay";
 import EffectDisplay from "@/components/EffectDisplay";
 import HintText from "@/components/HintText";
+import { CriticalIdleIncome } from "@/core/break-infinity-upgrades";
 import wordShift from "@/core/word-shift";
 
 export default {
@@ -37,8 +38,12 @@ export default {
       showingCharged: false,
       hasTS31: false,
       ts31Effect: new Decimal(0),
+      criticalIdleIncomeActive: false,
+      criticalIdleIncomeStatus: "",
       displayName: "",
-      isForbiddenGalaxyName: false
+      isForbiddenGalaxyName: false,
+      hasAfterEU: false,
+      afterEUText: ""
     };
   },
   computed: {
@@ -63,9 +68,17 @@ export default {
         : config;
     },
     effectConfig() {
-      return this.displayedUpgrade.id === "criticalIdleIncome" && this.displayedUpgrade.isBought
-        ? this.upgrade.config
-        : this.config;
+      if (this.displayedUpgrade.id === "criticalIdleIncome" && this.displayedUpgrade.isBought) {
+        return this.upgrade.config;
+      }
+      if (this.isAfterEternityUpgradeBought && this.config.baseEffect) {
+        return { ...this.config, effect: this.config.baseEffect, cap: this.config.baseCap ?? this.config.cap };
+      }
+      return this.config;
+    },
+    isAfterEternityUpgradeBought() {
+      const upgrade = this.config.afterEternityUpgrade;
+      return Boolean(upgrade) && EternityUpgrade[upgrade].isBought;
     },
     classObject() {
       return {
@@ -83,7 +96,7 @@ export default {
       };
     },
     isImprovedByTS31() {
-      return this.hasTS31 && this.isBasedOnInfinities && !this.showChargedEffect;
+      return this.hasTS31 && this.isBasedOnInfinities && !this.config.ts31Applied && !this.showChargedEffect;
     }
   },
   methods: {
@@ -98,6 +111,11 @@ export default {
       this.canBeBought = upgrade.canBeBought;
       this.canBeCharged = upgrade.canCharge;
       this.isCharged = upgrade.isCharged;
+      this.criticalIdleIncomeActive = upgrade.id === "criticalIdleIncome" && CriticalIdleIncome.isActive;
+      this.criticalIdleIncomeStatus = this.criticalIdleIncomeActive
+        ? `Idle Income is ${format(CriticalIdleIncome.multiplier.times(100), 2, 2)}% for
+          ${TimeSpan.fromMilliseconds(new Decimal(CriticalIdleIncome.remaining)).toStringShort()}`
+        : "";
       this.isForbiddenGalaxyName = upgrade === InfinityUpgrade.galaxyBoost || upgrade.config.scrambleName;
       if (!upgrade.isBought && upgrade.config.nameCycle) {
         this.displayName = wordShift.wordCycle(upgrade.config.nameCycle);
@@ -119,6 +137,11 @@ export default {
       this.isUseless = Pelle.uselessInfinityUpgrades.includes(upgrade.id) && Pelle.isDoomed;
       this.hasTS31 = TimeStudy(31).canBeApplied;
       if (!this.isDisabled && this.isImprovedByTS31) this.ts31Effect = Decimal.pow(upgrade.config.effect(), 4);
+      this.hasAfterEU = Boolean(upgrade.config.afterEU) &&
+        (this.isAfterEternityUpgradeBought || upgrade.config.showAfterEUPreview);
+      this.afterEUText = this.hasAfterEU
+        ? upgrade.config.formatAfterEU(upgrade.config.afterEU())
+        : "";
       if (upgrade.id !== "challengeMult") return;
       this.showChallengeTime = upgrade.effectValue !== upgrade.cap &&
         player.challenge.normal.bestTimes.sum().lt(Number.MAX_VALUE);
@@ -147,7 +170,11 @@ export default {
       {{ displayName }}
     </HintText>
     <span :class="{ 'o-pelle-disabled': isUseless }">
+      <span v-if="criticalIdleIncomeActive">
+        {{ criticalIdleIncomeStatus }}
+      </span>
       <DescriptionDisplay
+        v-else
         :config="config"
       />
       <span v-if="showChallengeTime">
@@ -162,6 +189,10 @@ export default {
       <template v-if="!isDisabled && isImprovedByTS31">
         <br>
         After TS31: {{ formatX(ts31Effect, 2, 2) }}
+      </template>
+      <template v-if="hasAfterEU">
+        <br>
+        After EU: {{ afterEUText }}
       </template>
     </span>
     <span

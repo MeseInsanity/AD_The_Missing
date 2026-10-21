@@ -65,8 +65,8 @@ export const ID = {
     multValue: dim => {
       const getMult = id => {
         const purchases = id === 8
-          ? Math.floor(InfinityDimension(id).baseAmount / 10)
-          : Math.min(InfinityDimensions.basePurchaseCap, Math.floor(InfinityDimension(id).baseAmount / 10));
+          ? new Decimal(Math.floor(InfinityDimension(id).baseAmount / 10))
+          : Decimal.min(InfinityDimensions.totalDimCap, Math.floor(InfinityDimension(id).baseAmount / 10));
         const baseMult = InfinityDimension(id)._powerMultiplier;
         return Decimal.pow(baseMult, purchases);
       };
@@ -84,9 +84,9 @@ export const ID = {
     multValue: dim => {
       const getMult = id => {
         if (id === 8) return DC.D1;
-        const purchases = Math.floor(InfinityDimension(id).baseAmount / 10);
+        const purchases = new Decimal(Math.floor(InfinityDimension(id).baseAmount / 10));
         return Decimal.pow(InfinityDimension(id)._powerMultiplier,
-          Math.clampMin(purchases - InfinityDimensions.basePurchaseCap, 0));
+          purchases.sub(InfinityDimensions.totalDimCap).clampMin(0));
       };
       if (dim) return getMult(dim);
       return InfinityDimensions.all

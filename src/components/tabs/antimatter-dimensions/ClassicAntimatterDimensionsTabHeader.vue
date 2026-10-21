@@ -14,6 +14,7 @@ export default {
       sacrificeBoost: new Decimal(0),
       disabledCondition: "",
       isFullyAutomated: false,
+      isIC11Running: false,
     };
   },
   computed: {
@@ -28,9 +29,10 @@ export default {
     update() {
       const isSacrificeUnlocked = Sacrifice.isVisible;
       this.isSacrificeUnlocked = isSacrificeUnlocked;
+      this.isIC11Running = InfinityChallenge(11).isRunning;
       if (!isSacrificeUnlocked) return;
       this.isSacrificeAffordable = Sacrifice.canSacrifice;
-      this.isFullyAutomated = Autobuyer.sacrifice.isActive && Achievement(118).isEffectActive &&
+      this.isFullyAutomated = Autobuyer.sacrifice.isActive && Achievement(127).isEffectActive &&
       (this.isSacrificeAffordable || Sacrifice.nextBoost.lte(1));
       this.currentSacrifice.copyFrom(Sacrifice.totalBoost);
       this.sacrificeBoost.copyFrom(Sacrifice.nextBoost);
@@ -52,7 +54,10 @@ export default {
       v-show="isSacrificeUnlocked"
       v-tooltip="sacrificeTooltip"
       :enabled="isSacrificeAffordable && !isFullyAutomated"
-      class="o-primary-btn--sacrifice"
+      :class="{
+        'o-primary-btn--sacrifice': true,
+        'o-primary-btn--sacrifice--ic11-disabled': isIC11Running && !isSacrificeAffordable
+      }"
       @click="sacrifice"
     >
       <span v-if="isSacrificeAffordable">Dimensional Sacrifice ({{ formatX(sacrificeBoost, 2, 2) }})</span>

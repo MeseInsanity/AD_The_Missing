@@ -291,7 +291,7 @@ Currency.infinityPoints = new class extends DecimalCurrency {
       new Decimal(),
       Perk.startIP1,
       Perk.startIP2,
-      Achievement(104)
+      Achievement(113)
     );
   }
 
@@ -354,6 +354,11 @@ Currency.eternityPoints = new class extends DecimalCurrency {
 Currency.timeShards = new class extends DecimalCurrency {
   get value() { return player.timeShards; }
   set value(value) { player.timeShards = value; }
+}();
+
+Currency.condensate = new class extends DecimalCurrency {
+  get value() { return player.fragments.condensate.amount; }
+  set value(value) { player.fragments.condensate.amount = value; }
 }();
 
 Currency.timeTheorems = new class extends DecimalCurrency {

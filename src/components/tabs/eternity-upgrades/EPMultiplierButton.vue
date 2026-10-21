@@ -1,12 +1,14 @@
 <script>
 import PrimaryButton from "@/components/PrimaryButton";
 import PrimaryToggleButton from "@/components/PrimaryToggleButton";
+import HintText from "@/components/HintText";
 
 export default {
   name: "EPMultiplierButton",
   components: {
     PrimaryButton,
-    PrimaryToggleButton
+    PrimaryToggleButton,
+    HintText
   },
   data() {
     return {
@@ -69,6 +71,15 @@ export default {
       :class="classObject"
       @click="purchaseUpgrade"
     >
+      <HintText
+        type="realityUpgrades"
+        :class="[
+          'l-hint-text--reality-upgrade',
+          'c-hint-text--reality-upgrade'
+        ]"
+      >
+        Eternal Returns
+      </HintText>
       <div :class="{ 'o-pelle-disabled': isDoomed }">
         Multiply Eternity Points from all sources by {{ formatX(5) }}
         <br>
@@ -95,5 +106,9 @@ export default {
 <style scoped>
 .l-margin-top {
   margin-top: 0.55rem;
+}
+
+.o-eternity-upgrade {
+  position: relative;
 }
 </style>

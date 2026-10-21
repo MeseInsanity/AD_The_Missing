@@ -55,6 +55,8 @@ export default {
       return `Purchased ${quantifyInt("time", this.bought)}`;
     },
     costUnit() {
+      if (InfinityChallenge(9).isRunning) return this.tier % 2 === 1 ? "Matter" : "AM";
+      if (InfinityChallenge(10).isRunning) return "I.Pow";
       const costTier = NormalChallenge(9).isRunning ? this.tier - 1 : this.tier - 2;
       return `${AntimatterDimension(costTier).shortDisplayName} AD`;
     },
@@ -99,7 +101,8 @@ export default {
       if (this.isContinuumActive) this.continuumValue.copyFrom(dimension.continuumValue);
       this.isShown = InfinityChallenge(5).isRunning ||
         (DimBoost.totalBoosts.gt(0) && DimBoost.totalBoosts.add(3).gte(tier)) || PlayerProgress.infinityUnlocked();
-      this.isCostsAD = NormalChallenge(9).isRunning && tier > 1;
+      this.isCostsAD = (NormalChallenge(9).isRunning && tier > 1) || InfinityChallenge(9).isRunning ||
+        InfinityChallenge(10).isRunning;
       this.isIC5Focus = false;
       this.amountDisplay = this.tier < 8 ? format(this.amount, 2) : formatInt(this.amount);
       this.hasTutorial = (tier === 1 && Tutorial.isActive(TUTORIAL_STATE.DIM1)) ||

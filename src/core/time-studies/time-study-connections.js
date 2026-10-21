@@ -35,6 +35,7 @@ TimeStudy.allConnections = (function() {
     [TS(11), TS(22)],
 
     [TS(21), TS(31)],
+    [TS(21), TS(34)],
     [TS(22), TS(33)],
     [TS(22), TS(32)],
 
@@ -71,6 +72,7 @@ TimeStudy.allConnections = (function() {
     [TS(103), TS(111)],
 
     [TS(111), EC(7)],
+    [EC(7), TS(155)],
 
     [TS(111), TS(121)],
     [TS(111), TS(122)],
@@ -79,8 +81,8 @@ TimeStudy.allConnections = (function() {
     [TS(121), TS(131)],
     [TS(122), TS(132)],
     [TS(123), TS(133)],
-    [TS(121), EC(6)],
-    [TS(123), EC(8)],
+    [TS(131), EC(6)],
+    [TS(122), EC(8)],
 
     [TS(131), TS(141)],
     [TS(132), TS(142)],
@@ -91,25 +93,32 @@ TimeStudy.allConnections = (function() {
     [TS(143), TS(151)],
     [TS(143), EC(4)],
 
+    [EC(6), TS(152)],
+    [EC(8), TS(153)],
+    [EC(4), TS(154)],
+
     [TS(151), EC(9)],
+    [EC(9), TS(156)],
 
     [TS(151), TS(161)],
     [TS(151), TS(162)],
 
+    [TS(72), EC(1)],
+    [TS(73), EC(2)],
+    [TS(71), EC(3)],
+
+    [EC(1), TS(113)],
+    [EC(2), TS(112)],
+    [EC(3), TS(114)],
+
     [TS(161), TS(171)],
     [TS(162), TS(171)],
+    [TS(161), TS(172)],
+    [TS(162), TS(173)],
 
-    [TS(171), EC(1)],
-    [TS(171), EC(2)],
-    [TS(171), EC(3)],
-
-    [TS(171), TS(181),
-      () => !Perk.bypassEC1Lock.isBought || !Perk.bypassEC2Lock.isBought || !Perk.bypassEC3Lock.isBought],
-
-    [EC(1), TS(181), () => Perk.bypassEC1Lock.isBought],
-    [EC(2), TS(181), () => Perk.bypassEC2Lock.isBought],
-    [EC(3), TS(181), () => Perk.bypassEC3Lock.isBought],
-
+    [TS(171), TS(181)],
+    [TS(172), TS(181)],
+    [TS(173), TS(181)],
     [TS(181), EC(10)],
 
     [EC(10), TS(191)],

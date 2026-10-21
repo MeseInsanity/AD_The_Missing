@@ -1,5 +1,6 @@
 import { GameMechanicState, SetPurchasableMechanicState } from "./game-mechanics";
 import { DC } from "./constants";
+import { Fragments } from "./secret-formula/fragments";
 import FullScreenAnimationHandler from "./full-screen-animation-handler";
 
 function giveEternityRewards(auto) {
@@ -8,7 +9,7 @@ function giveEternityRewards(auto) {
 
   const newEternities = gainedEternities();
 
-  if (Currency.eternities.eq(0) && newEternities.lte(10)) {
+  if (Currency.eternities.eq(0)) {
     Tab.dimensions.time.show();
   }
 
@@ -46,9 +47,12 @@ function giveEternityRewards(auto) {
 
   player.records.bestEternity.trueTime = Math.min(player.records.bestEternity.trueTime, player.records.thisEternity.trueTime);
   Currency.infinitiesBanked.value = Currency.infinitiesBanked.value.plusEffectsOf(
-    Achievement(131).effects.bankedInfinitiesGain,
     TimeStudy(191)
   );
+  const thirdDrainBankedInfinities = Currency.infinities.value
+    .times(Fragments.bankedInfinityFraction)
+    .floor();
+  Currency.infinitiesBanked.add(thirdDrainBankedInfinities);
 
   if (Effarig.isRunning && !EffarigUnlock.eternity.isUnlocked) {
     EffarigUnlock.eternity.unlock();
@@ -180,7 +184,7 @@ export function initializeChallengeCompletions(isReality) {
   if (!isReality && EternityMilestone.keepAutobuyers.isReached || Pelle.isDoomed) {
     NormalChallenges.completeAll();
   }
-  if (Achievement(133).isUnlocked && !Pelle.isDoomed) InfinityChallenges.completeAll();
+  if (Achievement(135).isUnlocked && !Pelle.isDoomed) InfinityChallenges.completeAll();
   player.challenge.normal.current = 0;
   player.challenge.infinity.current = 0;
 }
@@ -242,8 +246,9 @@ export function gainedEternities() {
   return Pelle.isDisabled("eternityMults")
     ? new Decimal(1)
     : new Decimal(getAdjustedGlyphEffect("timeetermult"))
-      .timesEffectsOf(RealityUpgrade(3), Achievement(113))
-      .pow(AlchemyResource.eternity.effectValue);
+      .timesEffectsOf(RealityUpgrade(3), Achievement(116))
+      .pow(AlchemyResource.eternity.effectValue)
+      .times(Fragments.eternityGainMultiplier);
 }
 
 export class EternityMilestoneState {
@@ -272,6 +277,10 @@ class EternityUpgradeState extends SetPurchasableMechanicState {
 
   get set() {
     return player.eternityUpgrades;
+  }
+
+  get isAvailableForPurchase() {
+    return this.config.isAvailableForPurchase?.() ?? true;
   }
 }
 

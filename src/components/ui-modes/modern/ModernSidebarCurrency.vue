@@ -153,6 +153,14 @@ export default {
   color: #03a9f4;
 }
 
+.o-sidebar-currency--fragments {
+  color: #f3a0c8;
+}
+
+.o-sidebar-currency--condensate {
+  color: #8bd3c7;
+}
+
 .o-sidebar-currency--eternity {
   color: var(--color-eternity);
 }

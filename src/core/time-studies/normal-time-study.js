@@ -68,7 +68,7 @@ export class NormalTimeStudyState extends TimeStudyState {
   }
 
   get canBeBought() {
-    return this.checkRequirement() && this.checkSetRequirement();
+    return !this.config.isPlanned && this.checkRequirement() && this.checkSetRequirement();
   }
 
   get isEffectActive() {

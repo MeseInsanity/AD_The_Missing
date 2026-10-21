@@ -13,12 +13,16 @@ export class Sacrifice {
 
   static get canSacrifice() {
     const requiredBoosts = 5;
-    return DimBoost.purchasedBoosts.gte(requiredBoosts) && !EternityChallenge(3).isRunning && this.nextBoost.gt(1) &&
+    return !InfinityChallenge(9).isRunning && !InfinityChallenge(11).isRunning &&
+      DimBoost.purchasedBoosts.gte(requiredBoosts) &&
+      !EternityChallenge(3).isRunning && this.nextBoost.gt(1) &&
       AntimatterDimension(8).totalAmount.gt(0) && Currency.antimatter.lt(Player.infinityLimit) &&
       !Enslaved.isRunning;
   }
 
   static get disabledCondition() {
+    if (InfinityChallenge(9).isRunning) return "Disabled in Infinity Challenge 9";
+    if (InfinityChallenge(11).isRunning) return "Infinity Challenge 11";
     if (NormalChallenge(12).isRunning) return "8th Dimensions are disabled";
     if (EternityChallenge(3).isRunning) return "Eternity Challenge 3";
     const requiredBoosts = 5;
@@ -83,13 +87,15 @@ export class Sacrifice {
   static totalBoostFor(sacrificedDimensions) {
     if (sacrificedDimensions.eq(0)) return DC.D1;
     const sacrificed = sacrificedDimensions.clampMin(1);
+    const effectiveSacrificed = sacrificed.times(EternityUpgrade.theoremSacrifice.effectOrDefault(1));
     let prePowerSacrificeMult;
     if (this.hasImprovedFormula) {
-      prePowerSacrificeMult = AntimatterDimension(1).amount.plus(sacrificed).dividedBy(sacrificed);
+      prePowerSacrificeMult = AntimatterDimension(1).amount.plus(effectiveSacrificed)
+        .dividedBy(effectiveSacrificed);
     } else {
       prePowerSacrificeMult = new Decimal(
-        AntimatterDimension(1).amount.plus(sacrificed).max(1).log10().div(10)
-          .div(Decimal.max(sacrificed.max(1).log10().div(10), 1))
+        AntimatterDimension(1).amount.plus(effectiveSacrificed).max(1).log10().div(10)
+          .div(Decimal.max(effectiveSacrificed.max(1).log10().div(10), 1))
       );
     }
 
@@ -102,14 +108,14 @@ export class Sacrifice {
     let prePowerBoost;
 
     if (this.hasImprovedFormula) {
-      prePowerBoost = sacrificed.times(tickspeedSacrifice);
+      prePowerBoost = effectiveSacrificed.times(tickspeedSacrifice);
     } else {
       // This is equivalent to applying Total Tickspeed to AD1 when sacrificing: it contributes log10(Tickspeed)
       // before the pre-IC2 logarithm, rather than applying Tickspeed directly to the finished Sacrifice multiplier.
-      prePowerBoost = sacrificed.max(1).times(tickspeedSacrifice).log10().div(10);
+      prePowerBoost = effectiveSacrificed.max(1).times(tickspeedSacrifice).log10().div(10);
     }
 
-    return prePowerBoost.clampMin(1).pow(this.sacrificeExponent);
+    return prePowerBoost.clampMin(1).pow(this.sacrificeExponent).powEffectOf(InfinityChallenge(12).reward);
   }
 
   static get totalBoost() {
@@ -125,13 +131,15 @@ export class Sacrifice {
   static get reflowDrainMultiplier() {
     const upgrade = BreakInfinityUpgrade.bestIPminAmp;
     if (!upgrade.isBought) return DC.D1;
-    return this.reflowFactor(upgrade.config.sacrificeDrainRate ?? DC.D0);
+    const rate = upgrade.config.sacrificeDrainRate;
+    return this.reflowFactor(typeof rate === "function" ? rate() : (rate ?? DC.D0));
   }
 
   static get reflowMultiplier() {
     const upgrade = BreakInfinityUpgrade.bestIPminAmp;
     if (!upgrade.isBought) return DC.D1;
-    return this.reflowFactor(upgrade.config.id4ReflowRate ?? DC.D0);
+    const rate = upgrade.config.id4ReflowRate;
+    return this.reflowFactor(typeof rate === "function" ? rate() : (rate ?? DC.D0));
   }
 }
 
@@ -146,7 +154,7 @@ export function sacrificeReset() {
     player.chall5Pow = DC.D0;
     player.chall5Sacrifices = (player.chall5Sacrifices ?? 0) + 1;
   }
-  const isAch118Unlocked = Achievement(118).canBeApplied;
+  const isAch118Unlocked = Achievement(127).canBeApplied;
   if (!isAch118Unlocked) {
     AntimatterDimensions.resetAmountUpToTier(7);
   }

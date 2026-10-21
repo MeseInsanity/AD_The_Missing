@@ -15,6 +15,11 @@ export default {
       required: false,
       default: () => ({})
     },
+    tooltipArrowPositionStyle: {
+      type: Object,
+      required: false,
+      default: () => ({})
+    },
     left: {
       type: String,
       required: false,
@@ -158,7 +163,7 @@ export default {
     <div
       class="c-tooltip-arrow"
       :class="tooltipArrowClass"
-      :style="[tooltipArrowStyle, positionStyle, { transform: tooltipTransform }]"
+      :style="[tooltipArrowStyle, positionStyle, { transform: tooltipTransform }, tooltipArrowPositionStyle]"
     />
   </div>
 </template>

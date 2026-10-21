@@ -131,8 +131,16 @@ export default {
     },
     importSave() {
       if (!this.inputIsValid) return;
-      this.emitClose();
-      GameStorage.import(this.input);
+      if (this.inputIsSecret) {
+        this.emitClose();
+        GameStorage.import(this.input);
+        return;
+      }
+      this.updateOfflineSettings();
+      GameStorage.import(this.input, {
+        offlineEnabled: GameStorage.offlineEnabled,
+        offlineTicks: GameStorage.offlineTicks,
+      });
     },
   },
 };

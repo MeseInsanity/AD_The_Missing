@@ -1,3 +1,5 @@
+import { DC } from "../constants";
+
 import { migrations } from "./migrations";
 
 function arrayToBits(array) {
@@ -1563,6 +1565,80 @@ export const devMigrations = {
     },
     player => {
       player.criticalIdleIncome ??= { elapsed: 0, remaining: 0 };
+    },
+    player => {
+      // IC7 changed from the Matter challenge to a new Galaxy/DimBoost challenge.
+      // Old completion must not grant the new permanent DimBoost reward.
+      if (player.challenge.infinity.current === 7) player.challenge.infinity.current = 0;
+      player.challenge.infinity.completedBits &= ~(1 << 7);
+      player.challenge.infinity.bestTimes[6] = DC.BEMAX;
+    },
+    player => {
+      // IC8 changed from recoverable Infinity Power decay to a one-way AD production speedrun.
+      // Prior clears must not grant the unrelated new Challenge reward.
+      if (player.challenge.infinity.current === 8) player.challenge.infinity.current = 0;
+      player.challenge.infinity.completedBits &= ~(1 << 8);
+      player.challenge.infinity.bestTimes[7] = DC.BEMAX;
+      delete player.records.thisInfinity.ic8ConversionResetTime;
+    },
+    player => {
+      player.fragments ??= {};
+      player.fragments.drains ??= {
+        stabilizeDecay: {
+          fill: new Decimal(0),
+          active: false,
+        },
+      };
+      delete player.fragments.decayUpgrades;
+      delete player.fragments.yieldUpgrades;
+      delete player.replicanti.chance;
+      delete player.replicanti.chanceCost;
+      delete player.replicanti.interval;
+      delete player.replicanti.intervalCost;
+    },
+    player => {
+      player.fragments ??= {};
+      player.fragments.bestFragmentGain = new Decimal(0);
+      delete player.fragments.bestReplicanti;
+    },
+    player => {
+      player.challenge.infinity.ic11SelfProductionTimers = Array.repeat(new Decimal(0), 8);
+    },
+    player => {
+      player.fragments ??= {};
+      player.fragments.drains ??= {};
+      player.fragments.drains.infinityPower ??= {
+        fill: new Decimal(0),
+        active: false,
+      };
+    },
+    player => {
+      player.fragments ??= {};
+      player.fragments.infinityPowerDrainUnlocked ??=
+        player.records.thisReality.maxIP.gte(DC.E1000);
+    },
+    player => {
+      player.fragments ??= {};
+      player.fragments.condensate ??= {
+        unlocked: false,
+        amount: DC.D0,
+        total: DC.D0,
+      };
+    },
+    player => {
+      player.fragments ??= {};
+      player.fragments.thirdDrainUnlocked ??= player.fragments.condensate?.unlocked ?? false;
+      player.fragments.drains ??= {};
+      player.fragments.drains.eternity ??= {
+        fill: DC.D0,
+        active: false,
+      };
+    },
+    player => {
+      player.fragments ??= {};
+      player.fragments.lastRecordGameTime = new Decimal(player.records.totalTimePlayed);
+      player.fragments.lockDrainSwitching ??= false;
+      player.auto.rebuyableBreakUpgrades ??= { isActive: true };
     }
   ],
 

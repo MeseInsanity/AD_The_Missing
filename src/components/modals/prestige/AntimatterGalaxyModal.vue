@@ -62,7 +62,7 @@ export default {
           this.newGalaxies = Galaxy.buyableGalaxies(Decimal.floor(dim.totalAmount.toNumber())).sub(player.galaxies);
         }
       }
-      this.keepAntimatter = Achievement(111).isUnlocked;
+      this.keepAntimatter = Achievement(117).isUnlocked;
       this.perkANRBought = Perk.antimatterNoReset.canBeApplied;
       this.keepDimBoost = (Achievement(143).isUnlocked && !Pelle.isDoomed) ||
         PelleUpgrade.galaxyNoResetDimboost.canBeApplied;

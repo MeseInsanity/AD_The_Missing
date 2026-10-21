@@ -140,8 +140,9 @@ export function maxAllTimeDimensions() {
 export function timeDimensionCommonMultiplier() {
   let mult = new Decimal(1)
     .timesEffectsOf(
-      Achievement(105),
-      Achievement(128),
+      Achievement(114),
+      Achievement(133),
+      TimeStudy(173),
       TimeStudy(93),
       TimeStudy(103),
       TimeStudy(151),

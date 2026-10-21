@@ -6,13 +6,13 @@ export const eternities = {
     name: "Eternities gained per Eternity",
     isBase: true,
     multValue: () => gainedEternities(),
-    isActive: () => (PlayerProgress.realityUnlocked() || Achievement(113).isUnlocked) && !Pelle.isDoomed,
+    isActive: () => (PlayerProgress.realityUnlocked() || Achievement(116).isUnlocked) && !Pelle.isDoomed,
     overlay: ["Δ", "<i class='fa-solid fa-arrows-rotate' />"],
   },
   achievement: {
     name: "Achievement 113",
-    multValue: () => Achievement(113).effectOrDefault(1),
-    isActive: () => Achievement(113).canBeApplied,
+    multValue: () => Achievement(116).effectOrDefault(1),
+    isActive: () => Achievement(116).canBeApplied,
     icon: MultiplierTabIcons.ACHIEVEMENT,
   },
   amplifierEter: {

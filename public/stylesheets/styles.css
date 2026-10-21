@@ -754,6 +754,16 @@ button:focus {
   background: var(--color-celestials);
 }
 
+.o-tab-btn--fragment {
+  color: #f3a0c8;
+  background-color: var(--color-prestige--accent);
+  border-color: #c74e8a;
+}
+
+.o-tab-btn--fragment:hover {
+  background: #f3a0c8;
+}
+
 /* #endregion tab buttons */
 
 #loading {
@@ -1618,6 +1628,10 @@ br {
   margin-right: 0.8rem;
 }
 
+.o-primary-btn--sacrifice--ic11-disabled {
+  font-size: 1.1rem;
+}
+
 .o-primary-btn--buy-dim {
   max-width: 25rem;
 }
@@ -2112,6 +2126,17 @@ br {
 .o-eternity-button--unavailable {
   opacity: 0.5;
   cursor: default;
+}
+
+.o-fragment-discovery-button {
+  color: #f3a0c8;
+  background-color: var(--color-prestige--accent);
+  border-color: #c74e8a;
+}
+
+.o-fragment-discovery-button:hover {
+  color: #3b0928;
+  background-color: #f3a0c8;
 }
 
 /* #endregion Eternity */

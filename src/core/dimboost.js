@@ -1,5 +1,6 @@
 import { DC } from "./constants";
 import { EternityChallenge } from "./eternity-challenge";
+import { Fragments } from "./secret-formula/fragments";
 import { IC5Focus } from "./infinity-challenges";
 
 class DimBoostRequirement {
@@ -19,7 +20,12 @@ class DimBoostRequirement {
 
 export class DimBoost {
   static get power() {
-    const infinityUpgradeBase = new Decimal(InfinityUpgrade.dimboostMult.effectOrDefault(DC.D2));
+    if (InfinityChallenge(7).isRunning) {
+      return DC.D1.add(player.galaxies.times(0.5)).powEffectOf(InfinityChallenge(12).reward);
+    }
+
+    const infinityUpgradeBase = new Decimal(InfinityUpgrade.dimboostMult.effectOrDefault(DC.D2))
+      .add(EternityUpgrade.achievementDimBoost.effectOrDefault(0));
     const adjustedInfinityUpgradeBase = NormalChallenge.isRuleBreaking
       ? DC.D2.times(infinityUpgradeBase.div(DC.D2).pow(DC.D0_5))
       : infinityUpgradeBase;
@@ -31,14 +37,13 @@ export class DimBoost {
       : currentInfinityMultiplier;
     let boost = new Decimal(Effects.max(
       2,
-      InfinityChallenge(8).reward,
-      InfinityChallenge(8),
+      InfinityChallenge(7).reward,
       TimeStudy(81)
     )).max(adjustedInfinityUpgradeBase)
       .timesEffectsOf(
         TimeStudy(83),
         TimeStudy(231),
-        Achievement(117),
+        Achievement(124),
         Achievement(142),
         GlyphEffect.dimBoostPower,
         PelleRifts.recursion.milestones[0]
@@ -56,7 +61,7 @@ export class DimBoost {
     }
     if (NormalChallenge(4).isRunning) boost = boost.pow(2.5);
     if (NormalChallenge(8).isRunning) boost = boost.pow(DC.D0_65);
-    return boost;
+    return boost.powEffectOf(InfinityChallenge(12).reward);
   }
 
   static multiplierToNDTier(tier) {
@@ -154,7 +159,9 @@ export class DimBoost {
 
     amount = Decimal.round(amount);
 
-    return new DimBoostRequirement(tier, amount, { usesBought: isIC5 });
+    return new DimBoostRequirement(tier, amount, {
+      usesBought: isIC5 || InfinityChallenge(11).isRunning
+    });
   }
 
   static get unlockedByBoost() {
@@ -224,7 +231,7 @@ export function softReset(tempBulk, forcedADReset = false, forcedAMReset = false
   resetChallengeStuff();
   const canKeepDimensions = Pelle.isDoomed
     ? PelleUpgrade.dimBoostResetsNothing.canBeApplied
-    : Perk.antimatterNoReset.canBeApplied;
+    : (Perk.antimatterNoReset.canBeApplied || Fragments.isInfinityPowerDrainComplete);
   if (forcedADReset || !canKeepDimensions) {
     AntimatterDimensions.reset();
     player.sacrificed = DC.D0;
@@ -233,7 +240,7 @@ export function softReset(tempBulk, forcedADReset = false, forcedAMReset = false
   skipResetsIfPossible(enteringAntimatterChallenge);
   const canKeepAntimatter = Pelle.isDoomed
     ? PelleUpgrade.dimBoostResetsNothing.canBeApplied
-    : (Achievement(111).isUnlocked || Perk.antimatterNoReset.canBeApplied);
+    : (Achievement(117).isUnlocked || Perk.antimatterNoReset.canBeApplied || Fragments.isInfinityPowerDrainComplete);
   if (!forcedAMReset && canKeepAntimatter) {
     Currency.antimatter.bumpTo(Currency.antimatter.startingValue);
   } else {
@@ -309,7 +316,8 @@ function maxBuyDimBoosts() {
   multiplierPerDB = multiplierPerDB.times(InfinityUpgrade.resetBoost.chargedEffect.effectOrDefault(1));
   amount = amount.times(InfinityUpgrade.resetBoost.chargedEffect.effectOrDefault(1));
 
-  const ad = AntimatterDimension(tier).totalAmount;
+  const dimension = AntimatterDimension(tier);
+  const ad = InfinityChallenge(11).isRunning ? dimension.bought : dimension.totalAmount;
   let calcBoosts;
   calcBoosts = ad.sub(amount).div(multiplierPerDB);
 

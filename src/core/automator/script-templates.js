@@ -166,8 +166,10 @@ export class ScriptTemplate {
     this.lines.push(`auto infinity 5s`);
     if (params.isBanked) {
       const has191 = this.storedTreeObj.purchasedStudies.includes(TimeStudy(191));
-      if (!has191) this.warnings.push(`TS191 is not reachable from an empty tree; banking anything in this template
-        will require Achievement "${Achievement(131).name}"`);
+      if (!has191) {
+        this.warnings.push("TS191 is not reachable from an empty tree; banking anything in this template requires " +
+          "another source of Banked Infinities.");
+      }
       const bankRate = has191 ? 0.1 : 0.05;
       this.lines.push("// Note: This template attempts to get all the Banked Infinities within a single Eternity");
       this.lines.push(`wait infinities > ${this.format(params.infinities.dividedBy(bankRate), 2)}`);

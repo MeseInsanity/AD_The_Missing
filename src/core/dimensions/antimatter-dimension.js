@@ -5,7 +5,7 @@ import {
   recordNormalChallenge10Purchases
 } from "../normal-challenges";
 import { effectiveGalaxyCount } from "../tickspeed";
-import { IC5Focus } from "../infinity-challenges";
+import { IC11Production, IC5Focus, IC9Annihilation } from "../infinity-challenges";
 
 import { DimensionState } from "./dimension";
 
@@ -39,8 +39,11 @@ export function antimatterDimensionCommonMultiplier() {
   multiplier = multiplier.times(Achievements.power);
 
   if (!EternityChallenge(9).isRunning) {
-    let infinityPowerMultiplier = Currency.infinityPower.value.pow(InfinityDimensions.powerConversionRate).max(1);
+    const infinityPowerMultiplier = Currency.infinityPower.value.pow(InfinityDimensions.powerConversionRate).max(1);
     multiplier = multiplier.times(infinityPowerMultiplier);
+  }
+  if (InfinityChallenge(11).isRunning && Replicanti.areUnlocked && Replicanti.amount.gt(1)) {
+    multiplier = multiplier.times(replicantiMult().pow(8));
   }
   const infinityUpgradeMultiplier = Effects.product(
     InfinityUpgrade.totalTimeMult,
@@ -52,18 +55,25 @@ export function antimatterDimensionCommonMultiplier() {
   );
   multiplier = multiplier.times(ruleBreakingInfinityUpgradeMultiplier(infinityUpgradeMultiplier));
 
-  const achievementMultiplier = Effects.product(
-    Achievement(48),
-    Achievement(56),
-    Achievement(65),
-    Achievement(72),
-    Achievement(73),
-    Achievement(74),
-    Achievement(76),
-    Achievement(84),
-    Achievement(91),
-    Achievement(92)
-  );
+  const achievementMultiplier = InfinityChallenge(11).isRunning
+    ? Effects.product(
+      Achievement(48),
+      Achievement(72),
+      Achievement(73),
+      Achievement(74),
+      Achievement(84)
+    )
+    : Effects.product(
+      Achievement(48),
+      Achievement(56),
+      Achievement(65),
+      Achievement(72),
+      Achievement(73),
+      Achievement(74),
+      Achievement(84),
+      Achievement(91),
+      Achievement(92)
+    );
   multiplier = multiplier.times(ruleBreakingAchievementMultiplier(achievementMultiplier));
 
   multiplier = multiplier.timesEffectsOf(
@@ -73,13 +83,12 @@ export function antimatterDimensionCommonMultiplier() {
     TimeStudy(161),
     TimeStudy(193),
     InfinityChallenge(4),
-    InfinityChallenge(9),
+    InfinityChallenge(8),
     EternityChallenge(10),
     AlchemyResource.dimensionality,
     PelleUpgrade.antimatterDimensionMult
   );
 
-  multiplier = multiplier.dividedByEffectOf(InfinityChallenge(7));
   multiplier = multiplier.times(getAdjustedGlyphEffect("powermult"));
   multiplier = multiplier.times(Currency.realityMachines.value.powEffectOf(AlchemyResource.force));
 
@@ -150,6 +159,22 @@ export function getDimensionFinalMultiplierUncached(tier) {
     multiplier = multiplier.div(normalChallenge11MatterPenalty());
   }
 
+  if (InfinityChallenge(12).isRunning) {
+    const dimension = AntimatterDimension(tier);
+    const buy10Count = Decimal.floor(dimension.bought.div(10));
+    let exemptMultiplier = Decimal.pow(AntimatterDimensions.buyTenMultiplier, buy10Count)
+      .times(DimBoost.multiplierToNDTier(tier));
+    if (tier > 1 && Achievement(58).isUnlocked) {
+      const lowerBuy10Count = Decimal.floor(AntimatterDimension(tier - 1).bought.div(10));
+      exemptMultiplier = exemptMultiplier.times(Decimal.pow(
+        AntimatterDimensions.buyTenMultiplier,
+        lowerBuy10Count.times(Achievement(58).effectOrDefault(0))
+      ));
+    }
+    if (tier === 8) exemptMultiplier = exemptMultiplier.times(Sacrifice.totalBoost);
+    multiplier = multiplier.div(exemptMultiplier).pow(0.05).times(exemptMultiplier);
+  }
+
   return multiplier;
 }
 
@@ -190,6 +215,7 @@ function applyNDMultipliers(mult, tier) {
     if (NormalChallenge.isRuleBreaking && !NormalChallenge(9).isRunning) lowerTierPower = lowerTierPower.times(DC.D0_5);
     multiplier = multiplier.times(Decimal.pow(buyTenMultiplier, lowerTierBuy10Value.times(lowerTierPower)));
   }
+  multiplier = multiplier.times(Decimal.pow(AntimatterDimensions.buyTenMultiplier, ic8VirtualBuy10Count(tier)));
   multiplier = multiplier.times(DimBoost.multiplierToNDTier(tier));
 
   if (tier === 1) {
@@ -215,8 +241,7 @@ function applyNDMultipliers(mult, tier) {
   );
   multiplier = multiplier.times(ruleBreakingAchievementMultiplier(tierAchievementMultiplier)).timesEffectsOf(
     tier < 8 ? TimeStudy(71) : null,
-    tier === 8 ? TimeStudy(214) : null,
-    tier > 1 && tier < 8 ? InfinityChallenge(9).reward : null
+    tier === 8 ? TimeStudy(214) : null
   );
   multiplier = multiplier.clampMin(1);
 
@@ -233,6 +258,13 @@ function applyNDMultipliers(mult, tier) {
   return multiplier;
 }
 
+// IC8's reward deliberately bypasses normal Buy 10 interactions. In particular, it must not
+// inherit lower-tier chaining, NC2/NC3/NC7 adjustments, or EC3's normal Buy 10 behavior.
+function ic8VirtualBuy10Count(tier) {
+  if (!InfinityChallenge(8).isCompleted) return DC.D0;
+  return InfinityDimension(tier).purchases.times(InfinityDimensions.powerConversionRate).div(4);
+}
+
 function applyNDPowers(mult, tier) {
   let multiplier = mult;
   const glyphPowMultiplier = new Decimal(getAdjustedGlyphEffect("powerpow"));
@@ -243,6 +275,9 @@ function applyNDPowers(mult, tier) {
   }
   if (Achievement(81).canBeApplied && tier <= InfinityChallenge(5).ic5AchievementTier) {
     multiplier = multiplier.pow(Achievement(81).effectValue);
+  }
+  if (Achievement(107).canBeApplied && tier < 8) {
+    multiplier = multiplier.pow(Achievement(107).effectValue);
   }
 
   multiplier = multiplier.pow(glyphPowMultiplier.times(glyphEffarigPowMultiplier).times(Ra.momentumValue));
@@ -454,12 +489,12 @@ class AntimatterDimensionState extends DimensionState {
    * @returns {ExponentialCostScaling}
    */
   get costScale() {
-    const useNC9Costs = NormalChallenge(9).isOnlyActiveChallenge;
+    const useNC9Costs = NormalChallenge(9).isRunning;
     return new ExponentialCostScaling({
       baseCost: useNC9Costs ? this._nc9BaseCost : this._baseCost,
       baseIncrease: useNC9Costs ? this._nc9BaseCostMultiplier : this._baseCostMultiplier,
       costScale: new Decimal(Player.dimensionMultDecrease),
-      scalingCostThreshold: DC.NUMMAX
+      scalingCostThreshold: Decimal.pow10(DC.NUMMAX.log10().add(EternityUpgrade.costScaling.effectOrDefault(0)))
     });
   }
 
@@ -467,7 +502,7 @@ class AntimatterDimensionState extends DimensionState {
    * @returns {Decimal}
    */
   get cost() {
-    const useNC9Costs = NormalChallenge(9).isOnlyActiveChallenge;
+    const useNC9Costs = NormalChallenge(9).isRunning;
     if (useNC9Costs) {
       const purchases = this.bought.div(DC.E1).floor().add(this.costBumps);
       const cost = this._nc9BaseCost.times(this._nc9BaseCostMultiplier.pow(purchases));
@@ -538,7 +573,13 @@ class AntimatterDimensionState extends DimensionState {
     }
 
     let toGain;
-    if (tier === 7 && EternityChallenge(7).isRunning) {
+    if (InfinityChallenge(9).isRunning) {
+      if (tier > 6) return DC.D0;
+      const producerTier = tier + 2;
+      toGain = IC9Annihilation.applyProductionExponent(
+        AntimatterDimension(producerTier).productionPerSecond, producerTier
+      );
+    } else if (tier === 7 && EternityChallenge(7).isRunning) {
       toGain = InfinityDimension(1).productionPerSecond.times(10);
     } else {
       toGain = AntimatterDimension(tier + 1).productionPerSecond;
@@ -563,6 +604,10 @@ class AntimatterDimensionState extends DimensionState {
    * @returns {Decimal}
    */
   get currencyAmount() {
+    if (InfinityChallenge(9).isRunning) return this.tier % 2 === 1
+      ? Currency.matter.value
+      : Currency.antimatter.value;
+    if (InfinityChallenge(10).isRunning) return Currency.infinityPower.value;
     if (NormalChallenge(9).isRunning && this.tier > 1) return AntimatterDimension(this.tier - 1).amount;
     return Currency.antimatter.value;
   }
@@ -571,6 +616,16 @@ class AntimatterDimensionState extends DimensionState {
    * @param {Decimal} value
    */
   set currencyAmount(value) {
+    if (InfinityChallenge(9).isRunning) {
+      // Both IC9 resources must remain positive: the Annihilate conversion uses their ratio.
+      if (this.tier % 2 === 1) Currency.matter.value = Decimal.max(value, DC.D1);
+      else Currency.antimatter.value = Decimal.max(value, DC.D1);
+      return;
+    }
+    if (InfinityChallenge(10).isRunning) {
+      Currency.infinityPower.value = value;
+      return;
+    }
     if (NormalChallenge(9).isRunning && this.tier > 1) {
       AntimatterDimension(this.tier - 1).amount = value;
       return;
@@ -713,6 +768,7 @@ export const AntimatterDimensions = {
     for (const dimension of AntimatterDimensions.all) {
       dimension.reset();
     }
+    if (InfinityChallenge(11).isRunning) IC11Production.reset();
     GameCache.dimensionMultDecrease.invalidate();
   },
 
@@ -720,6 +776,7 @@ export const AntimatterDimensions = {
     for (const dimension of AntimatterDimensions.all.slice(0, maxTier)) {
       dimension.resetAmount();
     }
+    if (InfinityChallenge(11).isRunning) IC11Production.reset();
   },
 
   get buyTenMultiplier() {
@@ -748,7 +805,7 @@ export const AntimatterDimensions = {
 
     if (NormalChallenge(8).isRunning) mult = mult.pow(DC.D0_65);
 
-    return mult;
+    return mult.powEffectOf(InfinityChallenge(12).reward);
   },
 
   tick(diff) {
@@ -756,7 +813,43 @@ export const AntimatterDimensions = {
     // are hidden when pre-break Big Crunch button is on screen.
     const hasBigCrunchGoal = !player.break || Player.isInAntimatterChallenge;
     const isNC9 = NormalChallenge(9).isRunning;
-    if (!isNC9 && hasBigCrunchGoal && Currency.antimatter.gte(Player.infinityGoal)) return;
+    const isIC9 = InfinityChallenge(9).isRunning;
+    const isIC10 = InfinityChallenge(10).isRunning;
+    if (!isNC9 && !isIC10 && hasBigCrunchGoal && Currency.antimatter.gte(Player.infinityGoal)) {
+      Currency.antimatter.value = new Decimal(Player.infinityGoal);
+      return;
+    }
+
+    if (isIC9) {
+      IC9Annihilation.sanitizeResources();
+      for (const dimension of AntimatterDimensions.all) {
+        if (!Decimal.isFinite(dimension.amount) || dimension.amount.lt(0)) dimension.amount = DC.D0;
+      }
+      for (let tier = 8; tier >= 3; --tier) {
+        const baseProduction = AntimatterDimension(tier).productionForDiff(diff.div(10));
+        const production = IC9Annihilation.applyProductionExponent(baseProduction, tier);
+        const produced = AntimatterDimension(tier - 2);
+        if (Decimal.isFinite(production)) produced.amount = produced.amount.plus(production);
+      }
+      const antimatterProduction = IC9Annihilation.applyProductionExponent(
+        AntimatterDimension(1).productionForDiff(diff), 1
+      );
+      const matterProduction = IC9Annihilation.applyProductionExponent(
+        AntimatterDimension(2).productionForDiff(diff), 2
+      );
+      if (Decimal.isFinite(antimatterProduction)) Currency.antimatter.add(antimatterProduction);
+      if (Decimal.isFinite(matterProduction)) Currency.matter.add(matterProduction);
+      if (hasBigCrunchGoal && Currency.antimatter.gte(Player.infinityGoal)) {
+        Currency.antimatter.value = new Decimal(Player.infinityGoal);
+      }
+      return;
+    }
+
+    if (InfinityChallenge(11).isRunning) {
+      // IC11 self-production is advanced in Replicanti-sized segments so each Replicate sees the amount which
+      // existed at that exact boundary. Handling the full diff here would let a large offline tick use future ADs.
+      return;
+    }
 
     const maxTierProduced = EternityChallenge(3).isRunning ? 3 : 7;
     for (let tier = maxTierProduced; tier >= 1; --tier) {
@@ -766,14 +859,14 @@ export const AntimatterDimensions = {
       player.requirementChecks.eternity.noAD1 = false;
     }
     const hasAnyAntimatterDimension = AntimatterDimensions.all.some(dimension => dimension.amount.gt(0));
-    if (isNC9) {
+    if (isNC9 || isIC10) {
       Currency.antimatter.value = hasAnyAntimatterDimension
         ? AntimatterDimension(1).productionPerSecond
         : DC.E2;
     } else {
       AntimatterDimension(1).produceCurrency(Currency.antimatter, diff);
     }
-    // NC9 displays the current 1st AD production rather than accumulated antimatter. Once its
+    // NC9 and IC10 display current 1st AD production rather than accumulated antimatter. Once its
     // production reaches a challenge goal, keep the displayed value at that goal until Crunch.
     if (hasBigCrunchGoal && player.records.thisInfinity.maxAM.gte(Player.infinityGoal)) {
       // Challenge goals are UI-observed game-data Decimals, so never place their reference in player data.

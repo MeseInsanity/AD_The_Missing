@@ -91,8 +91,9 @@ TimeTheoremPurchaseType.am = new class extends TimeTheoremPurchaseType {
   set amount(value) { player.timestudy.amBought = value; }
 
   get currency() { return Currency.antimatter; }
-  get costBase() { return DC.E20000; }
-  get costIncrement() { return DC.E20000; }
+  // AM reaches roughly three times as many orders of magnitude before Eternity in this mod.
+  get costBase() { return DC.E60000; }
+  get costIncrement() { return DC.E60000; }
 }();
 
 TimeTheoremPurchaseType.ip = new class extends TimeTheoremPurchaseType {
@@ -101,7 +102,8 @@ TimeTheoremPurchaseType.ip = new class extends TimeTheoremPurchaseType {
 
   get currency() { return Currency.infinityPoints; }
   get costBase() { return DC.D1; }
-  get costIncrement() { return DC.E100; }
+  // IP reaches roughly four times as many orders of magnitude before Eternity in this mod.
+  get costIncrement() { return DC.E400; }
 }();
 
 TimeTheoremPurchaseType.ep = new class extends TimeTheoremPurchaseType {

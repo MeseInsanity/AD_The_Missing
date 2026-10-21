@@ -58,51 +58,39 @@ export class TimeStudyTreeLayout {
     this.rows = [
       normalRow(                       null,   TS(11),   null                         ),
       normalRow(                           TS(21), TS(22)                             ),
-      normalRow(                   null, TS(31), TS(32), TS(33)                       )
+      normalRow(                         TS(34), TS(31), TS(32), TS(33)               )
     ];
 
     if (type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_62 || type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_62_181 ||
       type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_TRIAD_STUDIES) {
       this.rows.push(
-        normalRow(                     null, TS(41), TS(42), EC(5)                      ),
-        normalRow(                               TS(51)                                 )
+        normalRow(                           null, TS(41), TS(42)                      ),
+        normalRow(null, TS(113), TS(51), EC(5), null)
       );
     } else {
       this.rows.push(
         normalRow(                           TS(41), TS(42)                             ),
-        normalRow(                       null,   TS(51),  EC(5)                         )
+        normalRow(null, TS(113), TS(51), EC(5), null)
       );
     }
 
     this.rows.push(
-      normalRow(                       null,   TS(61),  TS(62)                        ),
-      normalRow(                      TS(71),  TS(72),  TS(73)                        ),
-      normalRow(                      TS(81),  TS(82),  TS(83)                        ),
-      normalRow(                      TS(91),  TS(92),  TS(93)                        ),
-      normalRow(                      TS(101), TS(102), TS(103)                       ),
-      normalRow(                       EC(7),  TS(111),  null                         ),
-      normalRow(                      TS(121), TS(122), TS(123)                       ),
-      normalRow(               EC(6), TS(131), TS(132), TS(133), EC(8)                ),
-      normalRow(                      TS(141), TS(142), TS(143)                       ),
-      normalRow(               null,   EC(9), TS(151),   null,   EC(4)                ),
-      normalRow(                          TS(161), TS(162)                            )
+      normalRow(null, EC(1), TS(61), TS(62), null),
+      normalRow(null, TS(71),  TS(72),  TS(73),  null),
+      normalRow(EC(3), TS(81), TS(82), TS(83), EC(2)),
+      normalRow(TS(114), TS(91), TS(92), TS(93), TS(112)),
+      normalRow(null, TS(101), TS(102), TS(103), null),
+      normalRow(TS(155), EC(7), TS(111), EC(8), TS(153)),
+      normalRow(null, TS(121), TS(122), TS(123), null),
+      normalRow(EC(6), TS(131), TS(132), TS(133), null),
+      normalRow(TS(152), TS(141), TS(142), TS(143), EC(4)),
+      normalRow(TS(156), EC(9), TS(151), TS(154), null),
+      normalRow(                          TS(161), TS(162)                            ),
+      normalRow(                      TS(172), TS(171), TS(173)                       )
     );
 
-    if (type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_181 || type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_62_181 ||
-      type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_TRIAD_STUDIES) {
-      this.rows.push(
-        normalRow(                         null, TS(171),  EC(2)                        ),
-        normalRow(                        EC(1), TS(181),  EC(3)                        )
-      );
-    } else {
-      this.rows.push(
-        normalRow(                               TS(171)                                ),
-        normalRow(                         EC(1), EC(2), EC(3)                          ),
-        normalRow(                               TS(181)                                )
-      );
-    }
-
     this.rows.push(
+      normalRow(                               TS(181)                                ),
       normalRow(                               EC(10)                                 ),
       normalRow(             TS(191),          TS(192),          TS(193)              ),
       normalRow(                               TS(201)                                ),

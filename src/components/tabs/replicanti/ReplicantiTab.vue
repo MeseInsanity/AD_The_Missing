@@ -1,6 +1,8 @@
 <script>
 import { Replicanti } from "../../../core/replicanti";
 
+import { Fragments } from "@/core/secret-formula/fragments";
+
 import wordShift from "@/core/word-shift";
 
 import ReplicantiUpgradeButton, { ReplicantiUpgradeButtonSetup } from "./ReplicantiUpgradeButton";
@@ -24,6 +26,8 @@ export default {
       isInEC8: false,
       ec8Purchases: 0,
       amount: new Decimal(),
+      effectiveReplicanti: new Decimal(),
+      hasFragments: false,
       mult: new Decimal(),
       hasTDMult: false,
       multTD: new Decimal(),
@@ -48,13 +52,6 @@ export default {
   },
   computed: {
     isDoomed: () => Pelle.isDoomed,
-    replicantiChanceSetup() {
-      return new ReplicantiUpgradeButtonSetup(
-        ReplicantiUpgrade.chance,
-        value => `Replicate chance: ${formatPercents(value)}`,
-        cost => `+${formatPercents(0.01)} Costs: ${format(cost)} IP`
-      );
-    },
     replicantiIntervalSetup() {
       const upgrade = ReplicantiUpgrade.interval;
       function formatInterval(interval) {
@@ -120,6 +117,9 @@ export default {
       return `${boostList.slice(0, -1).join(",<br>")},<br> and ${boostList[boostList.length - 1]}.`;
     },
     hasMaxText: () => PlayerProgress.realityUnlocked() && !Pelle.isDoomed,
+    displayedReplicanti() {
+      return this.hasFragments ? this.effectiveReplicanti : this.amount;
+    },
     toMaxTooltip() {
       if (this.amount.lte(this.replicantiCap)) return null;
       return this.estimateToMax.lt(0.01)
@@ -141,6 +141,10 @@ export default {
         this.ec8Purchases = player.eterc8repl;
       }
       this.amount.copyFrom(Replicanti.amount);
+      this.hasFragments = Fragments.isUnlocked;
+      if (this.hasFragments) {
+        this.effectiveReplicanti.copyFrom(Fragments.effectiveReplicanti);
+      }
       this.mult.copyFrom(replicantiMult());
       this.hasTDMult = DilationUpgrade.tdMultReplicanti.isBought;
       this.multTD.copyFrom(DilationUpgrade.tdMultReplicanti.effectValue);
@@ -177,7 +181,7 @@ export default {
     // This is copied out of a short segment of ReplicantiGainText with comments and unneeded variables stripped
     calculateEstimate() {
       const updateRateMs = player.options.updateRate;
-      const logGainFactorPerTick = player.replicanti.chance.add(1).ln().mul(updateRateMs)
+      const logGainFactorPerTick = Replicanti.chance.add(1).ln().mul(updateRateMs)
         .mul(getGameSpeedupForDisplay()).div(getReplicantiInterval());
       const postScale = Decimal.log10(ReplicantiGrowth.scaleFactor).div(ReplicantiGrowth.scaleLog10);
       const nextMilestone = this.maxReplicanti;
@@ -222,8 +226,15 @@ export default {
       </div>
       <p class="c-replicanti-description">
         You have
-        <span class="c-replicanti-description__accent">{{ format(amount, 2, 0) }}</span>
-        Replicanti, translated to
+        <span class="c-replicanti-description__accent">{{ format(displayedReplicanti, 2, 0) }}</span>
+        Replicanti
+        <template v-if="hasFragments">
+          <br>
+          (<span class="c-replicanti-description__fragment-accent">{{ format(amount, 2, 0) }}</span>
+          real Replicanti before enhancement)
+        </template>.
+        <br><br>
+        Translated to:
         <br>
         <span v-html="boostText" />
       </p>
@@ -242,8 +253,6 @@ export default {
         You have {{ quantifyInt("purchase", ec8Purchases) }} left within Eternity Challenge 8.
       </div>
       <div class="l-replicanti-upgrade-row">
-        <ReplicantiUpgradeButton :setup="replicantiChanceSetup" />
-        <ReplicantiUpgradeButton :setup="replicantiIntervalSetup" />
         <ReplicantiUpgradeButton :setup="maxGalaxySetup" />
       </div>
       <div>
@@ -270,5 +279,9 @@ export default {
 .modified-cap {
   margin: -0.8rem 0 0.8rem;
   font-weight: bold;
+}
+
+.c-replicanti-description__fragment-accent {
+  color: #f3a0c8;
 }
 </style>

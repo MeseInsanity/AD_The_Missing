@@ -16,7 +16,8 @@ export default {
     return {
       name: "",
       displayName: "",
-      canEternity: false
+      canEternity: false,
+      hasStudies: false,
     };
   },
   computed: {
@@ -29,13 +30,16 @@ export default {
       this.name = player.timestudy.presets[this.saveslot - 1].name;
       this.displayName = this.name === "" ? this.saveslot : this.name;
       this.canEternity = Player.canEternity;
+      this.hasStudies = this.preset.studies !== "";
     },
     nicknameBlur(event) {
       const newName = event.target.value.slice(0, 4).trim();
       if (!this.isASCII(newName)) return;
 
-      const existingNames = player.timestudy.presets.map(p => p.name);
-      if (existingNames.includes(newName)) return;
+      const existingNames = player.timestudy.presets
+        .filter((_, index) => index !== this.saveslot - 1)
+        .map(p => p.name);
+      if (newName !== "" && existingNames.includes(newName)) return;
 
       this.preset.name = newName;
       this.name = this.preset.name;
@@ -72,12 +76,15 @@ export default {
       }
     },
     respecAndLoad() {
-      if (Player.canEternity) {
-        player.respec = true;
-        const newTree = new TimeStudyTree();
-        newTree.attemptBuyArray(newTree.parseStudyImport(this.preset.studies));
-        animateAndEternity(() => TimeStudyTree.commitToGameState(newTree.purchasedStudies, false, newTree.startEC));
+      if (!this.preset.studies) {
+        Modal.message.show("This Time Study list currently contains no Time Studies.");
+        return;
       }
+      if (!Player.canEternity) return;
+      player.respec = true;
+      const newTree = new TimeStudyTree();
+      newTree.attemptBuyArray(newTree.parseStudyImport(this.preset.studies));
+      animateAndEternity(() => TimeStudyTree.commitToGameState(newTree.purchasedStudies, false, newTree.startEC));
     },
     deletePreset() {
       this.hideContextMenu();
@@ -150,7 +157,7 @@ export default {
             <div
               :class="{
                 'c-tt-save-load-btn__menu-item__hover-option': true,
-                'c-tt-save-load-btn__menu-item__hover-option--disabled': !canEternity,
+                'c-tt-save-load-btn__menu-item__hover-option--disabled': !canEternity || !hasStudies,
               }"
               @click="respecAndLoad"
             >

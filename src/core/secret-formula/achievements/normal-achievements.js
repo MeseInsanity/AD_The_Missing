@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 import { DC } from "../../constants";
+import { Fragments } from "../fragments";
 
 export const normalAchievements = [
   {
@@ -533,13 +534,10 @@ export const normalAchievements = [
   },
   {
     id: 76,
-    name: "One for each dimension",
-    get description() { return `Play for ${formatInt(8)} days.`; },
-    checkRequirement: () => Time.totalTimePlayed.totalDays.gte(8),
+    name: "Stable Fusion",
+    description: "Purchase Sacrificial Servant and fully stabilize Infinity Dimensions.",
+    checkRequirement: () => InfinityDimensions.isID5PermanentlyStable,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
-    reward: "Extremely small multiplier to Antimatter Dimensions based on time played.",
-    effect: () => Decimal.max(Decimal.pow(Time.totalTimePlayed.totalDays.div(2), 0.05), 1),
-    formatEffect: value => `${formatX(value, 2, 2)}`
   },
   {
     id: 77,
@@ -575,7 +573,7 @@ export const normalAchievements = [
   {
     id: 82,
     name: "Anti-antichallenged",
-    get description() { return `Complete all ${formatInt(8)} Infinity Challenges.`; },
+    get description() { return `Complete the first ${formatInt(8)} Infinity Challenges.`; },
     checkRequirement: () => InfinityChallenges.completed.length === 8,
     checkEvent: [GAME_EVENT.INFINITY_CHALLENGE_COMPLETED, GAME_EVENT.REALITY_RESET_AFTER],
   },
@@ -699,7 +697,10 @@ export const normalAchievements = [
     id: 95,
     name: "Is this safe?",
     get description() { return `Gain ${format(DC.NUMMAX, 1, 0)} Replicanti in ${formatInt(1)} hour.`; },
-    get reward() { return `You keep your Replicanti and ${formatInt(1)} Replicanti Galaxy on Infinity.`; },
+    get reward() {
+      return `Replicanti Interval is ${formatPercents(0.25)} shorter and you keep ${formatInt(1)} Replicanti Galaxy on Infinity.`;
+    },
+    effect: 0.75,
     checkRequirement: () =>
       (Replicanti.amount.eq(DC.NUMMAX) || player.replicanti.galaxies.gt()) &&
       Time.thisInfinityRealTime.totalHours.lte(1),
@@ -707,16 +708,20 @@ export const normalAchievements = [
   },
   {
     id: 96,
-    name: "Time is relative",
-    description: "Go Eternal.",
-    checkRequirement: () => true,
-    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
+    get name() {
+      return Fragments.isUnlocked ? "Fragmented World" : "Time is relative.";
+    },
+    get description() {
+      return Fragments.isUnlocked ? "Discover a Fragment." : "Go Eternal.";
+    },
+    checkRequirement: () => Fragments.isUnlocked,
+    checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
   },
   {
     id: 97,
     name: "Like jumping on a lego",
-    get description() { return `Get the sum of Infinity Challenge times under ${format(6.66, 2, 2)} seconds.`; },
-    checkRequirement: () => Time.infinityChallengeSum.totalSeconds.lt(6.66),
+    get description() { return `Get the sum of Infinity Challenge times under ${formatInt(10)} seconds.`; },
+    checkRequirement: () => Time.infinityChallengeSum.totalSeconds.lt(10),
     checkEvent: [GAME_EVENT.BIG_CRUNCH_AFTER, GAME_EVENT.REALITY_RESET_AFTER],
   },
   {
@@ -728,23 +733,23 @@ export const normalAchievements = [
   },
   {
     id: 101,
-    name: "8 nobody got time for that",
-    description: "Eternity without buying Antimatter Dimensions 1-7.",
-    checkRequirement: () => player.requirementChecks.eternity.onlyAD8,
+    name: "Other timelines",
+    description: "Gain Fragments.",
+    checkRequirement: () => Fragments.total.gt(0),
     checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
   },
   {
     id: 102,
-    name: "This mile took an eternity",
-    description: "Get all Eternity milestones.",
-    checkRequirement: () => EternityMilestone.all.every(m => m.isReached),
+    name: "I heard you hate timewalls.",
+    description: "Gain a Fragment Milestone.",
+    checkRequirement: () => false,
     checkEvent: GAME_EVENT.GAME_TICK_AFTER
   },
   {
-    id: 103,
+    id: 123,
     name: "Tätä saavutusta ei ole olemassa II",
-    get description() { return `Reach ${formatPostBreak(DC.D9_99999E999, 5, 0)} Infinity Points.`; },
-    checkRequirement: () => Currency.infinityPoints.gte(new Decimal("1e1000")),
+    get description() { return `Reach ${formatPostBreak("9.99999e9999", 5, 0)} Infinity Points.`; },
+    checkRequirement: () => Currency.infinityPoints.gte("9.99999e9999"),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     get reward() {
       return `Make the Infinity Point formula better. log(x)/${formatInt(308)} ➜ log(x)/${formatFloat(307.8, 1)}`;
@@ -752,47 +757,65 @@ export const normalAchievements = [
     effect: 307.8
   },
   {
-    id: 104,
-    name: "That wasn't an eternity",
-    get description() { return `Eternity in under ${formatInt(30)} seconds.`; },
-    checkRequirement: () => Time.thisEternity.totalSeconds.lte(30),
-    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE,
-    get reward() { return `Start Eternities with ${format(5e25)} Infinity Points.`; },
-    effect: 5e25
-  },
-  {
-    id: 105,
-    name: "Infinite Time",
-    get description() { return `Have ${formatInt(308)} Tickspeed upgrades from Time Dimensions.`; },
-    checkRequirement: () => player.totalTickGained.gte(308),
+    id: 103,
+    name: "Nothing ever stays",
+    description: "Let Fragment Decay halve your Fragment factor.",
+    checkRequirement: () => Fragments.isUnlocked && Fragments.amount.gt(0) &&
+      Fragments.decayedAmount.lte(Fragments.amount.div(2)),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
-    reward: "Time Dimensions gain a multiplier based on tickspeed.",
-    effect: () => Tickspeed.perSecond.pow(0.000005),
-    formatEffect: value => `${formatX(value, 2, 2)}`
+    reward: "Gain Replicanti 1.5x faster.",
+    effect: 1.5
   },
   {
-    id: 106,
-    name: "The swarm",
-    get description() { return `Get ${formatInt(10)} Replicanti Galaxies in ${formatInt(15)} seconds.`; },
-    checkRequirement: () => Replicanti.galaxies.total.gte(10) && Time.thisInfinity.totalSeconds.lte(15),
+    id: 104,
+    name: "Galactic Overflow",
+    description: "Gain 15 Replicanti Galaxies in a single Infinity.",
+    checkRequirement: () => Replicanti.galaxies.bought.gte(15),
     checkEvent: GAME_EVENT.REPLICANTI_TICK_AFTER
   },
   {
+    id: 105,
+    name: "Almost none",
+    description: "Have Fragment Decay last at least 4 hours.",
+    checkRequirement: () => Fragments.decayDuration >= 4 * 60 * 60,
+    checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
+    get reward() {
+      return `You gain Replicanti ${formatInt(2)} times faster below ${format(Decimal.pow(2, 1024), 1)} real Replicanti.`;
+    }
+  },
+  {
+    id: 106,
+    name: "Nega-Challenged",
+    description: "Complete all 12 Infinity Challenges.",
+    checkRequirement: () => InfinityChallenges.completed.length === 12,
+    checkEvent: [GAME_EVENT.INFINITY_CHALLENGE_COMPLETED, GAME_EVENT.REALITY_RESET_AFTER]
+  },
+  {
     id: 107,
-    name: "Do you really need a guide for this?",
-    get description() { return `Eternity with less than ${formatInt(10)} Infinities.`; },
-    checkRequirement: () => Currency.infinities.lt(10),
-    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
+    name: "It's not like, \"I'll do it just because I can,\" is it?",
+    description: "Complete Infinity Challenge 5 with one 8th Antimatter Dimension, no Dimension Boosts, and no Galaxies.",
+    checkRequirement: () => false,
+    checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
+    reward: "AD1-7 are empowered by AD8 purchases.",
+    effect: () => AntimatterDimension(8).bought.sqrt().div(1000).add(1),
+    formatEffect: value => `^${format(value, 3, 3)}`
   },
   {
     id: 108,
-    name: "We COULD afford 9",
-    get description() { return `Eternity with exactly ${formatInt(9)} Replicanti.`; },
-    checkRequirement: () => Replicanti.amount.round().eq(9),
-    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
+    name: "You're too good at this!",
+    get description() { return `Reach ${formatPostBreak("1e114514")} antimatter.`; },
+    checkRequirement: () => Currency.antimatter.gte("1e114514"),
+    checkEvent: GAME_EVENT.GAME_TICK_AFTER,
+    get reward() {
+      if (!Achievement(108).isUnlocked) return "Fragment Decay lasts 30 seconds longer.";
+      return "I meant to add about 30 seconds, but added 114514 seconds instead...";
+    },
+    effect: () => (Achievement(108).isUnlocked ? 114514 : 30),
+    formatEffect: value => `${formatInt(value)} seconds`,
+    hideEffect: true,
   },
   {
-    id: 111,
+    id: 117,
     name: "Yo dawg, I heard you liked infinities...",
     get description() {
       return `Have all your Infinities in your past ${formatInt(10)} Infinities be at least
@@ -810,14 +833,21 @@ export const normalAchievements = [
     reward: "Your antimatter doesn't reset on Dimension Boosts or Antimatter Galaxies."
   },
   {
-    id: 112,
-    name: "Never again",
-    get description() { return `Get the sum of Infinity Challenge times below ${formatInt(750)}ms.`; },
-    checkRequirement: () => Time.infinityChallengeSum.totalMilliseconds.lt(750),
-    checkEvent: [GAME_EVENT.BIG_CRUNCH_AFTER, GAME_EVENT.REALITY_RESET_AFTER]
+    id: 118,
+    name: "We COULD afford 9",
+    get description() { return `Eternity with exactly ${formatInt(9)} Replicanti.`; },
+    checkRequirement: () => Replicanti.amount.round().eq(9),
+    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
   },
   {
-    id: 113,
+    id: 111,
+    name: "Time is relative.",
+    description: "Go Eternal.",
+    checkRequirement: () => true,
+    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
+  },
+  {
+    id: 116,
     name: "Eternities are the new infinity",
     get description() { return `Eternity in under ${formatInt(250)}ms.`; },
     checkRequirement: () => Time.thisEternity.totalMilliseconds.lte(250),
@@ -826,7 +856,7 @@ export const normalAchievements = [
     effect: 2,
   },
   {
-    id: 114,
+    id: 122,
     name: "You're a mistake",
     description: "Fail an Eternity Challenge.",
     checkRequirement: () => true,
@@ -836,12 +866,13 @@ export const normalAchievements = [
   },
   {
     id: 115,
-    name: "I wish I had gotten 7 eternities",
-    description: "Start an Infinity Challenge inside an Eternity Challenge.",
-    checkEvent: GAME_EVENT.ACHIEVEMENT_EVENT_OTHER,
+    name: "Do you really need a guide for this?",
+    get description() { return `Eternity with less than ${formatInt(10)} Infinities.`; },
+    checkRequirement: () => Currency.infinities.lt(10),
+    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
   },
   {
-    id: 116,
+    id: 121,
     name: "Do I really need to infinity",
     get description() { return `Eternity with only ${formatInt(1)} Infinity.`; },
     checkRequirement: () => Currency.infinities.lte(1),
@@ -858,7 +889,7 @@ export const normalAchievements = [
     }
   },
   {
-    id: 117,
+    id: 124,
     name: "Costco sells Dimboosts now!",
     get description() { return `Bulk buy ${formatInt(750)} Dimension Boosts at once.`; },
     checkRequirement: ([bulk]) => bulk.gte(750),
@@ -869,7 +900,7 @@ export const normalAchievements = [
     effect: 1.01
   },
   {
-    id: 118,
+    id: 127,
     name: "IT'S OVER 9000",
     get description() { return `Get a total Dimensional Sacrifice multiplier of ${formatPostBreak(DC.E9000)}.`; },
     checkRequirement: () => Sacrifice.totalBoost.gte(DC.E9000),
@@ -878,28 +909,40 @@ export const normalAchievements = [
       and the Autobuyer activates every tick if turned on.`,
   },
   {
-    id: 121,
-    name: "Can you get infinite IP?",
-    get description() { return `Reach ${formatPostBreak("1e30008")} Infinity Points.`; },
-    checkRequirement: () => Currency.infinityPoints.gte(new Decimal("1e30008")),
+    id: 112,
+    name: "This mile took an Eternity",
+    description: "Get all Eternity milestones.",
+    checkRequirement: () => EternityMilestone.all.every(m => m.isReached),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER
   },
   {
-    id: 122,
-    name: "You're already dead.",
-    description: "Eternity without buying Antimatter Dimensions 2-8.",
-    checkRequirement: () => player.requirementChecks.eternity.onlyAD1,
-    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
+    id: 113,
+    name: "That wasn't an eternity",
+    get description() { return `Eternity in under ${formatInt(30)} seconds.`; },
+    checkRequirement: () => Time.thisEternity.totalSeconds.lte(30),
+    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE,
+    get reward() { return `Start Eternities with ${format(5e25)} Infinity Points.`; },
+    effect: 5e25
   },
   {
-    id: 123,
+    id: 114,
+    name: "Infinite Time",
+    get description() { return `Have ${formatInt(308)} Tickspeed upgrades from Time Dimensions.`; },
+    checkRequirement: () => player.totalTickGained.gte(308),
+    checkEvent: GAME_EVENT.GAME_TICK_AFTER,
+    reward: "Time Dimensions gain a multiplier based on tickspeed.",
+    effect: () => Tickspeed.perSecond.pow(0.000005),
+    formatEffect: value => `${formatX(value, 2, 2)}`
+  },
+  {
+    id: 125,
     name: "5 more eternities until the update",
     get description() { return `Complete ${formatInt(50)} unique Eternity Challenge tiers.`; },
     checkRequirement: () => EternityChallenges.completions >= 50,
     checkEvent: GAME_EVENT.ETERNITY_RESET_AFTER
   },
   {
-    id: 124,
+    id: 126,
     name: "Long lasting relationship",
     get description() {
       return `Have your Infinity Power per second exceed your Infinity Power
@@ -914,7 +957,7 @@ export const normalAchievements = [
     checkEvent: GAME_EVENT.GAME_TICK_AFTER
   },
   {
-    id: 125,
+    id: 131,
     name: "Like feasting on a behind",
     get description() {
       return `Reach ${format(DC.E90)} Infinity Points without having any Infinities
@@ -932,7 +975,7 @@ export const normalAchievements = [
     formatEffect: value => `${formatX(value, 2, 2)}`
   },
   {
-    id: 126,
+    id: 132,
     name: "Popular music",
     get description() { return `Have ${formatInt(180)} times more Replicanti Galaxies than Antimatter Galaxies.`; },
     checkRequirement: () => Replicanti.galaxies.total.gte(player.galaxies.times(180)) && player.galaxies.gt(0),
@@ -943,14 +986,14 @@ export const normalAchievements = [
     },
   },
   {
-    id: 127,
+    id: 128,
     name: "But I wanted another prestige layer...",
     get description() { return `Reach ${format(DC.NUMMAX, 1, 0)} Eternity Points.`; },
     checkRequirement: () => Currency.eternityPoints.gte(DC.NUMMAX),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER
   },
   {
-    id: 128,
+    id: 133,
     name: "What do I have to do to get rid of you",
     get description() { return `Reach ${formatPostBreak("1e22000")} Infinity Points without any Time Studies.`; },
     checkRequirement: () => Currency.infinityPoints.gte("1e22000") && player.timestudy.studies.length === 0,
@@ -960,22 +1003,7 @@ export const normalAchievements = [
     formatEffect: value => `${formatX(value)}`
   },
   {
-    id: 131,
-    name: "No ethical consumption",
-    get description() { return `Get ${format(DC.D2E9)} Banked Infinities.`; },
-    checkRequirement: () => Currency.infinitiesBanked.gt(DC.D2E9),
-    checkEvent: [GAME_EVENT.ETERNITY_RESET_AFTER, GAME_EVENT.SAVE_CONVERTED_FROM_PREVIOUS_VERSION],
-    get reward() {
-      return `You gain ${formatX(2)} times more Infinities and
-      after Eternity you permanently keep ${formatPercents(0.05)} of your Infinities as Banked Infinities.`;
-    },
-    effects: {
-      infinitiesGain: 2,
-      bankedInfinitiesGain: () => Currency.infinities.value.times(0.05).floor()
-    }
-  },
-  {
-    id: 132,
+    id: 134,
     name: "Unique snowflakes",
     get description() {
       return `Have ${formatInt(569)} Antimatter Galaxies without gaining any
@@ -988,7 +1016,7 @@ export const normalAchievements = [
     formatEffect: value => `${formatX(value, 2, 2)}`
   },
   {
-    id: 133,
+    id: 135,
     name: "I never liked this infinity stuff anyway",
     get description() {
       return `Reach ${formatPostBreak(DC.E200000)} Infinity Points without
@@ -1000,23 +1028,6 @@ export const normalAchievements = [
       Currency.infinityPoints.gte(DC.E200000),
     checkEvent: GAME_EVENT.GAME_TICK_AFTER,
     reward: "You start Eternities with all Infinity Challenges unlocked and completed."
-  },
-  {
-    id: 134,
-    name: "When will it be enough?",
-    get description() { return `Reach ${formatPostBreak(DC.E18000)} Replicanti.`; },
-    checkRequirement: () => Replicanti.amount.gte(DC.E18000),
-    checkEvent: GAME_EVENT.GAME_TICK_AFTER,
-    get reward() {
-      return `You gain Replicanti ${formatInt(2)} times faster under ${format(replicantiCap(), 1)} Replicanti.`;
-    }
-  },
-  {
-    id: 135,
-    name: "Faster than a potato^286078",
-    get description() { return `Get more than ${formatPostBreak("1e8296262")} ticks per second.`; },
-    checkRequirement: () => Tickspeed.current.lte("1e-8296262"),
-    checkEvent: GAME_EVENT.GAME_TICK_AFTER
   },
   {
     id: 136,

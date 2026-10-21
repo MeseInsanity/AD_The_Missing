@@ -11,16 +11,38 @@ export default {
   computed: {
     grid() {
       return [
-        [
-          EternityUpgrade.idMultEP,
-          EternityUpgrade.idMultEternities,
-          EternityUpgrade.idMultICRecords
-        ],
-        [
-          EternityUpgrade.tdMultAchs,
-          EternityUpgrade.tdMultTheorems,
-          EternityUpgrade.tdMultRealTime,
-        ]
+        {
+          name: "Antimatter Dimensions",
+          upgrades: [
+            EternityUpgrade.costScaling,
+            EternityUpgrade.theoremSacrifice,
+            EternityUpgrade.achievementDimBoost,
+          ]
+        },
+        {
+          name: "Infinity Dimensions",
+          upgrades: [
+            EternityUpgrade.idMultEP,
+            EternityUpgrade.idMultEternities,
+            EternityUpgrade.idMultICRecords,
+          ]
+        },
+        {
+          name: "Time Dimensions",
+          upgrades: [
+            EternityUpgrade.tdMultAchs,
+            EternityUpgrade.tdMultTheorems,
+            EternityUpgrade.tdMultRealTime,
+          ]
+        },
+        {
+          name: "Infinity Mechanics",
+          upgrades: [
+            EternityUpgrade.currentRunFormula,
+            EternityUpgrade.breakUpgradeFormula,
+            EternityUpgrade.replicantiChance,
+          ]
+        },
       ];
     },
     costIncreases: () => EternityUpgrade.epMult.costIncreaseThresholds.map(x => new Decimal(x))
@@ -32,18 +54,23 @@ export default {
 </script>
 
 <template>
-  <div class="l-eternity-upgrades-grid">
+  <div class="l-eternity-upgrades-tab">
     <div
-      v-for="(row, i) in grid"
-      :key="i"
-      class="l-eternity-upgrades-grid__row"
+      v-for="row in grid"
+      :key="row.name"
+      class="c-eternity-upgrade-grid__row"
     >
-      <EternityUpgradeButton
-        v-for="upgrade in row"
-        :key="upgrade.id"
-        :upgrade="upgrade"
-        class="l-eternity-upgrades-grid__cell"
-      />
+      <div class="c-eternity-upgrade-grid__row-label">
+        {{ row.name }}
+      </div>
+      <div class="l-eternity-upgrade-grid__row-upgrades">
+        <EternityUpgradeButton
+          v-for="upgrade in row.upgrades"
+          :key="upgrade.id"
+          :upgrade="upgrade"
+          class="l-eternity-upgrade-grid__cell"
+        />
+      </div>
     </div>
     <EPMultiplierButton />
     <div>
@@ -56,19 +83,41 @@ export default {
 </template>
 
 <style scoped>
-.l-eternity-upgrades-grid {
+.l-eternity-upgrades-tab {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-top: 1rem;
 }
 
-.l-eternity-upgrades-grid__row {
+.c-eternity-upgrade-grid__row {
   display: flex;
-  flex-direction: row;
+  position: relative;
+  justify-content: center;
+  width: fit-content;
+  margin: 1.5rem 0 0.8rem;
+  padding: 2rem 0.8rem 0.7rem;
+  border: var(--var-border-width, 0.2rem) solid var(--color-eternity);
+  border-radius: var(--var-border-radius, 0.3rem);
+}
+
+.c-eternity-upgrade-grid__row-label {
+  position: absolute;
+  top: -0.8rem;
+  left: 1rem;
+  padding: 0 0.5rem;
+  background: var(--color-base, #000);
+  color: var(--color-eternity);
+  font-weight: bold;
+}
+
+.l-eternity-upgrade-grid__row-upgrades {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .l-eternity-upgrades-grid__cell {
-  margin: 0.5rem 0.8rem;
+  margin: 0.5rem 0;
 }
 </style>

@@ -1,7 +1,13 @@
 import { DC } from "../../constants";
 
-const PEAK_PERFORMANCE_SACRIFICE_DRAIN_RATE = new Decimal(0.25);
-const PEAK_PERFORMANCE_ID4_REFLOW_RATE = new Decimal(0.25);
+const POWER_PARTITION_BASE_RATE = new Decimal(0.25);
+const POWER_PARTITION_IMPROVED_RATE = new Decimal(0.3);
+
+function powerPartitionRate() {
+  return EternityUpgrade.breakUpgradeFormula.isBought
+    ? POWER_PARTITION_IMPROVED_RATE
+    : POWER_PARTITION_BASE_RATE;
+}
 
 function rebuyable(config) {
   const effectFunction = config.effect || (x => x);
@@ -41,11 +47,53 @@ function nyi(description, cost = DC.D0, showCost = false) {
   };
 }
 
-function infinityIPMultiplier() {
-  const progress = Currency.infinitiesTotal.value.max(1).log10().div(Math.log10(2e6));
-  if (progress.lte(1)) return Decimal.pow10(progress.times(4));
+function infinityIPMultiplier(isImproved = EternityUpgrade.breakUpgradeFormula.isBought) {
+  const infinities = Currency.infinitiesTotal.value.max(1);
+  if (isImproved) return Decimal.pow10(infinities.log(8)).powEffectOf(TimeStudy(31));
+  const progress = infinities.log10().div(Math.log10(2e6));
+  if (progress.lte(1)) return Decimal.pow10(progress.times(4)).powEffectOf(TimeStudy(31));
   const postSoftcapExponent = 4 + 2 * (1 - Math.exp(-2 * progress.sub(1).toNumber()));
-  return Decimal.pow10(postSoftcapExponent);
+  return Decimal.pow10(postSoftcapExponent).powEffectOf(TimeStudy(31));
+}
+
+function formatInfinityIPMultiplier(value) {
+  if (!TimeStudy(31).canBeApplied) return formatX(value, 2, 2);
+  const baseValue = value.pow(1 / TimeStudy(31).effectValue);
+  return `${formatX(baseValue, 2, 2)} (After TS31: ${formatX(value, 2, 2)})`;
+}
+
+function challengeChronometerMultiplier() {
+  return Decimal.clampMin(
+    new Decimal(500).div(Time.challengeSum.totalMinutes).sub(1).div(10).add(1),
+    1
+  );
+}
+
+function improvedChallengeChronometerMultiplier() {
+  const totalHours = Time.challengeSum.totalMinutes.div(60);
+  return new Decimal(24).div(totalHours).clampMin(1).clampMax(8.64e7);
+}
+
+function temporalTenacityMultiplier(isImproved = EternityUpgrade.breakUpgradeFormula.isBought) {
+  const seconds = Time.thisInfinity.totalSeconds;
+  const halfHour = 30 * 60;
+  let multiplier;
+  if (seconds.lte(halfHour)) {
+    multiplier = seconds.times(0.05).add(1);
+  } else if (seconds.lte(2 * 60 * 60)) {
+    const elapsed = seconds.sub(halfHour);
+    const secondStage = Decimal.min(elapsed, halfHour);
+    const thirdStage = Decimal.min(elapsed.sub(halfHour).max(0), halfHour);
+    const fourthStage = elapsed.sub(2 * halfHour).max(0);
+    multiplier = new Decimal(91).add(secondStage.times(0.04)).add(thirdStage.times(0.03))
+      .add(fourthStage.times(0.02));
+  } else {
+    const elapsed = seconds.sub(2 * 60 * 60);
+    // This begins at x253 after two hours and reaches x2000 after a further six hours.
+    const acceleration = 1315 / (6 * 60 * 60) ** 2;
+    multiplier = new Decimal(253).add(elapsed.times(0.02)).add(elapsed.pow(2).times(acceleration));
+  }
+  return multiplier.pow(isImproved ? 1.25 : 1);
 }
 
 export const breakInfinityUpgrades = {
@@ -135,48 +183,44 @@ export const breakInfinityUpgrades = {
     cost: new Decimal("2e11"),
     name: "Challenge Chronometer",
     description: "2nd Infinity Dimension gains a multiplier based on total NC completion time",
-    effect: () => Decimal.clampMin(
-      new Decimal(500).div(Time.challengeSum.totalMinutes).sub(1).div(10).add(1),
-      1
-    ),
+    effect: () => (EternityUpgrade.breakUpgradeFormula.isBought
+      ? improvedChallengeChronometerMultiplier()
+      : challengeChronometerMultiplier()),
+    baseEffect: () => challengeChronometerMultiplier(),
     formatEffect: value => formatX(value, 2, 2),
+    afterEU: () => improvedChallengeChronometerMultiplier(),
+    afterEternityUpgrade: "breakUpgradeFormula",
+    formatAfterEU: value => formatX(value, 2, 2),
     hasCap: true,
-    cap: new Decimal(3e3)
+    cap: () => (EternityUpgrade.breakUpgradeFormula.isBought ? new Decimal(8.64e7) : new Decimal(3e3)),
+    baseCap: new Decimal(3e3)
   },
   infinityTimeIDMult: {
     id: "infinityTimeIDMult",
     cost: DC.E15,
     name: "Temporal Tenacity",
     description: "3rd Infinity Dimension gains a rapidly increasing multiplier based on this Infinity's time",
-    effect: () => {
-      const seconds = Time.thisInfinity.totalSeconds;
-      const halfHour = 30 * 60;
-      if (seconds.lte(halfHour)) return seconds.times(0.05).add(1);
-      if (seconds.lte(2 * 60 * 60)) {
-        const elapsed = seconds.sub(halfHour);
-        const secondStage = Decimal.min(elapsed, halfHour);
-        const thirdStage = Decimal.min(elapsed.sub(halfHour).max(0), halfHour);
-        const fourthStage = elapsed.sub(2 * halfHour).max(0);
-        return new Decimal(91).add(secondStage.times(0.04)).add(thirdStage.times(0.03)).add(fourthStage.times(0.02));
-      }
-      const elapsed = seconds.sub(2 * 60 * 60);
-      // This begins at x253 after two hours and reaches x2000 after a further six hours.
-      const acceleration = 1315 / (6 * 60 * 60) ** 2;
-      return new Decimal(253).add(elapsed.times(0.02)).add(elapsed.pow(2).times(acceleration));
-    },
-    formatEffect: value => formatX(value, 2, 2)
+    effect: () => temporalTenacityMultiplier(),
+    baseEffect: () => temporalTenacityMultiplier(false),
+    formatEffect: value => formatX(value, 2, 2),
+    afterEU: () => temporalTenacityMultiplier(true),
+    afterEternityUpgrade: "breakUpgradeFormula",
+    formatAfterEU: value => formatX(value, 2, 2)
   },
   bestIPminAmp: {
     id: "bestIPminAmp",
     cost: DC.E20,
-    name: "Peak Performance",
+    name: "Power Partition",
     description: "Divert Sacrifice power above ×1e10 from AD8 to ID4",
     // The accepted reflow moves equal logarithmic strength from AD8 to ID4.
-    sacrificeDrainRate: PEAK_PERFORMANCE_SACRIFICE_DRAIN_RATE,
-    id4ReflowRate: PEAK_PERFORMANCE_ID4_REFLOW_RATE,
-    effect: PEAK_PERFORMANCE_ID4_REFLOW_RATE,
-    formatEffect: () => `${formatPercents(PEAK_PERFORMANCE_SACRIFICE_DRAIN_RATE, 0)} diverted; ` +
-      `${formatPercents(PEAK_PERFORMANCE_ID4_REFLOW_RATE, 0)} returned to ID4`
+    sacrificeDrainRate: powerPartitionRate,
+    id4ReflowRate: powerPartitionRate,
+    effect: powerPartitionRate,
+    baseEffect: POWER_PARTITION_BASE_RATE,
+    afterEU: () => POWER_PARTITION_IMPROVED_RATE,
+    afterEternityUpgrade: "breakUpgradeFormula",
+    formatAfterEU: value => `${formatPercents(value, 0)} diverted`,
+    formatEffect: value => `${formatPercents(value, 0)} diverted`
   },
   infinitiedGen: {
     id: "infinitiedGeneration",
@@ -237,7 +281,12 @@ export const breakInfinityUpgrades = {
     name: "Infinite Interest",
     description: "Infinity Point gain increases based on total Infinities",
     effect: () => infinityIPMultiplier(),
-    formatEffect: value => formatX(value, 2, 2)
+    baseEffect: () => infinityIPMultiplier(false),
+    formatEffect: value => formatInfinityIPMultiplier(value),
+    afterEU: () => infinityIPMultiplier(true),
+    afterEternityUpgrade: "breakUpgradeFormula",
+    formatAfterEU: value => formatInfinityIPMultiplier(value),
+    ts31Applied: true
   },
   instantAutobuyers: {
     id: "instantAutobuyers",
@@ -307,11 +356,12 @@ export const breakInfinityUpgrades = {
     id: "criticalIdleIncome",
     cost: DC.E20,
     name: "Critical Idle Income",
+    retainOnEternity: false,
     isAvailableForPurchase: () => BreakInfinityUpgrade.ipGen.isCapped,
     description: () => {
       if (CriticalIdleIncome.isActive) {
         return `Idle Income is ${format(CriticalIdleIncome.multiplier.times(100), 2, 2)}% for
-          ${TimeSpan.fromMilliseconds(CriticalIdleIncome.remaining).toStringShort()}`;
+          ${TimeSpan.fromMilliseconds(new Decimal(CriticalIdleIncome.remaining)).toStringShort()}`;
       }
       return "Every 700 seconds, roll 1d20. On a natural 20, Idle Income is 7.77 times stronger for 7 seconds";
     },

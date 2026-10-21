@@ -1,3 +1,5 @@
+import { Fragments } from "./fragments";
+
 export const tabs = [
   {
     key: "dimensions",
@@ -280,10 +282,7 @@ export const tabs = [
         name: "Replicanti",
         symbol: "Ξ",
         component: "ReplicantiTab",
-        condition: () =>
-          PlayerProgress.realityUnlocked() ||
-          PlayerProgress.eternityUnlocked() ||
-          PlayerProgress.infinityUnlocked(),
+        condition: () => Replicanti.areUnlocked,
         id: 2,
         hidable: true,
       }
@@ -332,6 +331,33 @@ export const tabs = [
         component: "TimeDilationTab",
         condition: () => PlayerProgress.dilationUnlocked() || PlayerProgress.realityUnlocked(),
         id: 3,
+        hidable: true,
+      }
+    ],
+  },
+  {
+    key: "fragments",
+    name: "Fragments",
+    UIClass: "o-tab-btn--fragment",
+    condition: () => Fragments.isUnlocked,
+    id: 11,
+    hidable: true,
+    subtabs: [
+      {
+        key: "main",
+        name: "Fragments",
+        symbol: "<i class='fas fa-puzzle-piece'></i>",
+        component: "FragmentsTab",
+        id: 0,
+        hidable: true,
+      },
+      {
+        key: "condensate",
+        name: "Condensate",
+        symbol: "<i class='fas fa-compress-arrows-alt'></i>",
+        component: "CondensateTab",
+        condition: () => Fragments.isCondensateUnlocked,
+        id: 1,
         hidable: true,
       }
     ],

@@ -1,5 +1,7 @@
 <script>
 import PrimaryButton from "@/components/PrimaryButton";
+import { ic9Annihilate } from "@/core/galaxy";
+import { IC9Annihilation } from "@/core/infinity-challenges";
 
 export default {
   name: "ClassicAntimatterGalaxyRow",
@@ -14,11 +16,15 @@ export default {
         replicanti: new Decimal(),
         dilation: new Decimal()
       },
+      isIC9Running: false,
+      ic9AnnihilateAvailable: false,
+      ic9GalaxyGain: new Decimal(),
       requirement: {
         tier: 1,
         amount: new Decimal(),
         cost: new Decimal(),
         usesCost: false,
+        usesBought: false,
       },
       canBeBought: false,
       distantStart: new Decimal(),
@@ -41,7 +47,7 @@ export default {
     buttonText() {
       if (this.lockText !== null) return this.lockText;
       const reset = [];
-      if (!Achievement(111).isUnlocked) reset.push("Dimensions");
+      if (!Achievement(117).isUnlocked) reset.push("Dimensions");
       if (!Achievement(143).isUnlocked) reset.push("Dimension Boosts");
       return reset.length === 0
         ? `Increase the power of Tickspeed upgrades`
@@ -101,6 +107,7 @@ export default {
       const requirement = Galaxy.requirement;
       this.requirement.amount.copyFrom(requirement.amount);
       this.requirement.usesCost = requirement.cost !== null;
+      this.requirement.usesBought = requirement.usesBought;
       if (this.requirement.usesCost) this.requirement.cost.copyFrom(requirement.cost);
       this.requirement.tier = requirement.tier;
       this.canBeBought = requirement.isSatisfied && Galaxy.canBeBought;
@@ -110,12 +117,22 @@ export default {
       this.canBulkBuy = Galaxy.canBulkBuy;
       this.creditsClosed = GameEnd.creditsEverClosed;
       this.hasTutorial = Tutorial.isActive(TUTORIAL_STATE.GALAXY);
+      this.isIC9Running = InfinityChallenge(9).isRunning;
+      if (this.isIC9Running) {
+        this.ic9AnnihilateAvailable = IC9Annihilation.canAnnihilate;
+        this.ic9GalaxyGain.copyFrom(IC9Annihilation.galaxyGain);
+      }
     },
     buyGalaxy(bulk) {
       if (!this.canBeBought) return;
       manualRequestGalaxyReset(this.canBulkBuy && bulk);
     },
+    annihilate() {
+      if (!this.ic9AnnihilateAvailable) return;
+      ic9Annihilate();
+    },
     formatGalaxies(num) {
+      if (InfinityChallenge(9).isRunning) return format(num, 4, 4);
       return num.gt(1e8) ? format(num, 2) : formatInt(num);
     },
   }
@@ -127,14 +144,33 @@ export default {
     <div
       class="l-dim-row__prestige-text c-dim-row__label c-dim-row__label--amount l-text-wrapper"
     >
-      {{ typeName }} ({{ sumText }}):
-      <template v-if="requirement.usesCost">requires next {{ dimName }} cost: {{ format(requirement.cost, 2, 0) }} AM</template>
-      <template v-else>requires {{ formatInt(requirement.amount) }} {{ dimName }} Dimensions</template>
-      <div class="l-scaling-text-wrapper">
-        {{ hasIncreasedScaling ? costScalingText : "" }}
-      </div>
+      <template v-if="isIC9Running">
+        Annihilate ({{ sumText }} Galaxies)
+      </template>
+      <template v-else>
+        {{ typeName }} ({{ sumText }}):
+        <template v-if="requirement.usesCost">
+          requires next {{ dimName }} cost: {{ format(requirement.cost, 2, 0) }} AM
+        </template>
+        <template v-else>
+          requires {{ formatInt(requirement.amount) }} {{ dimName }} Dimensions
+          {{ requirement.usesBought ? " purchased" : "" }}
+        </template>
+        <div class="l-scaling-text-wrapper">
+          {{ hasIncreasedScaling ? costScalingText : "" }}
+        </div>
+      </template>
     </div>
     <PrimaryButton
+      v-if="isIC9Running"
+      :enabled="ic9AnnihilateAvailable"
+      class="o-primary-btn--galaxy l-dim-row__prestige-button"
+      @click="annihilate"
+    >
+      Annihilate (+{{ format(ic9GalaxyGain, 4, 4) }} Galaxies)
+    </PrimaryButton>
+    <PrimaryButton
+      v-else
       :enabled="canBeBought"
       :class="classObject"
       @click.exact="buyGalaxy(true)"

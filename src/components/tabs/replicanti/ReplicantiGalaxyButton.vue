@@ -1,4 +1,6 @@
 <script>
+import { Fragments } from "@/core/secret-formula/fragments";
+
 import PrimaryButton from "@/components/PrimaryButton";
 import PrimaryToggleButton from "@/components/PrimaryToggleButton";
 
@@ -16,13 +18,15 @@ export default {
       isAutoEnabled: false,
       isDivideUnlocked: false,
       boughtGalaxies: 0,
-      extraGalaxies: 0
+      extraGalaxies: 0,
+      nextRequirement: new Decimal(),
+      scalingStart: 0
     };
   },
   computed: {
     resetActionDisplay() {
       return this.isDivideUnlocked && !Pelle.isDoomed
-        ? `Divide Replicanti by ${format(Number.MAX_VALUE, 1, 1)}`
+        ? `Divide Replicanti by the required amount`
         : "Reset Replicanti amount";
     },
     galaxyCountDisplay() {
@@ -46,7 +50,9 @@ export default {
       this.isAvailable = rg.canBuyMore;
       this.boughtGalaxies = rg.bought;
       this.extraGalaxies = rg.extra;
-      this.isDivideUnlocked = Achievement(126).isUnlocked;
+      this.nextRequirement.copyFrom(rg.nextRequirement);
+      this.scalingStart = Fragments.replicantiGalaxyScalingStart;
+      this.isDivideUnlocked = Achievement(132).isUnlocked;
       const auto = Autobuyer.replicantiGalaxy;
       this.isAutoUnlocked = auto.isUnlocked;
       this.isAutoActive = auto.isActive;
@@ -64,27 +70,49 @@ export default {
 </script>
 
 <template>
-  <div class="l-spoon-btn-group">
-    <PrimaryButton
-      :enabled="isAvailable"
-      class="o-primary-btn--replicanti-galaxy"
-      @click="handleClick"
-    >
-      {{ resetActionDisplay }} for a Replicanti Galaxy
+  <div class="c-replicanti-galaxy">
+    <div class="l-spoon-btn-group c-replicanti-galaxy__button-group">
+      <PrimaryButton
+        :enabled="isAvailable"
+        class="o-primary-btn--replicanti-galaxy"
+        @click="handleClick"
+      >
+        {{ resetActionDisplay }} for a Replicanti Galaxy
+        <br>
+        {{ galaxyCountDisplay }}
+      </PrimaryButton>
+      <PrimaryToggleButton
+        v-if="isAutoUnlocked"
+        :value="isAutoActive"
+        :on="autobuyerTextDisplay"
+        :off="autobuyerTextDisplay"
+        class="l--spoon-btn-group__little-spoon o-primary-btn--replicanti-galaxy-toggle"
+        @input="handleAutoToggle"
+      />
+    </div>
+    <div class="c-replicanti-galaxy-cost">
+      Next Galaxy at {{ format(nextRequirement, 2, 2) }} Effective Replicanti
       <br>
-      {{ galaxyCountDisplay }}
-    </PrimaryButton>
-    <PrimaryToggleButton
-      v-if="isAutoUnlocked"
-      :value="isAutoActive"
-      :on="autobuyerTextDisplay"
-      :off="autobuyerTextDisplay"
-      class="l--spoon-btn-group__little-spoon o-primary-btn--replicanti-galaxy-toggle"
-      @input="handleAutoToggle"
-    />
+      Scaling begins after {{ formatInt(scalingStart) }} purchased Galaxies
+    </div>
   </div>
 </template>
 
 <style scoped>
+.c-replicanti-galaxy {
+  text-align: center;
+}
 
+.c-replicanti-galaxy__button-group {
+  align-items: center;
+}
+
+.c-replicanti-galaxy__button-group .l--spoon-btn-group__little-spoon {
+  align-self: center;
+}
+
+.c-replicanti-galaxy-cost {
+  margin-top: 0.4rem;
+  font-size: 1.1rem;
+}
 </style>

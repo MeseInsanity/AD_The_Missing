@@ -101,7 +101,7 @@ export const Effarig = {
     return Decimal.pow10(Decimal.pow(base, this.multDilation));
   },
   get bonusRG() {
-    // Will return 0 if Effarig Infinity is uncompleted
+    if (!EffarigUnlock.infinity.canBeApplied) return DC.D0;
     return Decimal.floor(replicantiCap().max(1).log10().div(LOG10_MAX_VALUE).sub(1));
   },
   quotes: Quotes.effarig,

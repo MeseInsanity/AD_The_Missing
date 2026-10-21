@@ -1,4 +1,6 @@
 <script>
+import { Fragments } from "@/core/secret-formula/fragments";
+
 export default {
   name: "UnlockInfinityDimButton",
   data() {
@@ -35,8 +37,12 @@ export default {
   },
   methods: {
     update() {
+      if (Fragments.isDiscoveryPending) {
+        this.isVisible = false;
+        return;
+      }
       const canShowUnlockButton = player.break && !InfinityDimension(8).isUnlocked && !Player.canEternity &&
-        !EternityMilestone.autoUnlockID.isReached;
+        !EternityMilestone.autobuyerID1.isReached;
       if (!canShowUnlockButton) {
         this.isVisible = false;
         return;

@@ -1,4 +1,7 @@
 <script>
+import { ic9Annihilate } from "@/core/galaxy";
+import { IC9Annihilation } from "@/core/infinity-challenges";
+
 export default {
   name: "ModernAntimatterGalaxyRow",
   data() {
@@ -9,11 +12,15 @@ export default {
         replicanti: new Decimal(),
         dilation: new Decimal()
       },
+      isIC9Running: false,
+      ic9AnnihilateAvailable: false,
+      ic9GalaxyGain: new Decimal(),
       requirement: {
         tier: 1,
         amount: 0,
         cost: new Decimal(),
         usesCost: false,
+        usesBought: false,
       },
       canBeBought: false,
       distantStart: new Decimal(),
@@ -36,7 +43,7 @@ export default {
     buttonText() {
       if (this.lockText !== null) return this.lockText;
       const reset = [];
-      if (!Achievement(111).isUnlocked) reset.push("Dimensions");
+      if (!Achievement(117).isUnlocked) reset.push("Dimensions");
       if (!Achievement(143).isUnlocked) reset.push("Dimension Boosts");
       return reset.length === 0
         ? `Increase the power of Tickspeed upgrades`
@@ -86,6 +93,13 @@ export default {
         "o-primary-btn--disabled": !this.canBeBought,
         "o-pelle-disabled-pointer": this.creditsClosed
       };
+    },
+    annihilateClassObject() {
+      return {
+        "o-primary-btn o-primary-btn--new o-primary-btn--dimension-reset c-ic9-annihilate-btn": true,
+        "o-primary-btn--disabled": !this.ic9AnnihilateAvailable,
+        "o-pelle-disabled-pointer": this.creditsClosed
+      };
     }
   },
   methods: {
@@ -98,6 +112,7 @@ export default {
       this.requirement.amount = requirement.amount;
       this.requirement.cost = requirement.cost;
       this.requirement.usesCost = requirement.cost !== null;
+      this.requirement.usesBought = requirement.usesBought;
       this.requirement.tier = requirement.tier;
       this.canBeBought = requirement.isSatisfied && Galaxy.canBeBought;
       this.distantStart.copyFrom(EternityChallenge(5).isRunning ? new Decimal() : Galaxy.costScalingStart);
@@ -112,12 +127,22 @@ export default {
         };
       }
       this.hasTutorial = Tutorial.isActive(TUTORIAL_STATE.GALAXY);
+      this.isIC9Running = InfinityChallenge(9).isRunning;
+      if (this.isIC9Running) {
+        this.ic9AnnihilateAvailable = IC9Annihilation.canAnnihilate;
+        this.ic9GalaxyGain.copyFrom(IC9Annihilation.galaxyGain);
+      }
     },
     buyGalaxy(bulk) {
       if (!this.canBeBought) return;
       manualRequestGalaxyReset(this.canBulkBuy && bulk);
     },
+    annihilate() {
+      if (!this.ic9AnnihilateAvailable) return;
+      ic9Annihilate();
+    },
     formatGalaxies(num) {
+      if (InfinityChallenge(9).isRunning) return format(num, 4, 4);
       return num.gt(1e8) ? format(num, 2) : formatInt(num.toNumber());
     },
   }
@@ -126,11 +151,28 @@ export default {
 
 <template>
   <div class="reset-container galaxy">
-    <h4>{{ typeName }} ({{ sumText }})</h4>
-    <span v-if="requirement.usesCost">Requires next {{ dimName }} cost: {{ format(requirement.cost, 2, 0) }} AM</span>
-    <span v-else>Requires: {{ formatInt(requirement.amount) }} {{ dimName }} Antimatter D</span>
-    <span v-if="hasIncreasedScaling">{{ costScalingText }}</span>
+    <template v-if="isIC9Running">
+      <h4>Annihilate ({{ sumText }} Galaxies)</h4>
+      <button
+        :class="annihilateClassObject"
+        @click="annihilate"
+      >
+        Annihilate (+{{ format(ic9GalaxyGain, 4, 4) }} Galaxies)
+      </button>
+    </template>
+    <template v-else>
+      <h4>{{ typeName }} ({{ sumText }})</h4>
+      <span v-if="requirement.usesCost">Requires next {{ dimName }} cost: {{ format(requirement.cost, 2, 0) }} AM</span>
+      <span v-else>
+        Requires: {{ formatInt(requirement.amount) }} {{ dimName }} Antimatter D
+        <template v-if="requirement.usesBought">
+          purchased
+        </template>
+      </span>
+      <span v-if="hasIncreasedScaling">{{ costScalingText }}</span>
+    </template>
     <button
+      v-if="!isIC9Running"
       :class="classObject"
       @click.exact="buyGalaxy(true)"
       @click.shift.exact="buyGalaxy(false)"
@@ -143,3 +185,9 @@ export default {
     </button>
   </div>
 </template>
+
+<style scoped>
+.c-ic9-annihilate-btn {
+  min-width: 28rem;
+}
+</style>

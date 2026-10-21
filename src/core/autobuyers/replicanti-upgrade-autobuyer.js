@@ -3,6 +3,10 @@ import { IntervaledAutobuyerState } from "./autobuyer";
 export class ReplicantiUpgradeAutobuyerState extends IntervaledAutobuyerState {
   get _upgradeName() { return ["chance", "interval", "galaxies"][this.id - 1]; }
 
+  get upgrade() {
+    return ReplicantiUpgrade[this._upgradeName];
+  }
+
   get name() {
     return `Replicanti ${[`Chance`, `Interval`, `Max Galaxies`][this.id - 1]}`;
   }
@@ -16,8 +20,9 @@ export class ReplicantiUpgradeAutobuyerState extends IntervaledAutobuyerState {
   }
 
   get isUnlocked() {
-    return ReplicantiUpgrade[this._upgradeName].autobuyerMilestone.isReached ||
-      PelleUpgrade.replicantiAutobuyers.canBeApplied;
+    return this.upgrade !== undefined && (this.upgrade.autobuyerMilestone.isReached ||
+      PelleUpgrade.replicantiAutobuyers.canBeApplied
+    );
   }
 
   get resetTickOn() {
@@ -31,7 +36,7 @@ export class ReplicantiUpgradeAutobuyerState extends IntervaledAutobuyerState {
   tick() {
     if (EternityChallenge(8).isRunning) return;
     super.tick();
-    ReplicantiUpgrade[this._upgradeName].autobuyerTick();
+    this.upgrade?.autobuyerTick();
   }
 
   static get entryCount() { return 3; }

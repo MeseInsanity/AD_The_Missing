@@ -32,7 +32,6 @@ export function infinityDimensionCommonMultiplier() {
       TimeStudy(92),
       TimeStudy(162),
       InfinityChallenge(1).reward,
-      InfinityChallenge(7).reward,
       EternityChallenge(4).reward,
       EternityChallenge(9).reward,
       EternityUpgrade.idMultEP,
@@ -47,6 +46,10 @@ export function infinityDimensionCommonMultiplier() {
 
   if (Replicanti.areUnlocked && Replicanti.amount.gt(1)) {
     mult = mult.times(replicantiMult());
+  }
+
+  if (InfinityChallenge(10).isRunning) {
+    mult = mult.timesEffectOf(BreakInfinityUpgrade.currentAMMult);
   }
 
   return mult;
@@ -111,6 +114,8 @@ class InfinityDimensionState extends DimensionState {
 
   get isVisible() {
     if (this.tier === 5) return this.antimatterRequirementReached || this.id5HintDiscovered;
+    if (this.tier === 7) return InfinityChallenge(10).isCompleted;
+    if (this.tier === 8) return InfinityDimension(7).isUnlocked;
     return this.tier <= 4 || InfinityChallenge(4).isUnlocked;
   }
 
@@ -163,7 +168,8 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get isAvailableForPurchase() {
-    return InfinityDimensions.canBuy() && this.isUnlocked && this.isAffordable && !this.isCapped;
+    return !InfinityChallenge(11).isRunning && InfinityDimensions.canBuy() && this.isUnlocked && this.isAffordable &&
+      !this.isCapped;
   }
 
   get isAffordable() {
@@ -186,7 +192,7 @@ class InfinityDimensionState extends DimensionState {
   }
 
   get productionPerSecond() {
-    if (EternityChallenge(2).isRunning || EternityChallenge(10).isRunning ||
+    if (InfinityChallenge(11).isRunning || EternityChallenge(2).isRunning || EternityChallenge(10).isRunning ||
       (Laitela.isRunning && this.tier > Laitela.maxAllowedDimension)) {
       return DC.D0;
     }
@@ -222,6 +228,7 @@ class InfinityDimensionState extends DimensionState {
       mult = mult.times(BreakInfinityUpgrade.infinityTimeIDMult.effectOrDefault(DC.D1));
     }
     if (tier === 4) mult = mult.times(Sacrifice.reflowMultiplier);
+    if (tier >= 5) mult = mult.times(Fragments.infinityDimensionJMultiplier);
     if (BreakInfinityUpgrade.achievementMult.isBought) {
       const tierExponent = 0.8 / (tier * 2.717857142857143);
       const achievementMultiplier = new Decimal(BreakInfinityUpgrade.achievementMult.effectOrDefault(1));
@@ -256,7 +263,7 @@ class InfinityDimensionState extends DimensionState {
       mult = mult.pow(0.5);
     }
 
-    return mult;
+    return mult.times(Fragments.infinityDimensionTickspeedMultiplier);
   }
 
   get isProducing() {
@@ -300,9 +307,9 @@ class InfinityDimensionState extends DimensionState {
     if (Enslaved.isRunning) {
       return DC.D1;
     }
-    return InfinityDimensions.capIncrease.add(this.tier === 8
+    return this.tier === 8
       ? DC.BEMAX
-      : InfinityDimensions.basePurchaseCap);
+      : InfinityDimensions.totalDimCap;
   }
 
   get isCapped() {
@@ -488,7 +495,7 @@ export const InfinityDimensions = {
   },
 
   get totalDimCap() {
-    return this.basePurchaseCap.add(this.capIncrease);
+    return this.basePurchaseCap.times(Fragments.infinityDimensionCapMultiplier).add(this.capIncrease).floor();
   },
 
   canBuy() {
@@ -502,6 +509,7 @@ export const InfinityDimensions = {
   },
 
   tick(diff) {
+    if (InfinityChallenge(11).isRunning) return;
     for (let tier = 8; tier > 1; tier--) {
       InfinityDimension(tier).produceDimensions(InfinityDimension(tier - 1), diff.div(10));
     }
@@ -519,7 +527,7 @@ export const InfinityDimensions = {
   },
 
   tryAutoUnlock() {
-    if (!EternityMilestone.autoUnlockID.isReached || InfinityDimension(8).isUnlocked) return;
+    if (!EternityMilestone.autobuyerID1.isReached || InfinityDimension(8).isUnlocked) return;
     for (const dimension of this.all) {
       // If we cannot unlock this one, we can't unlock the rest, either
       if (!dimension.unlock()) break;
@@ -543,8 +551,7 @@ export const InfinityDimensions = {
   get basePowerConversionRate() {
     const normalChallengeCompletions = NormalChallenges.all.countWhere(c => c.isCompleted);
     const normalChallengeExponent = DC.D0_05.times(Decimal.pow(2, Math.max(normalChallengeCompletions - 4, 0) / 4));
-    const fragmentBonus = Fragments.infinityPowerConversion.effect().sub(DC.D0_01.times(2)).max(0);
-    return getAdjustedGlyphEffect("infinityrate").add(normalChallengeExponent).add(fragmentBonus)
+    return getAdjustedGlyphEffect("infinityrate").add(normalChallengeExponent)
       .add(PelleUpgrade.infConversion.effectOrDefault(0));
   },
 

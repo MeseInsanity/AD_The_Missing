@@ -2,6 +2,7 @@
 /* eslint-disable no-inline-comments */
 import { DC } from "./constants";
 import { ic5GalaxyRequirements } from "./secret-formula/challenges/infinity-challenges";
+import { IC9Annihilation } from "./infinity-challenges";
 
 export const GALAXY_TYPE = {
   NORMAL: 0,
@@ -10,15 +11,18 @@ export const GALAXY_TYPE = {
 };
 
 class GalaxyRequirement {
-  constructor(tier, amount, cost = null) {
+  constructor(tier, amount, { cost = null, usesBought = false } = {}) {
     this.tier = tier;
     this.amount = amount;
     this.cost = cost;
+    this.usesBought = usesBought;
   }
 
   get isSatisfied() {
     const dimension = AntimatterDimension(this.tier);
-    return this.cost ? dimension.cost.gte(this.cost) : dimension.totalAmount.gte(this.amount);
+    if (this.cost) return dimension.cost.gte(this.cost);
+    const amount = this.usesBought ? dimension.bought : dimension.totalAmount;
+    return amount.gte(this.amount);
   }
 }
 
@@ -148,13 +152,15 @@ export class Galaxy {
 
     amount = Decimal.floor(amount);
     const tier = Galaxy.requiredTier;
-    return new GalaxyRequirement(tier, amount);
+    return new GalaxyRequirement(tier, amount, { usesBought: InfinityChallenge(11).isRunning });
   }
 
   static get costMult() {
     if (InfinityChallenge(3).isRunning) return DC.D50;
     const baseScaling = (NormalChallenge(12).isRunning ? 90 : 60) - InfinityChallenge(3).reward.effectOrDefault(0);
-    return new Decimal(Effects.min(baseScaling, TimeStudy(42)));
+    // TS42 is a flat reduction, not a cap. This lets it stack with the IC3 reward.
+    const ts42Reduction = TimeStudy(42).isBought ? 8 : 0;
+    return new Decimal(baseScaling - ts42Reduction);
   }
 
   static get baseCost() {
@@ -168,9 +174,11 @@ export class Galaxy {
 
   static get canBeBought() {
     if (EternityChallenge(6).isRunning && !Enslaved.isRunning) return false;
-    if (NormalChallenge(8).isRunning || InfinityChallenge(8).isRunning) {
+    if (NormalChallenge(8).isRunning) {
       return false;
     }
+    // IC9 Galaxies are awarded exclusively by the manual Annihilate conversion.
+    if (InfinityChallenge(9).isRunning) return false;
     if (InfinityChallenge(2).isRunning && player.galaxies.gte(1)) return false;
     if (InfinityChallenge(5).isRunning && player.galaxies.gte(ic5GalaxyRequirements.length + 1)) return false;
     if (player.records.thisInfinity.maxAM.gt(Player.infinityGoal) &&
@@ -180,7 +188,7 @@ export class Galaxy {
 
   static get canBulkBuy() {
     return !InfinityChallenge(4).isRunning && !InfinityChallenge(5).isRunning &&
-      (EternityMilestone.autobuyMaxGalaxies.isReached || BreakInfinityUpgrade.galaxyBulk.isBought);
+      BreakInfinityUpgrade.galaxyBulk.isBought;
   }
 
   static get lockText() {
@@ -190,7 +198,7 @@ export class Galaxy {
     if (InfinityChallenge(5).isRunning && player.galaxies.gte(ic5GalaxyRequirements.length + 1)) {
       return "Locked (IC5 maximum Galaxy reached)";
     }
-    if (InfinityChallenge(8).isRunning) return "Locked (Infinity Challenge 8)";
+    if (InfinityChallenge(9).isRunning) return "Locked (IC9: use Annihilate)";
     if (InfinityChallenge(1).isRunning) return "Locked (Infinity Challenge 1)";
     if (NormalChallenge(8).isRunning) return "Locked (Normal Challenge 8)";
     return null;
@@ -240,6 +248,25 @@ export function galaxyReset() {
   EventHub.dispatch(GAME_EVENT.GALAXY_RESET_AFTER);
 }
 
+export function ic9Annihilate() {
+  if (!IC9Annihilation.canAnnihilate) return false;
+
+  const continuum = IC9Annihilation.continuumValue;
+  const galaxies = IC9Annihilation.galaxyCountForContinuum(continuum);
+  if (galaxies.lte(player.galaxies)) return false;
+
+  player.challenge.infinity.ic9PreviousContinuum = continuum;
+  IC9Annihilation.captureResidualImbalance();
+  IC9Annihilation.divideCurrencies();
+  // GalaxyReset() adds one; set the pre-reset count so fractional IC9 Galaxy credit survives the reset.
+  player.galaxies = galaxies.sub(1);
+  galaxyReset();
+  // Galaxy reset initializes Antimatter but not Matter. Keep both resources able to restart;
+  // the prior imbalance is retained separately as the IC9 production exponent.
+  Currency.matter.bumpTo(Currency.antimatter.value);
+  return true;
+}
+
 export function manualRequestGalaxyReset(bulk) {
   if (!Galaxy.canBeBought || !Galaxy.requirement.isSatisfied) return;
   if (GameEnd.creditsEverClosed) return;
@@ -276,9 +303,10 @@ function maxBuyGalaxies(limit = DC.BEMAX) {
   const req = Galaxy.requirement;
   if (!req.isSatisfied) return false;
   const dim = AntimatterDimension(req.tier);
-  if (Galaxy.buyableGalaxies(Decimal.round(dim.totalAmount)).lte(player.galaxies)) return false;
+  const dimensionAmount = req.usesBought ? dim.bought : dim.totalAmount;
+  if (Galaxy.buyableGalaxies(Decimal.round(dimensionAmount)).lte(player.galaxies)) return false;
   const newGalaxies = Decimal.min(
-    Galaxy.buyableGalaxies(Decimal.round(dim.totalAmount)), limit);
+    Galaxy.buyableGalaxies(Decimal.round(dimensionAmount)), limit);
   const boughtGalaxies = newGalaxies.sub(player.galaxies);
   if (Notations.current === Notation.emoji) {
     player.requirementChecks.permanent.emojiGalaxies = player.requirementChecks.permanent.emojiGalaxies

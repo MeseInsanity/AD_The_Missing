@@ -42,6 +42,7 @@ export default {
         "c-pelle-useless--bought": this.isUseless && this.isBought,
         "c-pelle-useless--unavailable": this.isUseless && !this.isBought,
         "o-pseudo-time-study--small": this.setup.isSmall,
+        "o-time-study--hidden": this.study.config.hiddenInTree,
         "o-time-study--unavailable": !this.isBought && !this.isUseless,
         "o-time-study--bought": this.isBought && !this.isUseless,
         "o-time-study--new-import": this.isNewFromImport && !this.isBought
@@ -77,7 +78,8 @@ export default {
     },
     studyString() {
       switch (this.study.type) {
-        case TIME_STUDY_TYPE.NORMAL: case TIME_STUDY_TYPE.TRIAD: return `${this.study.id}`;
+        case TIME_STUDY_TYPE.NORMAL: return `${this.study.config.displayId ?? this.study.id}`;
+        case TIME_STUDY_TYPE.TRIAD: return `${this.study.id}`;
         case TIME_STUDY_TYPE.ETERNITY_CHALLENGE: return `EC${this.study.id}`;
       }
       return "";
@@ -119,6 +121,11 @@ export default {
 
 .o-pseudo-time-study--small {
   width: 1.8rem;
+}
+
+.o-time-study--hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .o-time-study-dark--bought {

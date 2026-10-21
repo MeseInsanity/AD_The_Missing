@@ -68,6 +68,21 @@ export const AD = {
     isActive: () => !EternityChallenge(11).isRunning,
     icon: dim => MultiplierTabIcons.PURCHASE("AD", dim),
   },
+  ic8VirtualBuy10: {
+    name: dim => (dim ? `IC8 virtual Buy 10 on AD ${dim}` : "IC8 virtual Buy 10s"),
+    multValue: dim => {
+      const virtualBuy10Multiplier = ad =>
+        Decimal.pow(AntimatterDimensions.buyTenMultiplier,
+          InfinityDimension(ad).purchases.times(InfinityDimensions.powerConversionRate).div(4));
+      if (dim) return virtualBuy10Multiplier(dim);
+      return AntimatterDimensions.all
+        .filter(ad => ad.isProducing)
+        .map(ad => virtualBuy10Multiplier(ad.tier))
+        .reduce((x, y) => x.times(y), DC.D1);
+    },
+    isActive: () => InfinityChallenge(8).isCompleted,
+    icon: MultiplierTabIcons.CHALLENGE("infinity"),
+  },
   highestDim: {
     name: () => `Amount of highest Dimension`,
     displayOverride: () => {
@@ -225,6 +240,12 @@ export const AD = {
     isActive: () => Currency.infinityPower.value.gt(1) && !EternityChallenge(9).isRunning,
     icon: MultiplierTabIcons.INFINITY_POWER,
   },
+  ic11Replicanti: {
+    name: "IC11 Replicanti Multiplier",
+    multValue: dim => Decimal.pow(replicantiMult(), dim ? 8 : 8 * MultiplierTabHelper.activeDimCount("AD")),
+    isActive: () => InfinityChallenge(11).isRunning && Replicanti.areUnlocked && Replicanti.amount.gt(1),
+    icon: MultiplierTabIcons.SPECIFIC_GLYPH("replication"),
+  },
   infinityChallenge: {
     name: dim => (dim ? `Infinity Challenges (AD ${dim})` : "Infinity Challenges"),
     multValue: dim => {
@@ -232,17 +253,10 @@ export const AD = {
         InfinityChallenge(4),
       );
 
-      const dimMults = Array.repeat(DC.D1, 9);
-      for (let tier = 1; tier <= 8; tier++) {
-        dimMults[tier] = dimMults[tier].timesEffectsOf(
-          tier > 1 && tier < 8 ? InfinityChallenge(9).reward : null
-        );
-      }
-
-      if (dim) return allMult.times(dimMults[dim]);
+      if (dim) return allMult;
       let totalMult = DC.D1;
       for (let tier = 1; tier <= MultiplierTabHelper.activeDimCount("AD"); tier++) {
-        totalMult = totalMult.times(dimMults[tier]).times(allMult);
+        totalMult = totalMult.times(allMult);
       }
       return totalMult;
     },
@@ -376,10 +390,8 @@ export const AD = {
     },
     multValue: dim => {
       let dimMults = Array.repeat(DC.D1, 9);
-      if (InfinityChallenge(7).isRunning) {
-        dimMults = Array.repeat(DC.D1.dividedByEffectOf(InfinityChallenge(7)), 9);
-      } else if (InfinityChallenge(9).isRunning) {
-        dimMults = Array.repeat(DC.D1.timesEffectsOf(InfinityChallenge(9)), 9);
+      if (InfinityChallenge(8).isRunning) {
+        dimMults = Array.repeat(DC.D1.timesEffectsOf(InfinityChallenge(8)), 9);
       }
 
       if (dim) return dimMults[dim];
@@ -390,7 +402,7 @@ export const AD = {
       return totalMult;
     },
     powValue: () => (InfinityChallenge(3).isRunning ? InfinityChallenge(3).effectValue : undefined),
-    isActive: () => [3, 5, 7, 9].some(ic => InfinityChallenge(ic).isRunning),
+    isActive: () => [3, 5, 8].some(ic => InfinityChallenge(ic).isRunning),
     icon: MultiplierTabIcons.CHALLENGE("infinity"),
   },
   nerfV: {

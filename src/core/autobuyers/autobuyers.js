@@ -14,6 +14,7 @@ import { ImaginaryUpgradeAutobuyerState } from "./imaginary-upgrade-autobuyer";
 import { InfinityDimensionAutobuyerState } from "./infinity-dimension-autobuyer";
 import { RealityAutobuyerState } from "./reality-autobuyer";
 import { RealityUpgradeAutobuyerState } from "./reality-upgrade-autobuyer";
+import { RebuyableBreakUpgradeAutobuyerState } from "./rebuyable-break-upgrade-autobuyer";
 import { ReplicantiGalaxyAutobuyerState } from "./replicanti-galaxy-autobuyer";
 import { ReplicantiUpgradeAutobuyerState } from "./replicanti-upgrade-autobuyer";
 import { SacrificeAutobuyerState } from "./sacrifice-autobuyer";
@@ -39,6 +40,7 @@ export const Autobuyer = {
   epMult: new EPMultAutobuyerState(),
   reality: new RealityAutobuyerState(),
   realityUpgrade: RealityUpgradeAutobuyerState.createAccessor(),
+  rebuyableBreakUpgrades: new RebuyableBreakUpgradeAutobuyerState(),
   replicantiGalaxy: new ReplicantiGalaxyAutobuyerState(),
   replicantiUpgrade: ReplicantiUpgradeAutobuyerState.createAccessor(),
   sacrifice: new SacrificeAutobuyerState(),
@@ -67,6 +69,7 @@ export const Autobuyers = (function() {
     Autobuyer.timeTheorem,
     Autobuyer.ipMult,
     Autobuyer.epMult,
+    Autobuyer.rebuyableBreakUpgrades,
     Autobuyer.darkMatterDims,
     Autobuyer.darkMatterDimsAscension,
     Autobuyer.singularity,

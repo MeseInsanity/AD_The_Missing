@@ -4,7 +4,7 @@ export const ecTimeStudies = [
   {
     id: 1,
     cost: new Decimal(30),
-    requirement: [171],
+    requirement: [72],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
     secondary: {
       resource: "Eternities",
@@ -16,7 +16,7 @@ export const ecTimeStudies = [
   {
     id: 2,
     cost: new Decimal(35),
-    requirement: [171],
+    requirement: [73],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
     secondary: {
       resource: "Tickspeed upgrades from Time Dimensions",
@@ -28,7 +28,7 @@ export const ecTimeStudies = [
   {
     id: 3,
     cost: new Decimal(40),
-    requirement: [171],
+    requirement: [71],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
     secondary: {
       resource: "8th Antimatter Dimensions",
@@ -64,7 +64,7 @@ export const ecTimeStudies = [
   {
     id: 6,
     cost: new Decimal(85),
-    requirement: [121],
+    requirement: [131],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
     secondary: {
       resource: "Replicanti Galaxies",
@@ -88,7 +88,7 @@ export const ecTimeStudies = [
   {
     id: 8,
     cost: new Decimal(115),
-    requirement: [123],
+    requirement: [122],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
     secondary: {
       resource: "Infinity Points",
@@ -112,13 +112,13 @@ export const ecTimeStudies = [
   {
     id: 10,
     cost: new Decimal(550),
-    requirement: [181],
+    requirement: [171, 172, 173],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
     secondary: {
-      resource: "Eternity Points",
-      current: () => Currency.eternityPoints.value,
-      required: completions => DC.E20.pow(Math.min(completions, 4)).times(DC.E100),
-      formatValue: value => format(value)
+      resource: "total Time Theorems",
+      current: () => Currency.timeTheorems.max,
+      required: completions => new Decimal(800 + 600 * completions),
+      formatValue: formatInt
     }
   },
   {

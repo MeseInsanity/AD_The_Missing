@@ -1,4 +1,4 @@
-import { DC } from "../constants";
+import { Fragments } from "./fragments";
 
 export const tabNotifications = {
   firstInfinity: {
@@ -60,8 +60,8 @@ export const tabNotifications = {
       }
     ],
     condition: () => !PlayerProgress.realityUnlocked() &&
-      !PlayerProgress.eternityUnlocked() && Currency.infinityPoints.gte(DC.E140),
-    events: [GAME_EVENT.BIG_CRUNCH_AFTER]
+      !PlayerProgress.eternityUnlocked() && Replicanti.areUnlocked,
+    events: [GAME_EVENT.INFINITY_CHALLENGE_COMPLETED]
   },
   firstEternity: {
     id: 5,
@@ -215,5 +215,16 @@ export const tabNotifications = {
     ],
     // Always externally triggered
     condition: () => true,
+  },
+  infinityPowerDrainUnlock: {
+    id: 17,
+    tabsToHighLight: [
+      {
+        parent: "fragments",
+        tab: "main",
+      },
+    ],
+    // Always externally triggered when the persistent unlock is first set.
+    condition: () => Fragments.isInfinityPowerDrainUnlocked,
   },
 };

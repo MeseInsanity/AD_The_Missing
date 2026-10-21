@@ -2,12 +2,14 @@
 import CostDisplay from "@/components/CostDisplay";
 import DescriptionDisplay from "@/components/DescriptionDisplay";
 import EffectDisplay from "@/components/EffectDisplay";
+import HintText from "@/components/HintText";
 
 export default {
   name: "EternityUpgradeButton",
   components: {
     DescriptionDisplay,
     EffectDisplay,
+    HintText,
     CostDisplay
   },
   props: {
@@ -50,8 +52,19 @@ export default {
     :class="classObject"
     @click="upgrade.purchase()"
   >
+    <HintText
+      v-if="upgrade.config.name"
+      type="realityUpgrades"
+      :class="[
+        'l-hint-text--reality-upgrade',
+        'c-hint-text--reality-upgrade'
+      ]"
+    >
+      {{ upgrade.config.name }}
+    </HintText>
     <DescriptionDisplay :config="upgrade.config" />
     <EffectDisplay
+      v-if="!upgrade.config.hideEffect"
       br
       :config="upgrade.config"
     />
@@ -68,5 +81,7 @@ export default {
 </template>
 
 <style scoped>
-
+.o-eternity-upgrade {
+  position: relative;
+}
 </style>

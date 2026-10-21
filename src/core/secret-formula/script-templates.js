@@ -130,10 +130,6 @@ export const automatorTemplates = {
       ],
       warnings: () => {
         const list = [];
-        if (!Perk.achievementGroup5.isBought) {
-          list.push(`You will not start this Reality with Achievement "${Achievement(131).name}" - grinding
-            Infinities may be less useful than expected since they cannot be Banked until later`);
-        }
         // Boundless flow (infinity generation)
         if (RealityUpgrade(11).isBought) {
           list.push(`You probably do not need to use this due to Reality Upgrade "${RealityUpgrade(11).name}"`);

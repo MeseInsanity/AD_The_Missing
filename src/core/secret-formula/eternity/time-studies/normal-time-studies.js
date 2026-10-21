@@ -1,17 +1,21 @@
 import { DC } from "../../../constants";
 
+const IP_TIME_STUDY_POWER = 4;
+const TS141_BASE_MULT = new Decimal("1e180");
+
 const thisInfinityMult = thisInfinity => {
   // All "this inf time" or "best inf time" mults are * 10
   const scaledInfinity = thisInfinity.times(10).add(1);
   const cappedInfinity = Decimal.min(Decimal.pow(scaledInfinity, 0.125), 500);
-  return DC.D15.pow(Decimal.log10(scaledInfinity).times(cappedInfinity));
+  return DC.D15.pow(Decimal.log10(scaledInfinity).times(cappedInfinity)).pow(IP_TIME_STUDY_POWER);
 };
 const passiveIPMult = () => {
   const isEffarigLimited = Effarig.isRunning && Effarig.currentStage === EFFARIG_STAGES.ETERNITY;
   const normalValue = Perk.studyPassive.isBought ? 1e50 : 1e25;
-  return isEffarigLimited
+  const baseValue = isEffarigLimited
     ? Math.min(normalValue, Effarig.eternityCap.toNumber())
     : normalValue;
+  return Decimal.pow(baseValue, IP_TIME_STUDY_POWER);
 };
 
 
@@ -70,8 +74,21 @@ export const normalTimeStudies = [
     cost: DC.D2,
     requirement: [11],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
-    description: () => `Base Replicanti interval limit ${formatInt(50)}ms ➜ ${formatInt(1)}ms`,
-    effect: 1
+    description: () => `You gain Replicanti ${formatInt(3)} times faster`,
+    effect: 3
+  },
+  {
+    id: 34,
+    cost: DC.D2,
+    requirement: [21],
+    reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
+    description: "Time Shards delay Replicanti slowdown",
+    effect: () => {
+      const logTimeShards = Currency.timeShards.value.max(1).log2();
+      const progress = logTimeShards.div(8192).clamp(0, 1).toNumber();
+      return 8 ** Math.sqrt(progress);
+    },
+    formatEffect: value => formatX(value, 2, 2)
   },
   {
     id: 31,
@@ -95,7 +112,10 @@ export const normalTimeStudies = [
     cost: DC.D2,
     requirement: [22],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
-    description: "You keep half of your Replicanti Galaxies on Infinity"
+    description: "Replicanti slowdown start is squared",
+    effect: 2,
+    formatEffect: value => `^${formatInt(value)}`,
+    hideEffect: true
   },
   {
     id: 41,
@@ -111,8 +131,7 @@ export const normalTimeStudies = [
     cost: new Decimal(6),
     requirement: [32],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
-    description: () => `Antimatter Galaxy requirement increases by ${formatInt(52)}
-      8th Dimensions instead of ${formatInt(60)}`,
+    description: () => `Increment of Antimatter Galaxy requirement is reduced by ${formatInt(8)}`,
     effect: 52
   },
   {
@@ -120,8 +139,8 @@ export const normalTimeStudies = [
     cost: DC.D3,
     requirement: [41, 42],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
-    description: () => `You gain ${formatX(1e15)} more Infinity Points`,
-    effect: 1e15
+    description: () => `You gain ${formatX(1e50)} more Infinity Points`,
+    effect: 1e50
   },
   {
     id: 61,
@@ -136,8 +155,8 @@ export const normalTimeStudies = [
     cost: DC.D3,
     requirement: [42, () => Perk.bypassEC5Lock.isBought || EternityChallenge(5).completions > 0],
     reqType: TS_REQUIREMENT_TYPE.ALL,
-    description: () => `You gain Replicanti ${formatInt(3)} times faster`,
-    effect: 3
+    description: () => `You gain Replicanti ${formatInt(5)} times faster`,
+    effect: 5
   },
   {
     id: 71,
@@ -260,10 +279,40 @@ export const normalTimeStudies = [
     cost: new Decimal(12),
     requirement: [101, 102, 103],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
-    description: () => (Achievement(103).canBeApplied
+    description: () => (Achievement(123).canBeApplied
       ? `Make the Infinity Point formula better log(x)/${formatFloat(307.8, 1)} ➜ log(x)/${formatInt(285)}`
       : `Make the Infinity Point formula better log(x)/${formatInt(308)} ➜ log(x)/${formatInt(285)}`),
     effect: 285
+  },
+  {
+    id: 112,
+    displayId: "13j",
+    cost: DC.D8,
+    requirement: [() => EternityChallenge(2).completions > 0],
+    reqType: TS_REQUIREMENT_TYPE.ALL,
+    description: "Time Shard requirement for Free Tickspeed upgrades is reduced by Condensation Theory",
+    effect: 1,
+    hideEffect: true
+  },
+  {
+    id: 113,
+    displayId: "12j",
+    cost: DC.D8,
+    requirement: [() => EternityChallenge(1).completions > 0],
+    reqType: TS_REQUIREMENT_TYPE.ALL,
+    description: "5th and higher Infinity Dimensions are strengthened by Refined Translation",
+    effect: 1,
+    hideEffect: true
+  },
+  {
+    id: 114,
+    displayId: "11j",
+    cost: DC.D8,
+    requirement: [() => EternityChallenge(3).completions > 0],
+    reqType: TS_REQUIREMENT_TYPE.ALL,
+    description: "All Galaxies are strengthened by Galactic Threshold",
+    effect: 1,
+    hideEffect: true
   },
   {
     id: 121,
@@ -355,11 +404,11 @@ export const normalTimeStudies = [
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
     requiresST: [142, 143],
     description: () => (Perk.studyActiveEP.isBought
-      ? `You gain ${formatX(DC.E45)} more Infinity Points`
+      ? `You gain ${formatX(TS141_BASE_MULT)} more Infinity Points`
       : "Multiplier to Infinity Points, which decays over this Infinity"),
     effect: () => (Perk.studyActiveEP.isBought
-      ? DC.E45
-      : DC.E45.divide(thisInfinityMult(Time.thisInfinity.totalSeconds)).clampMin(1)),
+      ? TS141_BASE_MULT
+      : TS141_BASE_MULT.divide(thisInfinityMult(Time.thisInfinity.totalSeconds)).clampMin(1)),
     formatEffect: value => (Perk.studyActiveEP.isBought ? undefined : formatX(value, 2, 1))
   },
   {
@@ -371,7 +420,7 @@ export const normalTimeStudies = [
     requiresST: [141, 143],
     description: () => `You gain ${formatX(passiveIPMult())} more Infinity Points`,
     effect: passiveIPMult,
-    cap: () => (Effarig.eternityCap === undefined ? undefined : Effarig.eternityCap.toNumber())
+    cap: () => (Effarig.eternityCap === undefined ? undefined : Effarig.eternityCap.pow(IP_TIME_STUDY_POWER))
   },
   {
     id: 143,
@@ -387,7 +436,7 @@ export const normalTimeStudies = [
       return thisInfinityMult(totalSeconds);
     },
     formatEffect: value => formatX(value, 2, 1),
-    cap: () => Effarig.eternityCap
+    cap: () => (Effarig.eternityCap === undefined ? undefined : Effarig.eternityCap.pow(IP_TIME_STUDY_POWER))
   },
   {
     id: 151,
@@ -396,6 +445,56 @@ export const normalTimeStudies = [
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
     description: () => `${formatX(1e4)} multiplier on all Time Dimensions`,
     effect: 1e4
+  },
+  {
+    id: 152,
+    displayId: "21j",
+    cost: new Decimal(16),
+    requirement: [() => EternityChallenge(6).completions > 0],
+    reqType: TS_REQUIREMENT_TYPE.ALL,
+    description: "Fragment's Replicanti effect softcap is 75% weaker, but Fragment Decay lasts 2500 times shorter",
+    effect: 0.25,
+    hideEffect: true
+  },
+  {
+    id: 153,
+    displayId: "22j",
+    cost: new Decimal(16),
+    requirement: [() => EternityChallenge(8).completions > 0],
+    reqType: TS_REQUIREMENT_TYPE.ALL,
+    description: "Fragment's Replicanti effect softcap is halved",
+    effect: 0.5,
+    hideEffect: true
+  },
+  {
+    id: 154,
+    displayId: "23j",
+    cost: new Decimal(16),
+    requirement: [() => EternityChallenge(4).completions > 0],
+    reqType: TS_REQUIREMENT_TYPE.ALL,
+    description: "Fragment's Replicanti effect softcap starts later over this Eternity",
+    effect: () => 16 ** Time.thisEternity.totalSeconds.div(8 * 60 * 60).clamp(0, 1).toNumber(),
+    formatEffect: value => `^${format(value, 2, 2)}`
+  },
+  {
+    id: 155,
+    displayId: "31j",
+    cost: new Decimal(35),
+    requirement: [() => EternityChallenge(7).completions > 0],
+    reqType: TS_REQUIREMENT_TYPE.ALL,
+    description: "1xj effects count their corresponding Condensate Milestone levels twice",
+    effect: 2,
+    hideEffect: true
+  },
+  {
+    id: 156,
+    displayId: "32j",
+    cost: new Decimal(35),
+    requirement: [() => EternityChallenge(9).completions > 0],
+    reqType: TS_REQUIREMENT_TYPE.ALL,
+    description: "2xj effects also affect the third Fragment Replicanti effect softcap",
+    effect: 1,
+    hideEffect: true
   },
   {
     id: 161,
@@ -423,7 +522,26 @@ export const normalTimeStudies = [
     effect: () => 1.25
   },
   {
+    id: 172,
+    cost: new Decimal(25),
+    requirement: [161],
+    reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
+    description: "Eternity Challenge completions improve the Eternity Point formula divisor",
+    effect: () => 2880 - EternityChallenges.completions * 5,
+    formatEffect: value => `2880 → ${format(value, 2, 2)}`
+  },
+  {
+    id: 173,
+    cost: new Decimal(25),
+    requirement: [162],
+    reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
+    description: "Eternity Challenge completions strengthen all Time Dimensions",
+    effect: () => Decimal.pow(2, EternityChallenges.completions / 3),
+    formatEffect: value => formatX(value, 2, 2)
+  },
+  {
     id: 181,
+    hiddenInTree: true,
     cost: new Decimal(200),
     requirement: [171,
       () => EternityChallenge(1).completions > 0 || Perk.bypassEC1Lock.isBought,
@@ -437,7 +555,7 @@ export const normalTimeStudies = [
   {
     id: 191,
     cost: new Decimal(400),
-    requirement: [181, () => EternityChallenge(10).completions > 0],
+    requirement: [() => EternityChallenge(10).completions > 0],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: () => `After Eternity you permanently keep ${formatPercents(0.05)}
     of your Infinities as Banked Infinities`,
@@ -446,16 +564,16 @@ export const normalTimeStudies = [
   {
     id: 192,
     cost: new Decimal(730),
-    requirement: [181, () => EternityChallenge(10).completions > 0, () => !Enslaved.isRunning],
+    requirement: [() => EternityChallenge(10).completions > 0, () => !Enslaved.isRunning],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: () => (Enslaved.isRunning
       ? "There is not enough space in this Reality"
-      : `Replicanti can go beyond ${format(replicantiCap(), 2, 1)}, but growth slows down at higher amounts`)
+      : "Effective Fragments delay Replicanti slowdown, which is 25% weaker")
   },
   {
     id: 193,
     cost: new Decimal(300),
-    requirement: [181, () => EternityChallenge(10).completions > 0],
+    requirement: [() => EternityChallenge(10).completions > 0],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: "Antimatter Dimension multiplier based on Eternities",
     effect: () => (DC.E13000.pow(Currency.eternities.value.div(1e6).clampMax(1))),

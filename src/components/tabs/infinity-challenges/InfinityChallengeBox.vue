@@ -27,8 +27,11 @@ export default {
     config() {
       return this.challenge.config;
     },
+    showCurrentEffect() {
+      return this.config.showCurrentEffect !== false;
+    },
     name() {
-      return `IC${this.challenge.id}`;
+      return `IC${this.challenge.id} — ${this.config.name}`;
     }
   },
   methods: {
@@ -54,7 +57,7 @@ export default {
     <template #top>
       <DescriptionDisplay :config="config" />
       <EffectDisplay
-        v-if="isRunning"
+        v-if="isRunning && showCurrentEffect"
         :config="config"
       />
     </template>
@@ -67,6 +70,7 @@ export default {
             title="Reward:"
           />
           <EffectDisplay
+            v-if="!config.reward.hideEffect"
             :config="config.reward"
           />
         </span>
@@ -76,6 +80,7 @@ export default {
             title="Reward:"
           />
           <EffectDisplay
+            v-if="!config.reward.hideEffect"
             :config="config.reward"
           />
         </template>

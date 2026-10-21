@@ -1,11 +1,13 @@
 <script>
 import EternityButton from "./EternityButton";
+import FragmentDiscoveryButton from "./FragmentDiscoveryButton";
 import UnlockInfinityDimButton from "./UnlockInfinityDimButton";
 
 export default {
   name: "HeaderEternityContainer",
   components: {
     EternityButton,
+    FragmentDiscoveryButton,
     UnlockInfinityDimButton,
   },
   data() {
@@ -15,6 +17,8 @@ export default {
       showNextEP: false,
       eternityPoints: new Decimal(0),
       nextEP: new Decimal(0),
+      nextEPForAmount: -1,
+      nextEPDivisor: new Decimal(-1),
     };
   },
   methods: {
@@ -22,9 +26,16 @@ export default {
       this.showContainer = player.break || PlayerProgress.eternityUnlocked();
       this.showEP = PlayerProgress.eternityUnlocked();
       this.eternityPoints.copyFrom(Currency.eternityPoints.value.floor());
+      const gainedEP = gainedEternityPoints();
       this.showNextEP = Player.canEternity && player.records.thisReality.maxEP.lt(100) &&
-        gainedEternityPoints().lt(100);
-      if (this.showNextEP) this.nextEP.copyFrom(requiredIPForEP(gainedEternityPoints().floor().toNumber() + 1));
+        gainedEP.lt(100);
+      const nextEPForAmount = gainedEP.floor().toNumber();
+      const divisor = eternityPointDivisor();
+      if (this.showNextEP && (this.nextEPForAmount !== nextEPForAmount || !this.nextEPDivisor.eq(divisor))) {
+        this.nextEP = nextEternityPointRequirement(gainedEP);
+        this.nextEPForAmount = nextEPForAmount;
+        this.nextEPDivisor.copyFrom(divisor);
+      }
     },
   },
 };
@@ -45,6 +56,7 @@ export default {
       <span v-if="showNextEP">(Next EP at {{ format(nextEP, 1) }} IP)</span>
     </div>
     <UnlockInfinityDimButton />
+    <FragmentDiscoveryButton />
     <EternityButton />
   </div>
 </template>

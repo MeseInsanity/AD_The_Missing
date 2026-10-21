@@ -18,10 +18,11 @@ export const ic5GalaxyRequirements = [
 export const infinityChallenges = [
   {
     id: 1,
+    name: "Mixed Up Wall",
     description: `all Normal Challenge restrictions are active at once, with the exception of the
       Budget Cuts (C10) and Sixth Sense (C12) Challenges.`,
     goal: new Decimal("1e380"),
-    isQuickResettable: true,
+    isQuickResettable: false,
     reward: {
       description: () => `All Infinity Dimensions ${formatX(1.3, 1, 1)}/IC; 1st ID Buy 10 +${format(1.25, 2, 2)}/IC.`,
       effect: () => Math.pow(1.3, InfinityChallenges.completed.length),
@@ -34,6 +35,7 @@ export const infinityChallenges = [
   },
   {
     id: 2,
+    name: "Pleasure the Gods",
     description: "You can buy only 1 Antimatter Galaxy, but Dimensional Sacrifice uses its improved formula.",
     goal: new Decimal("1e1050"),
     isQuickResettable: false,
@@ -46,6 +48,7 @@ export const infinityChallenges = [
   },
   {
     id: 3,
+    name: "Blooming Galaxy",
     description: "All Antimatter Dimension multipliers other than Infinity Power and Dimensional Sacrifice are disabled. Antimatter Galaxy requirements are reduced.",
     // Trial goal: compare the long-run clear time with and without the third ID5 purchase.
     goal: new Decimal("3.33e3333"),
@@ -59,6 +62,7 @@ export const infinityChallenges = [
   },
   {
     id: 4,
+    name: "Boosting Momentum",
     description: "Tickspeed upgrades have stronger diminishing returns. Each Dimension Boost gained during this\n      Infinity Challenge restores their strength. Galaxy Bulk is disabled.",
     goal: new Decimal("1e3500"),
     isQuickResettable: false,
@@ -73,6 +77,7 @@ export const infinityChallenges = [
   },
   {
     id: 5,
+    name: "Descending Ladder",
     description: () =>
       `start with only the 8th AD. Each Antimatter Galaxy unlocks one lower Antimatter Dimension.
       Locked Dimensions can produce but cannot be purchased.
@@ -92,6 +97,7 @@ export const infinityChallenges = [
   },
   {
     id: 6,
+    name: "Buyer's Remorse",
     description:
       `buying Antimatter Dimensions 1-4 causes all cheaper AD costs to increase.
       Buying Antimatter Dimensions 5-8 causes all more expensive AD costs to increase.`,
@@ -107,89 +113,88 @@ export const infinityChallenges = [
   },
   {
     id: 7,
+    name: "Galaxy Brain",
     description: () =>
-      `exponentially rising matter divides the multiplier on all of your Antimatter Dimensions
-      once you have at least ${formatInt(1)} 2nd Antimatter Dimension.`,
-    goal: DC.D2E22222,
-    isQuickResettable: true,
-    effect: () => Currency.matter.value.clampMin(1),
-    formatEffect: value => `/${format(value, 1, 2)}`,
-    reward: {
-      description: "Infinity Dimension multiplier based on tickspeed",
-      effect: () => Tickspeed.perSecond.pow(0.0005),
-      formatEffect: value => formatX(value, 2, 2)
-    },
-    unlockAM: DC.E22500,
-  },
-  {
-    id: 8,
-    description: () => {
-      // Copied from DimBoost.power; this is the base amount before any multipliers. Post-eternity this isn't
-      // necessarily 2.5x by the time the player sees this challenge; it's probably most accurate to say what it
-      // currently is, and this phrasing avoids 10x ➜ 10x with the old description.
-      const mult = Effects.max(
-        2,
-        InfinityUpgrade.dimboostMult,
-        InfinityChallenge(8).reward,
-        TimeStudy(81)
-      );
-      return `you cannot buy Antimatter Galaxies. Base Dimension Boost multiplier is increased to a maximum
-        of ${formatX(10)}. (Current base multiplier: ${formatX(mult, 2, 1)})`;
-    },
-    goal: DC.E10000,
+      `Tickspeed purchases are fixed at ${formatX(1.08)}. Galaxies do not affect Tickspeed;
+      instead, each Galaxy increases Dimension Boost power by +${format(0.5, 1, 1)}.`,
+    goal: new Decimal("1e6500"),
     isQuickResettable: false,
-    effect: 10,
+    showCurrentEffect: false,
+    effect: () => DC.D1.add(player.galaxies.times(0.5)),
+    formatEffect: value => formatX(value, 2, 2),
     reward: {
       description: () => `Dimension Boost multiplier is increased to a minimum of ${formatX(4)}`,
       effect: 4
     },
-    unlockAM: DC.E23000,
+    unlockAM: new Decimal("1e15000"),
+  },
+  {
+    id: 8,
+    name: "Race Against Time",
+    description: "All Antimatter Dimension production rapidly and permanently decays over time.",
+    goal: new Decimal("1e18500"),
+    isQuickResettable: false,
+    showCurrentEffect: false,
+    effect: () => {
+      const elapsedSeconds = Decimal.max(player.records.thisInfinity.time.div(1000), DC.D1);
+      return DC.D1.div(elapsedSeconds.pow(elapsedSeconds.pow(2)));
+    },
+    formatEffect: value => formatX(value, 2, 2),
+    reward: {
+      description: "ID purchases grant their matching AD virtual Buy 10s, scaled by Infinity Power conversion."
+    },
+    unlockAM: new Decimal("1e19000"),
   },
   {
     id: 9,
-    description: () =>
-      `AD production rapidly and continually drops over time. Purchasing Antimatter Dimension or Tickspeed
-        upgrades sets production back to ${formatPercents(1)} before it starts dropping again.`,
-    goal: DC.E27000,
-    isQuickResettable: true,
-    effect: () => DC.D0_8446303389034288.pow(
-      Decimal.max(0, player.records.thisInfinity.time.sub(player.records.thisInfinity.lastBuyTime))),
+    name: "The Matter of Balance",
+    description: "Matter and Antimatter oppose each other. Balance both resources, then Annihilate them for Galaxies.",
+    goal: new Decimal("1e7100"),
+    isQuickResettable: false,
+    showCurrentEffect: false,
     reward: {
-      description:
-        "You get a multiplier to AD 2-7 based on 1st and 8th AD multipliers.",
-      effect: () => AntimatterDimension(1).multiplier.times(AntimatterDimension(8).multiplier).pow(0.02),
-      formatEffect: value => formatX(value, 2, 2)
+      description: "Unlock Replicanti for free."
     },
-    unlockAM: DC.E28000,
+    unlockAM: new Decimal("1e25000"),
   },
   {
     id: 10,
-    description: "This Infinity Challenge has not been designed yet.",
-    goal: DC.BEMAX,
+    name: "No Antimatter What",
+    description: "Antimatter never accumulates. Antimatter Dimensions cost Infinity Power. Present Power affects all\n      Infinity Dimensions.",
+    goal: new Decimal("2.22e22222"),
     isQuickResettable: false,
     reward: {
-      description: "Reserved for a future Infinity Challenge.",
+      description: "Unlock the 7th Infinity Dimension.",
     },
-    unlockAM: DC.E30000,
+    unlockAM: DC.E45000,
   },
   {
     id: 11,
-    description: "This Infinity Challenge has not been designed yet.",
-    goal: DC.BEMAX,
+    name: "The Product of Chance",
+    description: `ADs self-produce between Replicates. Each Replicate multiplies active AD outputs, weighted by
+      Replicate Chance, into AM. The ID Replicanti multiplier instead applies to ADs as ^8; IDs are disabled.`,
+    goal: new Decimal("1e7119"),
     isQuickResettable: false,
     reward: {
-      description: "Reserved for a future Infinity Challenge.",
+      description: "Replicanti is 2x faster.",
+      effect: 2,
+      formatEffect: value => formatX(value, 2, 2),
+      hideEffect: true,
     },
-    unlockAM: DC.E32000,
+    unlockAM: new Decimal("1e70000"),
   },
   {
     id: 12,
-    description: "This Infinity Challenge has not been designed yet.",
-    goal: DC.BEMAX,
+    name: "Back to Basics",
+    description: `All multipliers except Buy 10, Dimension Boost, Sacrifice, and base Galaxy effects are ^0.05.`,
+    goal: new Decimal("1e6200"),
     isQuickResettable: false,
     reward: {
-      description: "Reserved for a future Infinity Challenge.",
+      description: "Buy 10, Dimension Boost, Sacrifice, and Galaxy effects are ^1.01.",
+      effect: 1.01,
+      formatEffect: value => `^${format(value, 2, 2)}`,
+      hideEffect: true,
     },
-    unlockAM: DC.E34000,
+    unlockAM: DC.E100000,
   },
 ];

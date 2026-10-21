@@ -1,3 +1,5 @@
+import { Fragments } from "./fragments";
+
 export const sidebarResources = [
   // Note: ID 0 is interpreted in the Vue component as "the largest unlocked ID" - do not use ID 0
   {
@@ -130,5 +132,29 @@ export const sidebarResources = [
     value: () => Currency.realityShards,
     formatValue: x => format(x, 2),
     formatClass: "o-sidebar-currency--pelle",
+  },
+  {
+    id: 17,
+    optionName: "Fragments",
+    isAvailable: () => Fragments.isUnlocked,
+    value: () => Fragments.amount,
+    formatValue: x => format(x, 2),
+    formatClass: "o-sidebar-currency--fragments",
+  },
+  {
+    id: 18,
+    optionName: "Effective Replicanti",
+    isAvailable: () => Fragments.isUnlocked,
+    value: () => Fragments.effectiveReplicanti,
+    formatValue: x => format(x, 2),
+    formatClass: "o-sidebar-currency--replicanti",
+  },
+  {
+    id: 19,
+    optionName: "Condensate",
+    isAvailable: () => Fragments.isCondensateUnlocked,
+    value: () => Fragments.condensateAmount,
+    formatValue: x => format(x, 2),
+    formatClass: "o-sidebar-currency--condensate",
   },
 ];

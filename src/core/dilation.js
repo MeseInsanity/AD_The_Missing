@@ -164,7 +164,7 @@ export function getDilationGainPerSecond() {
   let dtRate = new Decimal(Currency.tachyonParticles.value)
     .timesEffectsOf(
       DilationUpgrade.dtGain,
-      Achievement(132),
+      Achievement(134),
       Achievement(137),
       RealityUpgrade(1),
       AlchemyResource.dilation,
@@ -184,7 +184,7 @@ export function tachyonGainMultiplier() {
   const pow = Enslaved.isRunning ? Enslaved.tachyonNerf : 1;
   return DC.D1.timesEffectsOf(
     DilationUpgrade.tachyonGain,
-    Achievement(132),
+    Achievement(134),
     RealityUpgrade(4),
     RealityUpgrade(8),
     RealityUpgrade(15)

@@ -210,7 +210,7 @@ export default {
           >
             Reward: {{ config.reward }}
             <EffectDisplay
-              v-if="config.formatEffect"
+              v-if="config.formatEffect && !config.hideEffect"
               br
               :config="config"
             />

@@ -46,10 +46,10 @@ export class ECTimeStudyState extends TimeStudyState {
   purchaseUntil() {
     const studiesToBuy = [
       undefined,
-      171, 171, 171,
-      143, 42, 121,
-      111, 123, 151,
-      181, 181, 181
+      72, 73, 71,
+      143, 42, 131,
+      111, 122, 151,
+      171, 171, 171
     ];
     // If the player shift clicks an EC study that is immediately buyable, we try to
     // buy it first - in case buying studies up to that point renders it unaffordable.

@@ -1,4 +1,6 @@
 <script>
+import { DC } from "@/core/constants";
+
 import ChallengeRecordsList from "./ChallengeRecordsList";
 
 export default {
@@ -27,9 +29,9 @@ export default {
     getInfinityChallengeTimes() {
       const timesi = [];
       let BBVi = new Decimal();
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 12; i++) {
         BBVi = new Decimal();
-        BBVi.copyFrom(player.challenge.infinity.bestTimes[i]);
+        BBVi.copyFrom(InfinityChallenge(i + 1).isCompleted ? player.challenge.infinity.bestTimes[i] : DC.BEMAX);
         timesi.push(BBVi);
       }
       return timesi;

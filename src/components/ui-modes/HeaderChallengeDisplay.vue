@@ -28,6 +28,11 @@ export default {
       inPelle: false,
       universeGlitch: false,
       universeGlitchIndex: 0,
+      hasCondensate: false,
+      canCondense: false,
+      condensateAmount: new Decimal(),
+      condensateGain: new Decimal(),
+      condensateRequirement: new Decimal(),
     };
   },
   computed: {
@@ -119,6 +124,11 @@ export default {
     update() {
       this.infinityUnlocked = PlayerProgress.infinityUnlocked();
       this.activityTokens = this.parts.map(part => part.activityToken());
+      this.hasCondensate = Fragments.isCondensateUnlocked;
+      this.canCondense = Fragments.canCondense;
+      this.condensateAmount.copyFrom(Fragments.condensateAmount);
+      this.condensateGain.copyFrom(Fragments.condensateGain);
+      this.condensateRequirement.copyFrom(Fragments.condensateRequirement);
       // Dilation in Pelle can't be left once entered, but we still want to allow leaving more nested challenges
       this.showExit = this.inPelle && player.dilation.active
         ? this.activeChallengeNames.length > 1
@@ -208,6 +218,10 @@ export default {
         "l-challenge-display": true,
         "l-challenge-display--clickable": this.activeChallengeNames.length !== 0,
       };
+    },
+    condense() {
+      if (player.options.confirmations.condensate) Modal.condense.show();
+      else Fragments.condense();
     }
   },
 };
@@ -215,27 +229,58 @@ export default {
 
 <template>
   <div
-    v-if="isVisible"
-    class="l-game-header__challenge-text"
+    v-if="isVisible || hasCondensate || canCondense"
+    class="l-game-header__challenge-area"
   >
-    <span
-      :class="textClassObject()"
-      @click="textClicked"
+    <div
+      v-if="isVisible"
+      class="l-game-header__challenge-text"
     >
-      You are currently in {{ challengeDisplay }}
-    </span>
-    <FailableEcText v-if="isInFailableEC" />
-    <span class="l-padding-line" />
-    <PrimaryButton
-      v-if="showExit"
-      @click="exitButtonClicked"
+      <span
+        :class="textClassObject()"
+        @click="textClicked"
+      >
+        You are currently in {{ challengeDisplay }}
+      </span>
+      <FailableEcText v-if="isInFailableEC" />
+      <span class="l-padding-line" />
+      <PrimaryButton
+        v-if="showExit"
+        @click="exitButtonClicked"
+      >
+        {{ exitText }}
+      </PrimaryButton>
+    </div>
+    <div
+      v-if="hasCondensate"
+      class="c-condensate-header-amount"
     >
-      {{ exitText }}
-    </PrimaryButton>
+      You have <span>{{ format(condensateAmount, 2, 2) }}</span> Condensate.
+    </div>
+    <button
+      v-if="hasCondensate || canCondense"
+      class="c-condensate-header-button"
+      :class="{ 'c-condensate-header-button--locked': !canCondense }"
+      :disabled="!canCondense"
+      @click="condense"
+    >
+      <template v-if="canCondense">
+        Condense Fragments for {{ format(condensateGain, 2, 2) }} Condensate.
+      </template>
+      <template v-else>
+        <b>Reach {{ format(condensateRequirement, 2, 2) }} Fragments</b>
+      </template>
+    </button>
   </div>
 </template>
 
 <style scoped>
+.l-game-header__challenge-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .l-game-header__challenge-text {
   display: flex;
   height: 2rem;
@@ -246,6 +291,42 @@ export default {
   font-weight: bold;
   color: var(--color-text);
   margin: 0.5rem;
+}
+
+.c-condensate-header-button {
+  margin: 0.2rem 0 0.4rem;
+  padding: 0.45rem 1.4rem;
+  font-family: Typewriter, serif;
+  font-size: 1.1rem;
+  color: #8bd3c7;
+  background: #000;
+  border-color: #5ca99a;
+  border-style: solid;
+  border-width: var(--var-border-width, 0.2rem);
+  border-radius: var(--var-border-radius, 0.5rem);
+  cursor: pointer;
+  transition-duration: 0.15s;
+}
+
+.c-condensate-header-amount {
+  padding-bottom: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: normal;
+}
+
+.c-condensate-header-amount span {
+  color: #8bd3c7;
+  font-weight: normal;
+}
+
+.c-condensate-header-button:not(:disabled):hover {
+  color: #000;
+  background: #8bd3c7;
+}
+
+.c-condensate-header-button--locked {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .l-challenge-display {

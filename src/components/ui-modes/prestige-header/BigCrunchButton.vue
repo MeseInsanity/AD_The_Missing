@@ -87,8 +87,7 @@ export default {
       this.currentIPRate.copyFrom(gainedIP.div(Decimal.max(0.0005, Time.thisInfinityRealTime.totalMinutes)));
       this.peakIPRate.copyFrom(player.records.thisInfinity.bestIPmin);
       this.peakIPRateVal.copyFrom(player.records.thisInfinity.bestIPminVal);
-      this.showIPRate = DimensionalDominoes.dividendCount === 0 &&
-        !(Player.canEternity || PlayerProgress.eternityUnlocked());
+      this.showIPRate = !DimensionalDominoes.isBought;
     },
     switchToInfinity() {
       Tab.dimensions.infinity.show(true);

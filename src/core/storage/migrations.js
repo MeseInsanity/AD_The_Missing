@@ -456,6 +456,80 @@ export const migrations = {
       player.challenge.infinity.ic5AchievementTier = 0;
       player.achievementBits[7] &= ~1;
     },
+    106: player => {
+      player.fragments = {
+        unlocked: false,
+        discoveryPending: false,
+        amount: new Decimal(0),
+        total: new Decimal(0),
+        bestReplicanti: new Decimal(0),
+        lastRecordTime: 0,
+        decayUpgrades: 0,
+        yieldUpgrades: 0,
+      };
+      while (player.options.hiddenSubtabBits.length < 12) player.options.hiddenSubtabBits.push(0);
+      while (player.options.lastOpenSubtab.length < 12) player.options.lastOpenSubtab.push(0);
+    },
+    107: player => {
+      player.fragments ??= {};
+      player.fragments.drains ??= {
+        stabilizeDecay: {
+          fill: new Decimal(0),
+          active: false,
+        },
+      };
+      delete player.fragments.decayUpgrades;
+      delete player.fragments.yieldUpgrades;
+      delete player.replicanti.chance;
+      delete player.replicanti.chanceCost;
+      delete player.replicanti.interval;
+      delete player.replicanti.intervalCost;
+    },
+    108: player => {
+      player.fragments ??= {};
+      player.fragments.bestFragmentGain = new Decimal(0);
+      delete player.fragments.bestReplicanti;
+    },
+    109: player => {
+      player.challenge.infinity.ic11SelfProductionTimers = Array.repeat(new Decimal(0), 8);
+    },
+    110: player => {
+      player.fragments ??= {};
+      player.fragments.drains ??= {};
+      player.fragments.drains.infinityPower ??= {
+        fill: new Decimal(0),
+        active: false,
+      };
+    },
+    111: player => {
+      player.fragments ??= {};
+      player.fragments.infinityPowerDrainUnlocked ??=
+        player.records.thisReality.maxIP.gte(new Decimal("1e1000"));
+    },
+    112: player => {
+      player.fragments ??= {};
+      player.fragments.condensate ??= {
+        unlocked: false,
+        amount: new Decimal(0),
+        total: new Decimal(0),
+      };
+    },
+    113: player => {
+      player.fragments ??= {};
+      player.fragments.thirdDrainUnlocked ??= player.fragments.condensate?.unlocked ?? false;
+      player.fragments.drains ??= {};
+      player.fragments.drains.eternity ??= {
+        fill: new Decimal(0),
+        active: false,
+      };
+    },
+    114: player => {
+      player.fragments ??= {};
+      // Fragment Decay now follows simulated game time; legacy wall-clock timestamps cannot be converted.
+      player.fragments.lastRecordGameTime = new Decimal(player.records.totalTimePlayed);
+      player.fragments.lockDrainSwitching ??= false;
+      player.auto.rebuyableBreakUpgrades ??= { isActive: true };
+    },
   },
 
   // IC3 was inserted ahead of the former IC3-8 sequence. The best-time array is

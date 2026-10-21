@@ -16,7 +16,7 @@ export function updateNormalAndInfinityChallenges(diff) {
     player.chall11MatterGrowthTime = (player.chall11MatterGrowthTime ?? DC.D0).add(diff);
   }
 
-  if (NormalChallenge(11).isRunning || InfinityChallenge(7).isRunning) {
+  if (NormalChallenge(11).isRunning) {
     const matterActivationTier = 2;
     const matterCanActivate = AntimatterDimension(matterActivationTier).amount.neq(0);
     if (matterCanActivate) {

@@ -60,6 +60,10 @@ window.player = {
       dimBoosts: DC.D0,
       focusTier: 1,
       ic5AchievementTier: 0,
+      ic9PreviousContinuum: DC.D0,
+      ic9ResidualRatio: DC.D1,
+      ic9ResidualResource: 0,
+      ic11SelfProductionTimers: Array.repeat(DC.D0, 8),
     },
     eternity: {
       current: 0,
@@ -211,6 +215,7 @@ window.player = {
     singularity: { isActive: false },
     ipMultBuyer: { isActive: false, },
     epMultBuyer: { isActive: false, },
+    rebuyableBreakUpgrades: { isActive: true },
   },
   infinityPoints: DC.D0,
   infinities: DC.D0,
@@ -405,13 +410,40 @@ window.player = {
   replicanti: {
     unl: false,
     amount: DC.D0,
-    chance: new Decimal(0.01),
-    chanceCost: DC.E150,
-    interval: DC.E3,
-    intervalCost: DC.E140,
     boughtGalaxyCap: DC.D0,
     galaxies: DC.D0,
     galCost: DC.E170,
+  },
+  fragments: {
+    unlocked: false,
+    discoveryPending: false,
+    infinityPowerDrainUnlocked: false,
+    thirdDrainUnlocked: false,
+    amount: DC.D0,
+    total: DC.D0,
+    bestFragmentGain: DC.D0,
+    lastRecordTime: 0,
+    lastRecordGameTime: DC.D0,
+    lockDrainSwitching: false,
+    condensate: {
+      unlocked: false,
+      amount: DC.D0,
+      total: DC.D0,
+    },
+    drains: {
+      stabilizeDecay: {
+        fill: DC.D0,
+        active: false,
+      },
+      infinityPower: {
+        fill: DC.D0,
+        active: false,
+      },
+      eternity: {
+        fill: DC.D0,
+        active: false,
+      },
+    },
   },
   timestudy: {
     theorem: DC.D0,
@@ -895,6 +927,7 @@ window.player = {
       deleteGlyphSetSave: true,
       glyphRefine: true,
       bigCrunch: true,
+      condensate: true,
       replicantiGalaxy: true,
       antimatterGalaxy: true,
       dimensionBoost: true,
@@ -928,9 +961,9 @@ window.player = {
       realityShards: true
     },
     hiddenTabBits: 0,
-    hiddenSubtabBits: Array.repeat(0, 11),
+    hiddenSubtabBits: Array.repeat(0, 12),
     lastOpenTab: 0,
-    lastOpenSubtab: Array.repeat(0, 11),
+    lastOpenSubtab: Array.repeat(0, 12),
     perkLayout: 0,
     perkPhysicsEnabled: true,
     automatorEvents: {
@@ -955,7 +988,7 @@ export const Player = {
   defaultStart: deepmergeAll([{}, player]),
 
   get isInMatterChallenge() {
-    return NormalChallenge(11).isRunning || InfinityChallenge(7).isRunning;
+    return NormalChallenge(11).isRunning;
   },
 
   get isInAntimatterChallenge() {

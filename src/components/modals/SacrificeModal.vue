@@ -14,7 +14,7 @@ export default {
   },
   computed: {
     message() {
-      if (Achievement(118).isUnlocked && !Pelle.isDoomed) {
+      if (Achievement(127).isUnlocked && !Pelle.isDoomed) {
         return `Dimensional Sacrifice will give you a boost to the 8th Antimatter Dimension based on the amount of
           1st Antimatter Dimensions you had at the time of Sacrificing.`;
       }

@@ -18,7 +18,7 @@ export default {
       return this.getMilestone();
     },
     config() {
-      return this.milestone.config;
+      return this.milestone?.config;
     },
     eternities() {
       return this.config.eternities;
@@ -45,6 +45,7 @@ export default {
   },
   methods: {
     update() {
+      if (this.milestone === undefined) return;
       this.isLocked = this.isDoomed && this.config.givenByPelle !== undefined;
       this.isReached = this.milestone.isReached;
     }
@@ -54,7 +55,7 @@ export default {
 
 <template>
   <div
-    v-if="!config.invisible"
+    v-if="config && !config.invisible"
     class="l-eternity-milestone"
   >
     <span class="o-eternity-milestone__goal">

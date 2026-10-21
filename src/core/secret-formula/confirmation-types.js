@@ -1,3 +1,5 @@
+import { Fragments } from "./fragments";
+
 export const confirmationTypes = [
   {
     name: "Dimension Boost",
@@ -15,6 +17,10 @@ export const confirmationTypes = [
     name: "Big Crunch",
     option: "bigCrunch",
     isUnlocked: () => player.break || PlayerProgress.eternityUnlocked(),
+  }, {
+    name: "Condense Fragments",
+    option: "condensate",
+    isUnlocked: () => Fragments.isCondensateUnlocked || Fragments.canCondense,
   }, {
     name: "Challenges",
     option: "challenges",

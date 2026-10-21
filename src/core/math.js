@@ -588,9 +588,22 @@ window.ExponentialCostScaling = class ExponentialCostScaling {
     };
   }
 
-  getContinuumValue(money, perSet) {
-    const continuumBase = this.getMaxBought(0, money, perSet, false);
-    return continuumBase ? continuumBase.quantity : continuumBase;
+  getContinuumValue(rawMoney, numberPerSet) {
+    const perSet = new Decimal(numberPerSet);
+    if (!Decimal.isFinite(rawMoney) || rawMoney.lte(0) || !Decimal.isFinite(perSet) || perSet.lte(0)) {
+      return new Decimal(0);
+    }
+
+    // Continuum represents partial sets. Unlike bulk buying, do not quantize the
+    // inverted cost curve to a whole purchase before applying its effects.
+    const logMoney = rawMoney.div(perSet).log10();
+    let continuumValue = logMoney.sub(this._logBaseCost).div(this._logBaseIncrease).add(1);
+    if (continuumValue.gt(this._purchasesBeforeScaling) && !this._logCostScale.eq(0)) {
+      const discriminant = this._precalcDiscriminant.add(this._logCostScale.mul(logMoney).mul(8));
+      if (discriminant.sign < 0) return new Decimal(0);
+      continuumValue = this._precalcCenter.add(Decimal.sqrt(discriminant).div(this._logCostScale.mul(2)));
+    }
+    return continuumValue.clampMin(0);
   }
 };
 

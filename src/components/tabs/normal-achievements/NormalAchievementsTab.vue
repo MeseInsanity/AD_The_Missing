@@ -2,6 +2,7 @@
 import NormalAchievementRow from "./NormalAchievementRow";
 import PrimaryToggleButton from "@/components/PrimaryToggleButton";
 import SwapAchievementImagesButton from "./SwapAchievementImagesButton";
+import { Fragments } from "@/core/secret-formula/fragments";
 
 export default {
   name: "NormalAchievementsTab",
@@ -28,6 +29,8 @@ export default {
       achMultToBH: false,
       achMultToTP: false,
       achMultToTT: false,
+      achMultToDimBoost: false,
+      achievementDimBoostPower: new Decimal(),
       renderedRowIndices: []
     };
   },
@@ -54,6 +57,9 @@ export default {
       if (this.achMultToTP) boostList.push(`Tachyon Particles: ${achTPEffect}`);
       if (this.achMultToBH) boostList.push(`Black Hole Power: ${achievementPower}`);
       if (this.achMultToTT) boostList.push(`Time Theorem production: ${achievementPower}`);
+      if (this.achMultToDimBoost) {
+        boostList.push(`Dimension Boost power: +${format(this.achievementDimBoostPower, 2, 3)}`);
+      }
       return `${boostList.join("<br>")}`;
     },
   },
@@ -95,6 +101,10 @@ export default {
       this.achMultToTP = RealityUpgrade(8).isBought;
       this.achMultToBH = VUnlocks.achievementBH.canBeApplied;
       this.achMultToTT = Ra.unlocks.achievementTTMult.canBeApplied;
+      this.achMultToDimBoost = EternityUpgrade.achievementDimBoost.isBought;
+      this.achievementDimBoostPower.copyFrom(
+        new Decimal(EternityUpgrade.achievementDimBoost.effectOrDefault(0))
+      );
     },
     startRowRendering() {
       const unlockedRows = [];
@@ -133,6 +143,7 @@ export default {
       if (PlayerProgress.current.hasFullCompletion || this.isDoomed) return false;
       if (PlayerProgress.realityUnlocked()) return row >= 17;
       if (PlayerProgress.eternityUnlocked()) return row >= 13;
+      if (Fragments.isUnlocked) return row >= 10;
       if (PlayerProgress.hasBroken()) return row >= 9;
       if (PlayerProgress.infinityUnlocked()) return row >= 5;
       return row >= 2;

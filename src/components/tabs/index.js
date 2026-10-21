@@ -12,6 +12,8 @@ import EnslavedTab from "./celestial-enslaved/EnslavedTab";
 import EternityChallengesTab from "./eternity-challenges/EternityChallengesTab";
 import EternityMilestonesTab from "./eternity-milestones/EternityMilestonesTab";
 import EternityUpgradesTab from "./eternity-upgrades/EternityUpgradesTab";
+import FragmentsTab from "./fragments/FragmentsTab";
+import CondensateTab from "./fragments/CondensateTab";
 import GlyphSetRecordsTab from "./glyph-set-records/GlyphSetRecordsTab";
 import GlyphsTab from "./glyphs/GlyphsTab";
 import ImaginaryUpgradesTab from "./imaginary-upgrades/ImaginaryUpgradesTab";
@@ -75,6 +77,8 @@ const TabComponents = {
   TimeStudiesTab,
   EternityUpgradesTab,
   EternityMilestonesTab,
+  FragmentsTab,
+  CondensateTab,
   TimeDilationTab,
   GlyphsTab,
   RealityUpgradesTab,

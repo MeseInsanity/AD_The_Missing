@@ -31,15 +31,18 @@ function bestInfinityTimeMult() {
 }
 
 function tickspeedSacrificeMultiplier() {
-  return Tickspeed.perSecond;
+  const exponent = EternityUpgrade.currentRunFormula.isBought ? 1.25 : 1;
+  return Tickspeed.perSecond.pow(exponent);
 }
 
 function chargedTickspeedSacrificeMultiplier() {
   return Tickspeed.perSecond.pow(Ra.pets.teresa.level / 2);
 }
 
-function dimBoostBuy10Multiplier() {
-  return DimBoost.totalBoosts.max(1).log10().div(8).clampMax(1).times(0.1).add(1);
+function dimBoostBuy10Multiplier(isImproved = EternityUpgrade.currentRunFormula.isBought) {
+  const boostLog = DimBoost.totalBoosts.max(1).log(isImproved ? 8 : 10);
+  const cap = isImproved ? 0.25 : 0.1;
+  return boostLog.div(8).clampMax(1).times(cap).add(1);
 }
 
 function chargedDimBoostBuy10Power() {
@@ -47,9 +50,17 @@ function chargedDimBoostBuy10Power() {
   return boostStrength.times(1 + Math.pow(Ra.pets.teresa.level / 2, 2)).add(1);
 }
 
-function sacrificeDimBoostMultiplier() {
+function sacrificeDimBoostMultiplier(isImproved = EternityUpgrade.currentRunFormula.isBought) {
   const sacrificeLog = Sacrifice.totalBoost.max(1).log10();
-  return sacrificeLog.div(sacrificeLog.add(5)).times(0.25).add(1);
+  const originalEffect = sacrificeLog.div(sacrificeLog.add(5)).times(0.25).add(1);
+  if (!isImproved) return originalEffect;
+  const improvedEffect = sacrificeLog.div(sacrificeLog.add(2500)).times(0.5).add(1);
+  return Decimal.max(originalEffect, improvedEffect);
+}
+
+function currentInfinityTimeMultiplier(isImproved = EternityUpgrade.currentRunFormula.isBought) {
+  const time = isImproved ? Time.thisInfinity.totalSeconds : Time.thisInfinity.totalMinutes;
+  return Decimal.max(Decimal.pow(time.div(4), isImproved ? 0.75 : 0.25), 1);
 }
 
 function chargedSacrificeDimBoostPower() {
@@ -78,7 +89,9 @@ export const infinityUpgrades = {
     name: "Tick Tock Soul",
     cost: 2,
     checkRequirement: () => InfinityUpgrade.thisInfinityTimeMult.isBought,
-    description: "Sacrificed Dimensions are multiplied by current Total Tickspeed.",
+    description: () => (EternityUpgrade.currentRunFormula.isBought
+      ? "Sacrificed Dimensions are multiplied by current Total Tickspeed^1.25."
+      : "Sacrificed Dimensions are multiplied by current Total Tickspeed."),
     effect: () => tickspeedSacrificeMultiplier(),
     formatEffect: value => formatX(value, 2, 2),
     hideEffect: true,
@@ -96,7 +109,11 @@ export const infinityUpgrades = {
     checkRequirement: () => InfinityUpgrade.currentInfinitySacrificeDimBoost.isBought,
     description: "Buy 10 Multiplier is stronger based on Dimension Boosts in the current Infinity",
     effect: () => dimBoostBuy10Multiplier(),
+    baseEffect: () => dimBoostBuy10Multiplier(false),
     formatEffect: value => formatX(value, 3, 3),
+    afterEU: () => dimBoostBuy10Multiplier(true),
+    afterEternityUpgrade: "currentRunFormula",
+    formatAfterEU: value => formatX(value, 3, 3),
     charged: {
       description: "Buy 10 Multiplier gains a power effect based on Dimension Boosts and Teresa level",
       effect: () => chargedDimBoostBuy10Power(),
@@ -111,7 +128,11 @@ export const infinityUpgrades = {
     checkRequirement: () => InfinityUpgrade.currentInfinityTickspeedSacrifice.isBought,
     description: "Dimension Boost is stronger based on Sacrifice in the current Infinity",
     effect: () => sacrificeDimBoostMultiplier(),
+    baseEffect: () => sacrificeDimBoostMultiplier(false),
     formatEffect: value => formatX(value, 2, 2),
+    afterEU: () => sacrificeDimBoostMultiplier(true),
+    afterEternityUpgrade: "currentRunFormula",
+    formatAfterEU: value => formatX(value, 2, 2),
     charged: {
       description: "Dimension Boost gains a power effect based on Sacrifice and Teresa level",
       effect: () => chargedSacrificeDimBoostPower(),
@@ -232,8 +253,12 @@ export const infinityUpgrades = {
     name: "Long Life",
     cost: 1,
     description: "Antimatter Dimensions gain a multiplier based on time spent in current Infinity",
-    effect: () => Decimal.max(Decimal.pow(Time.thisInfinity.totalMinutes.div(4), 0.25), 1),
+    effect: () => currentInfinityTimeMultiplier(),
+    baseEffect: () => currentInfinityTimeMultiplier(false),
     formatEffect: value => formatX(value, 2, 2),
+    afterEU: () => currentInfinityTimeMultiplier(true),
+    afterEternityUpgrade: "currentRunFormula",
+    formatAfterEU: value => formatX(value, 2, 2),
     charged: {
       description:
         "Antimatter Dimensions gain a power effect based on time spent in current Infinity and Teresa level",

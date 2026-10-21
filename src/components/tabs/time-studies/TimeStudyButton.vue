@@ -56,6 +56,7 @@ export default {
         "c-pelle-useless--unavailable": this.isUseless && !this.isAvailableForPurchase && !this.isBought,
         "c-pelle-useless-available": this.isUseless && !this.isAvailableForPurchase && !this.isBought,
         "o-time-study--small": this.setup.isSmall,
+        "o-time-study--hidden": this.study.config.hiddenInTree,
         "o-time-study--unavailable": !this.isAvailableForPurchase && !this.isBought && !this.isUseless,
         "o-time-study--available": this.isAvailableForPurchase && !this.isBought,
         "o-time-study--bought": this.isBought && !this.isUseless,
@@ -110,7 +111,7 @@ export default {
     },
     showDefaultCostDisplay() {
       const costCond = (this.showCost && !this.showStCost) || this.STCost === 0;
-      return !this.setup.isSmall && !this.doomedRealityStudy && costCond;
+      return !this.config.isPlanned && !this.setup.isSmall && !this.doomedRealityStudy && costCond;
     },
     isDisabledByEnslaved() {
       return this.study.id === 192 && Enslaved.isRunning;
@@ -198,6 +199,9 @@ export class TimeStudySetup {
       :config="config"
       name="Time Theorem"
     />
+    <div v-else-if="config.isPlanned">
+      Planned
+    </div>
     <div v-else-if="!doomedRealityStudy && !isDisabledByEnslaved">
       Cost: {{ customCostStr }}
     </div>
@@ -205,5 +209,8 @@ export class TimeStudySetup {
 </template>
 
 <style scoped>
-
+.o-time-study--hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
 </style>

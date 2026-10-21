@@ -27,7 +27,7 @@ export default {
       return this.setup.study;
     },
     hintText() {
-      const id = this.study.id;
+      const id = this.study.config.displayId ?? this.study.id;
       if (!this.setup.path) return id;
       const pathEntry = NormalTimeStudies.pathList.find(p => p.path === this.setup.path);
       return `${id} ${pathEntry.name}`;
@@ -67,6 +67,7 @@ export default {
         :config="study.config"
       />
       <EffectDisplay
+        v-if="!study.config.hideEffect"
         br
         :config="study.config"
       />

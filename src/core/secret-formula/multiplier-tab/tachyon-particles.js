@@ -38,8 +38,8 @@ export const TP = {
   },
   achievement: {
     name: "Achievement 132",
-    multValue: () => Achievement(132).effectOrDefault(1),
-    isActive: () => Achievement(132).canBeApplied,
+    multValue: () => Achievement(134).effectOrDefault(1),
+    isActive: () => Achievement(134).canBeApplied,
     icon: MultiplierTabIcons.ACHIEVEMENT,
   },
   dilation: {

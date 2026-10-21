@@ -2777,12 +2777,12 @@ export const news = [
     id: "l27",
     text:
       "New strange material was been found. It seems to grow exponentially, but only helps with antimatter production.",
-    get unlocked() { return PlayerProgress.replicantiUnlocked() && player.replicanti.chance.eq(0.01); }
+    get unlocked() { return PlayerProgress.replicantiUnlocked(); }
   },
   {
     id: "l28",
     text: "It seems this \"replicanti\" stuff won't be growing any faster now.",
-    get unlocked() { return player.replicanti.chance.eq(1) && player.replicanti.interval.eq(1); }
+    get unlocked() { return false; }
   },
   {
     id: "l29",

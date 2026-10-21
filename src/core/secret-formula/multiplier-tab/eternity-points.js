@@ -20,9 +20,9 @@ export const EP = {
   base: {
     name: "Base Eternity Points",
     isBase: true,
-    fakeValue: DC.D5,
-    multValue: () => DC.D5.pow(player.records.thisEternity.maxIP.plus(
-      gainedInfinityPoints()).log10() / (308 - PelleRifts.recursion.effectValue.toNumber()) - 0.7),
+    fakeValue: DC.D4,
+    multValue: () => DC.D4.pow(player.records.thisEternity.maxIP.plus(
+      gainedInfinityPoints()).max(1).log2().div(eternityPointDivisor()).sub(1)),
     isActive: () => PlayerProgress.eternityUnlocked(),
     icon: MultiplierTabIcons.CONVERT_FROM("IP"),
   },
@@ -30,18 +30,18 @@ export const EP = {
     name: "Eternity Points from Infinity Points",
     displayOverride: () => `${format(player.records.thisEternity.maxIP.plus(gainedInfinityPoints()), 2, 2)} IP`,
     // Just needs to match the value in base and be larger than 1
-    multValue: DC.D5,
+    multValue: DC.D4,
     isActive: () => PlayerProgress.eternityUnlocked(),
     icon: MultiplierTabIcons.SPECIFIC_GLYPH("infinity"),
   },
   divisor: {
-    name: "Pelle - EP Formula Improvement",
+    name: "EP Formula Divisor",
     displayOverride: () => {
-      const div = 308 - PelleRifts.recursion.effectValue.toNumber();
-      return `log(IP)/${formatInt(308)} ➜ log(IP)/${format(div, 2, 2)}`;
+      const div = eternityPointDivisor();
+      return `log2(IP)/${formatInt(2880)} - 1 ➜ log2(IP)/${format(div, 2, 2)} - 1`;
     },
-    powValue: () => 308 / (308 - PelleRifts.recursion.effectValue.toNumber()),
-    isActive: () => PelleRifts.recursion.canBeApplied,
+    powValue: () => Decimal.divide(2880, eternityPointDivisor()),
+    isActive: () => !eternityPointDivisor().eq(2880),
     icon: MultiplierTabIcons.DIVISOR("EP"),
   },
   eternityUpgrade: {

@@ -5,6 +5,7 @@ import { ElectronRuntime, SteamRuntime } from "@/steam";
 import { DC } from "./core/constants";
 import { deepmergeAll } from "@/utility/deepmerge";
 import { DEV } from "@/env";
+import { Fragments } from "./core/secret-formula/fragments";
 import { SpeedrunMilestones } from "./core/speedrun";
 import { supportedBrowsers } from "./supported-browsers";
 
@@ -13,28 +14,25 @@ if (GlobalErrorHandler.handled) {
 }
 GlobalErrorHandler.cleanStart = true;
 
+// Every non-EC Eternity uses this gate. The base formula floors to 1 EP here before later multipliers.
+const ETERNITY_POINT_START = Decimal.pow(2, 4096);
+const ETERNITY_POINT_BASE = 4;
+const ETERNITY_POINT_BASE_DIVISOR = 2880;
+
 export function playerInfinityUpgradesOnReset() {
-
-  const infinityUpgrades = new Set(
-    ["timeMult", "dimMult", "timeMult2",
-      "skipReset1", "skipReset2", "unspentBonus",
-      "27Mult", "18Mult", "36Mult", "resetMult",
-      "skipReset3", "passiveGen", "45Mult",
-      "resetBoost", "galaxyBoost", "skipResetGalaxy",
-      "ipOffline"]
+  const emptyInfinityRebuyables = () => [new Decimal(), new Decimal(), new Decimal(), new Decimal()];
+  const upgradeIds = (upgrades, predicate) => new Set(Object.values(upgrades)
+    .filter(config => config?.id !== undefined && predicate(config))
+    .map(config => config.id));
+  // These Milestones must track the mod's actual Upgrade database. The inherited hard-coded vanilla lists omitted
+  // renamed and newly added upgrades, causing the reset to restore obsolete IDs instead of the intended rewards.
+  const infinityUpgrades = upgradeIds(GameDatabase.infinity.upgrades, config => config.id !== "ipMult");
+  const fixedBreakInfinityUpgrades = upgradeIds(
+    GameDatabase.infinity.breakUpgrades,
+    config => !config.rebuyable && !config.isNYI && config.retainOnEternity !== false
   );
-
-  const breakInfinityUpgrades = new Set(
-    ["timeMult", "dimMult", "timeMult2",
-      "skipReset1", "skipReset2", "unspentBonus",
-      "27Mult", "18Mult", "36Mult", "resetMult",
-      "skipReset3", "passiveGen", "45Mult",
-      "resetBoost", "galaxyBoost", "skipResetGalaxy",
-      "totalMult", "currentMult", "postGalaxy",
-      "challengeMult", "achievementMult", "infinitiedMult",
-      "infinitiedGeneration", "autoBuyerUpgrade", "autobuyMaxDimboosts",
-      "ipOffline"]
-  );
+  // The five-Eternity reward subsumes the four-Eternity reward, matching the inherited Break Infinity behavior.
+  const breakInfinityUpgrades = new Set([...infinityUpgrades, ...fixedBreakInfinityUpgrades]);
 
   if (PelleUpgrade.keepBreakInfinityUpgrades.canBeApplied) {
     player.infinityUpgrades = new Set([...player.infinityUpgrades].filter(u => breakInfinityUpgrades.has(u)));
@@ -43,7 +41,7 @@ export function playerInfinityUpgradesOnReset() {
 
   if (PelleUpgrade.keepInfinityUpgrades.canBeApplied) {
     player.infinityUpgrades = new Set([...player.infinityUpgrades].filter(u => infinityUpgrades.has(u)));
-    player.infinityRebuyables = [0, 0, 0];
+    player.infinityRebuyables = emptyInfinityRebuyables();
     GameCache.tickSpeedMultDecrease.invalidate();
     GameCache.dimensionMultDecrease.invalidate();
     return;
@@ -51,19 +49,22 @@ export function playerInfinityUpgradesOnReset() {
 
   if (RealityUpgrade(10).isBought || EternityMilestone.keepBreakUpgrades.isReached) {
     player.infinityUpgrades = breakInfinityUpgrades;
-    player.infinityRebuyables = [new Decimal(8), new Decimal(7), new Decimal(10)];
+    player.infinityRebuyables = emptyInfinityRebuyables();
   } else if (EternityMilestone.keepInfinityUpgrades.isReached) {
     player.infinityUpgrades = infinityUpgrades;
-    player.infinityRebuyables = [new Decimal(), new Decimal(), new Decimal()];
+    player.infinityRebuyables = emptyInfinityRebuyables();
   } else {
     player.infinityUpgrades.clear();
-    player.infinityRebuyables = [new Decimal(), new Decimal(), new Decimal()];
+    player.infinityRebuyables = emptyInfinityRebuyables();
   }
 
   if (Pelle.isDoomed) {
     player.infinityUpgrades.clear();
-    player.infinityRebuyables = [new Decimal(), new Decimal(), new Decimal()];
+    player.infinityRebuyables = emptyInfinityRebuyables();
   }
+
+  // Critical Idle Income is intentionally not retained through Eternity, so its pending roll and burst cannot persist.
+  player.criticalIdleIncome = { elapsed: 0, remaining: 0 };
 
   GameCache.tickSpeedMultDecrease.invalidate();
   GameCache.dimensionMultDecrease.invalidate();
@@ -86,7 +87,7 @@ export function breakInfinity() {
 export function gainedInfinityPoints(includeDominoesDividend = true) {
   const div = new Decimal(Effects.min(
     308,
-    Achievement(103),
+    Achievement(123),
     TimeStudy(111)
   )).toNumber();
   if (Pelle.isDisabled("IPMults")) {
@@ -135,9 +136,15 @@ function totalEPMult() {
       );
 }
 
+export function eternityPointDivisor() {
+  return new Decimal(TimeStudy(172).effectOrDefault(ETERNITY_POINT_BASE_DIVISOR))
+    .sub(Fragments.eternityPointDivisorReduction)
+    .sub(PelleRifts.recursion.effectValue);
+}
+
 export function gainedEternityPoints() {
-  let ep = DC.D5.pow(player.records.thisEternity.maxIP.plus(
-    gainedInfinityPoints()).max(1).log10().div(new Decimal(308).sub(PelleRifts.recursion.effectValue)).sub(0.7))
+  let ep = Decimal.pow(ETERNITY_POINT_BASE, player.records.thisEternity.maxIP.plus(
+    gainedInfinityPoints()).max(1).log2().div(eternityPointDivisor()).sub(1))
     .times(totalEPMult());
 
   if (Teresa.isRunning) {
@@ -154,9 +161,35 @@ export function gainedEternityPoints() {
   return ep.floor();
 }
 
+function gainedEternityPointsAtIP(ip) {
+  return Decimal.pow(ETERNITY_POINT_BASE, ip.max(1).log2().div(eternityPointDivisor()).sub(1))
+    .times(totalEPMult()).floor();
+}
+
+// This is deliberately solved from the forward formula. It keeps the header accurate even when an EP multiplier
+// has a special effect which makes the analytic inverse unsuitable for display.
+export function nextEternityPointRequirement(gainedEP) {
+  const targetEP = gainedEP.floor().add(1);
+  const currentIP = player.records.thisEternity.maxIP.plus(gainedInfinityPoints());
+  let lowerExponent = currentIP.max(1).log10().toNumber();
+  let upperExponent = lowerExponent + 1;
+
+  while (gainedEternityPointsAtIP(Decimal.pow10(upperExponent)).lt(targetEP)) {
+    upperExponent += upperExponent - lowerExponent;
+  }
+
+  for (let i = 0; i < 48; i++) {
+    const midpoint = (lowerExponent + upperExponent) / 2;
+    if (gainedEternityPointsAtIP(Decimal.pow10(midpoint)).lt(targetEP)) lowerExponent = midpoint;
+    else upperExponent = midpoint;
+  }
+  return Decimal.pow10(upperExponent);
+}
+
 export function requiredIPForEP(epAmount) {
-  return Decimal.pow10((Decimal.log10(Decimal.divide(epAmount, totalEPMult()), 5).times(308).plus(0.7)))
-    .clampMin(Number.MAX_VALUE);
+  return Decimal.pow(2, Decimal.divide(epAmount, totalEPMult()).log(ETERNITY_POINT_BASE)
+    .add(1).times(eternityPointDivisor()))
+    .clampMin(ETERNITY_POINT_START);
 }
 
 export function gainedGlyphLevel() {
@@ -172,7 +205,8 @@ export function gainedGlyphLevel() {
 export function resetChallengeStuff() {
   player.chall2Pow = DC.D0;
   player.chall3Pow = DC.D0_01;
-  Currency.matter.reset();
+  // IC9 treats Matter as a parallel run resource, so Boost and Galaxy resets must preserve it.
+  if (!InfinityChallenge(9).isRunning) Currency.matter.reset();
   player.chall8TotalSacrifice = DC.D1;
   player.postC4Tier = 1;
 }
@@ -273,13 +307,12 @@ export function gainedInfinities() {
     TimeStudy(32),
     RealityUpgrade(5),
     RealityUpgrade(7),
-    Achievement(131).effects.infinitiesGain,
     Achievement(164),
     Ra.unlocks.continuousTTBoost.effects.infinity
   );
   infGain = infGain.times(getAdjustedGlyphEffect("infinityinfmult"));
   infGain = infGain.powEffectOf(SingularityMilestone.infinitiedPow);
-  return infGain;
+  return infGain.times(Fragments.infinityGainMultiplier);
 }
 
 export function updateRefresh() {
@@ -590,6 +623,8 @@ export function gameLoop(passedDiff, options = {}) {
   EternityChallenges.autoComplete.tick();
 
   replicantiLoop(diff);
+  Fragments.fillDrains(realDiff);
+  Fragments.gainAutoFragments(realDiff);
 
   if (PlayerProgress.dilationUnlocked()) {
     Currency.dilatedTime.add(getDilationGainPerSecond().times(diff.div(1000)));
@@ -683,7 +718,7 @@ function passivePrestigeGen() {
   let eternitiedGain = 0;
   if (RealityUpgrade(14).isBought) {
     eternitiedGain = DC.D1.timesEffectsOf(
-      Achievement(113),
+      Achievement(116),
       RealityUpgrade(3),
       RealityUpgrade(14)
     );
@@ -697,6 +732,7 @@ function passivePrestigeGen() {
 
   if (!EternityChallenge(4).isRunning) {
     let infGen = DC.D0;
+    const fragmentInfinityGain = Fragments.infinityGainMultiplier;
     if (BreakInfinityUpgrade.infinitiedGen.isBought) {
       // Multipliers are done this way to explicitly exclude ach87 and TS32
       infGen = infGen.plus(Time.deltaTimeMs.div(2).div(Decimal.clampMin(50, player.records.bestInfinity.time)));
@@ -705,10 +741,12 @@ function passivePrestigeGen() {
         RealityUpgrade(7),
         Ra.unlocks.continuousTTBoost.effects.infinity
       );
-      infGen = infGen.times(getAdjustedGlyphEffect("infinityinfmult"));
+      infGen = infGen.times(getAdjustedGlyphEffect("infinityinfmult"))
+        .times(fragmentInfinityGain);
     }
     if (RealityUpgrade(11).isBought) {
-      infGen = infGen.plus(RealityUpgrade(11).effectValue.times(Time.deltaTime));
+      const realityInfinityGain = RealityUpgrade(11).effectValue.times(Time.deltaTime).times(fragmentInfinityGain);
+      infGen = infGen.plus(realityInfinityGain);
     }
     if (EffarigUnlock.eternity.isUnlocked) {
       // We consider half of the eternities we gained above this tick
@@ -805,7 +843,13 @@ function laitelaBeatText(disabledDim) {
 
 // This gives IP/EP/RM from the respective upgrades that reward the prestige currencies continuously
 function applyAutoprestige(diff) {
-  Currency.infinityPoints.add(TimeStudy(181).effectOrDefault(0));
+  const thirdDrainIP = Fragments.hasThirdDrainPassiveIP
+    ? gainedInfinityPoints().times(Time.deltaTime.div(100))
+      .timesEffectOf(Ra.unlocks.continuousTTBoost.effects.autoPrestige)
+    : DC.D0;
+  // Power of Eternity replaces TS181's passive on legacy saves which still own the hidden Study.
+  Currency.infinityPoints.add(Fragments.hasThirdDrainPassiveIP ? DC.D0 : TimeStudy(181).effectOrDefault(0));
+  Currency.infinityPoints.add(thirdDrainIP);
 
   if (TeresaUnlocks.epGen.canBeApplied) {
     Currency.eternityPoints.add(player.records.thisEternity.bestEPmin.times(DC.D0_01)
@@ -927,7 +971,7 @@ export function simulateTime(seconds, real, fast) {
   if (eternitiedMilestone.gt(0)) {
     Currency.eternities.add(eternitiedMilestone);
   } else if (infinitiedMilestone.gt(0)) {
-    Currency.infinities.add(infinitiedMilestone);
+    Currency.infinities.add(infinitiedMilestone.times(Fragments.infinityGainMultiplier));
   } else {
     Currency.eternityPoints.add(getOfflineEPGain(seconds * 1000));
   }

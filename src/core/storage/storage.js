@@ -151,7 +151,7 @@ export const GameStorage = {
     Achievements.updateSteamStatus();
   },
 
-  import(saveData) {
+  import(saveData, offlineSettings) {
     if (tryImportSecret(saveData) || Theme.tryUnlock(saveData)) {
       return;
     }
@@ -164,7 +164,15 @@ export const GameStorage = {
     Modal.hideAll();
     Quote.clearAll();
     AutomatorBackend.clearEditor();
+    // Modal.hideAll() destroys ImportSaveModal, whose teardown clears the temporary offline settings. Restore the
+    // values captured at confirmation so the selected import mode controls this load only.
+    if (offlineSettings) {
+      this.offlineEnabled = offlineSettings.offlineEnabled;
+      this.offlineTicks = offlineSettings.offlineTicks;
+    }
     this.loadPlayerObject(newPlayer);
+    this.offlineEnabled = undefined;
+    this.offlineTicks = undefined;
     GlyphAppearanceHandler.clearInvalidCosmetics();
     if (player.speedrun?.isActive) Speedrun.setSegmented(true);
     this.save(true);
