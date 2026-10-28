@@ -1,4 +1,6 @@
 import { DC } from "../../../constants";
+import { Fragments } from "../../fragments";
+import { galaxyStrengthMultiplier } from "../../../galaxy-strength";
 
 const IP_TIME_STUDY_POWER = 4;
 const TS141_BASE_MULT = new Decimal("1e180");
@@ -57,14 +59,19 @@ export const normalTimeStudies = [
     cost: DC.D3,
     requirement: [11],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
-    description: () => `Improve Replicanti multiplier formula to
-      (log2(x)${formatPow(2)})+x${formatPow(0.032, 3, 3)}`,
-    effect: () => Replicanti.amount.pow(0.032),
+    description: () => {
+      const source = Fragments.hasCondensateMilestone("infiniteResonance")
+        ? "Effective Replicanti" : "Replicanti";
+      return `Improve Replicanti multiplier formula to
+        (log2(x)${formatPow(2)})+${source}${formatPow(0.032, 3, 3)}`;
+    },
+    effect: () => (Fragments.hasCondensateMilestone("infiniteResonance")
+      ? Fragments.effectiveReplicanti : Replicanti.amount).pow(0.032),
     // This is a special case because the study itself is *added* to the existing formula, but it makes more sense
     // to display a multiplicative increase just like every other study. We need to do the calculation in here in order
     // to properly show only the effect of this study and nothing else
     formatEffect: value => {
-      const oldVal = Decimal.pow(Decimal.log2(Replicanti.amount.clampMin(1)), 2).clampMin(1);
+      const oldVal = Decimal.pow(Decimal.log2(Fragments.effectiveReplicanti.clampMin(1)), 2).clampMin(1);
       const newVal = oldVal.plus(value);
       return formatX(newVal.div(oldVal).clampMin(1), 2, 2);
     }
@@ -252,8 +259,11 @@ export const normalTimeStudies = [
     cost: DC.D4,
     requirement: [91],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
-    description: "Antimatter Dimension multiplier equal to Replicanti amount",
-    effect: () => Decimal.max(Replicanti.amount, 1),
+    description: () => (Fragments.hasCondensateMilestone("antimatterResonance")
+      ? "Antimatter Dimension multiplier equal to Effective Replicanti"
+      : "Antimatter Dimension multiplier equal to Replicanti amount"),
+    effect: () => Decimal.max(Fragments.hasCondensateMilestone("antimatterResonance")
+      ? Fragments.effectiveReplicanti : Replicanti.amount, 1),
     formatEffect: value => formatX(value, 2, 1)
   },
   {
@@ -270,9 +280,13 @@ export const normalTimeStudies = [
     cost: new Decimal(6),
     requirement: [93],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
-    description: "Time Dimension multiplier equal to Replicanti Galaxy amount",
-    effect: () => Decimal.max(player.replicanti.galaxies, 1),
-    formatEffect: value => formatX(value, 2, 0)
+    description: () => (Fragments.hasCondensateMilestone("temporalConstellation")
+      ? "Time Dimension multiplier equal to Replicanti Galaxies strengthened by Galaxy power"
+      : "Time Dimension multiplier equal to Replicanti Galaxy amount"),
+    effect: () => Decimal.max(Replicanti.galaxies.bought.times(
+      Fragments.hasCondensateMilestone("temporalConstellation") ? galaxyStrengthMultiplier() : 1
+    ), 1),
+    formatEffect: value => formatX(value, 2, 2)
   },
   {
     id: 111,

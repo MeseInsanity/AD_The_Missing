@@ -1,6 +1,7 @@
-import { DC } from "./constants";
 import { normalChallenge10PurchasesRemaining, recordNormalChallenge10Purchases } from "./normal-challenges";
+import { DC } from "./constants";
 import { Fragments } from "./secret-formula/fragments";
+import { galaxyStrengthMultiplier } from "./galaxy-strength";
 
 export function effectiveBaseGalaxies() {
   // Note that this already includes the "50% more" active path effect
@@ -26,32 +27,9 @@ export function getIC4TickspeedSoftcapCoefficient() {
   return Decimal.min(DC.D10, boosts.div(DC.D1_07).pow(DC.D0_3).add(DC.D0_5));
 }
 
-// The Galaxy count after all effects which directly strengthen Galaxies. The Drain's future Fragment strength uses
-// the improved Galaxy Formula's sqrt(f / 4) factor, while 11j directly strengthens the effective Galaxy count.
+// The Galaxy count after all effects which directly strengthen Galaxies.
 export function effectiveGalaxyCount() {
-  const galaxies = effectiveBaseGalaxies();
-  const effects = Effects.product(
-    InfinityUpgrade.galaxyBoost,
-    InfinityUpgrade.galaxyBoost.chargedEffect,
-    BreakInfinityUpgrade.galaxyBoost,
-    TimeStudy(212),
-    TimeStudy(232),
-    Achievement(86),
-    Achievement(178),
-    InfinityChallenge(6).reward,
-    PelleUpgrade.galaxyPower,
-    PelleRifts.decay.milestones[1]
-  );
-  let modifier = effects;
-  modifier = modifier.times(Fragments.galaxyPower.effect().div(4).sqrt());
-  modifier = modifier.times(Fragments.galacticThresholdJMultiplier);
-  if (Pelle.isDoomed) modifier = modifier.div(2);
-  modifier = modifier.times(Pelle.specialGlyphEffect.power);
-  modifier = modifier.times(getAdjustedGlyphEffect("cursedgalaxies"));
-  modifier = modifier.times(getAdjustedGlyphEffect("realitygalaxies"));
-  modifier = modifier.times(ImaginaryUpgrade(9).effectOrDefault(DC.D0).add(1));
-  if (InfinityChallenge(12).isRunning) modifier = modifier.pow(0.05);
-  return galaxies.times(modifier);
+  return effectiveBaseGalaxies().times(galaxyStrengthMultiplier());
 }
 
 function applyNC6TickspeedPenalty(multiplier) {
@@ -140,8 +118,8 @@ export function resetTickspeed() {
 export const Tickspeed = {
 
   get isUnlocked() {
-    return InfinityChallenge(5).isRunning || AntimatterDimension(2).bought.gt(0) || EternityMilestone.unlockAllND.isReached ||
-      PlayerProgress.realityUnlocked();
+    return InfinityChallenge(5).isRunning || AntimatterDimension(2).bought.gt(0) ||
+      EternityMilestone.unlockAllND.isReached || PlayerProgress.realityUnlocked();
   },
 
   get isAvailableForPurchase() {

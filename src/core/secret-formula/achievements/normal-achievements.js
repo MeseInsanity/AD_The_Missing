@@ -835,8 +835,11 @@ export const normalAchievements = [
   {
     id: 118,
     name: "We COULD afford 9",
-    get description() { return `Eternity with exactly ${formatInt(9)} Replicanti.`; },
-    checkRequirement: () => Replicanti.amount.round().eq(9),
+    get description() {
+      return `Eternity with exactly ${formatInt(9)} Replicanti Galaxies and
+        ${formatInt(9)} Max Replicanti Galaxies.`;
+    },
+    checkRequirement: () => Replicanti.galaxies.bought.eq(9) && ReplicantiUpgrade.galaxies.value.eq(9),
     checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
   },
   {

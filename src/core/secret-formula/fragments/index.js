@@ -158,7 +158,7 @@ export const Fragments = {
   },
   get infinityDimensionCapMultiplier() {
     const progress = this.infinityDimensionCapProgress;
-    const exponent = progress.lte(1) ? progress.pow(2) : progress;
+    const exponent = progress.lte(1) ? progress.pow(0.75) : progress;
     return Decimal.pow(3, exponent);
   },
   get infinityGainMultiplier() {
@@ -348,7 +348,7 @@ export const Fragments = {
     const translation = this.fragmentYieldTranslationProgress;
     // Front-load half of the translation before the Chance milestone without allowing an early full conversion.
     return Decimal.pow(baseGain, 1 - translation).times(Decimal.pow(replicanti, translation))
-      .pow(Decimal.pow(1.1, fragmentEfficiency));
+      .pow(fragmentEfficiency.times(0.1).add(1));
   },
 
   checkForDiscovery() {
@@ -492,7 +492,15 @@ export const Fragments = {
     const oneSecondSpent = Decimal.min(this.amount.times(this.drainRate), remaining);
     const currentFraction = this.drainFraction(drain);
     const nextFraction = this.drainFractionAtFill(drain, drain.fill.plus(oneSecondSpent));
-    return oneSecondSpent.gte(remaining) || nextFraction - currentFraction > this.minimumDrainProgressPerSecond;
+    return oneSecondSpent.gte(remaining) ||
+      nextFraction - currentFraction > this.minimumDrainProgress(drain);
+  },
+  minimumDrainProgress() {
+    // Stabilize Decay sets the shared visibility gate for every Drain. Before its first two Milestones, any
+    // available Drain can receive the whole useful injection; the ordinary gate then returns for all Drains.
+    const rampProgress = (this.stabilizeDecayFraction - this.fragmentYieldTransitionStart) /
+      (this.replicantiChanceMilestone - this.fragmentYieldTransitionStart);
+    return this.minimumDrainProgressPerSecond * Math.clamp(rampProgress, 0, 1);
   },
   drainFractionAtFill(drain, fill) {
     if (drain === this.stabilizeDecayDrain) {

@@ -19,6 +19,7 @@ export default {
       stabilizeDecayFill: new Decimal(),
       stabilizeDecayTarget: new Decimal(),
       stabilizeDecayFraction: 0,
+      stabilizeDecayMinimumProgress: 0,
       fragmentGainTransitionProgress: 0,
       replicantiChance: new Decimal(),
       decayedFragments: new Decimal(),
@@ -42,7 +43,6 @@ export default {
       infinityPowerDrainFraction: 0,
       infinityGainMultiplier: new Decimal(),
       infinityDimensionTickspeedMultiplier: new Decimal(),
-      infinityDimensionCapMultiplier: new Decimal(),
       infinityDimensionBasePurchaseCap: new Decimal(),
       infinityDimensionPurchaseCap: new Decimal(),
       isThirdDrainUnlocked: false,
@@ -76,9 +76,6 @@ export default {
         borderTop: "0.55rem solid #f3a0c8"
       };
     },
-    completedThirdDrainMilestones() {
-      return [0.4, 0.75, 1].filter(requirement => this.thirdDrainFraction >= requirement);
-    },
     drainStatusLabel() {
       return (complete, active, waiting) => {
         if (complete) return "(Complete)";
@@ -101,6 +98,7 @@ export default {
       this.stabilizeDecayFill.copyFrom(Fragments.stabilizeDecayFill);
       this.stabilizeDecayTarget.copyFrom(Fragments.stabilizeDecayTarget);
       this.stabilizeDecayFraction = Fragments.stabilizeDecayFraction;
+      this.stabilizeDecayMinimumProgress = Fragments.minimumDrainProgress();
       this.fragmentGainTransitionProgress = Fragments.fragmentYieldTranslationProgress;
       this.replicantiChance.copyFrom(Replicanti.chance);
       this.decayedFragments.copyFrom(Fragments.decayedAmount);
@@ -123,7 +121,6 @@ export default {
       this.infinityPowerDrainFraction = Fragments.infinityPowerDrainFraction;
       this.infinityGainMultiplier.copyFrom(Fragments.infinityGainMultiplier);
       this.infinityDimensionTickspeedMultiplier.copyFrom(Fragments.infinityDimensionTickspeedMultiplier);
-      this.infinityDimensionCapMultiplier.copyFrom(Fragments.infinityDimensionCapMultiplier);
       this.infinityDimensionBasePurchaseCap.copyFrom(InfinityDimensions.basePurchaseCap);
       this.infinityDimensionPurchaseCap.copyFrom(InfinityDimensions.totalDimCap);
       this.isThirdDrainUnlocked = Fragments.isThirdDrainUnlocked;
@@ -214,13 +211,6 @@ export default {
       const milestone = this.nextInfinityPowerDrainMilestone();
       const exponent = Fragments.infinityPowerDrainStartExponent + Fragments.infinityPowerDrainSpan * milestone;
       return Decimal.pow(2, exponent);
-    },
-    thirdDrainMilestoneText(requirement) {
-      if (requirement === 0.4) {
-        return `Banked Infinities after Eternity: ${formatPercents(this.bankedInfinityFraction, 3)}`;
-      }
-      if (requirement === 0.75) return "Eternity Point formula divisor: -30.";
-      return "Passive Infinity Point gain: 1% of Big Crunch IP per second.";
     },
     thirdDrainMilestoneTooltipText(requirement) {
       if (requirement === 0.4) {
@@ -359,7 +349,10 @@ export default {
       <div class="c-fragment-drain__description">
         Only one Drain can be active at a time; switching preserves deposited progress.
         Drains up to 1% of current Fragments and fills up to 1% each second.
-        They wait until progress reaches 0.001%/s.
+        <span v-if="stabilizeDecayFraction >= drainMilestones[0].requirement">
+          Drains wait until progress reaches
+          {{ formatPercents(stabilizeDecayMinimumProgress, 5) }}/s.
+        </span>
         <div class="c-fragment-drain__lock">
           <PrimaryToggleButton
             :value="isDrainSwitchLocked"
@@ -456,7 +449,6 @@ export default {
           <div class="c-fragment-drain__effect">
             ID Purchase Cap: {{ formatInt(infinityDimensionBasePurchaseCap) }} →
             {{ formatInt(infinityDimensionPurchaseCap) }}
-            ({{ formatX(infinityDimensionCapMultiplier, 3, 3) }})
           </div>
           <div
             v-if="infinityPowerDrainFraction >= 0.2"
@@ -537,11 +529,10 @@ export default {
             Eternities gain: {{ formatX(eternityGainMultiplier, 2, 2) }}
           </div>
           <div
-            v-for="requirement in completedThirdDrainMilestones"
-            :key="requirement"
+            v-if="thirdDrainFraction >= 0.4"
             class="c-fragment-drain__effect"
           >
-            {{ thirdDrainMilestoneText(requirement) }}
+            Banked Infinities Gain: {{ formatPercents(bankedInfinityFraction, 2) }}
           </div>
         </div>
         <div class="c-fragment-drain__center">

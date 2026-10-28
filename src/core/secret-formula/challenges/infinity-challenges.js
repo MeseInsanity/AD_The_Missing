@@ -173,15 +173,15 @@ export const infinityChallenges = [
     name: "The Product of Chance",
     description: `ADs self-produce between Replicates. Each Replicate multiplies active AD outputs, weighted by
       Replicate Chance, into AM. The ID Replicanti multiplier instead applies to ADs as ^8; IDs are disabled.`,
-    goal: new Decimal("1e7119"),
+    goal: new Decimal("1e6420"),
     isQuickResettable: false,
     reward: {
-      description: "Replicanti is 2x faster.",
-      effect: 2,
+      description: "Replicanti is 3.5x faster before its growth slowdown, and 2x faster afterward.",
+      effect: () => (Replicanti.amount.lt(Decimal.pow(2, 1024)) ? 3.5 : 2),
       formatEffect: value => formatX(value, 2, 2),
       hideEffect: true,
     },
-    unlockAM: new Decimal("1e70000"),
+    unlockAM: new Decimal("8e62588"),
   },
   {
     id: 12,

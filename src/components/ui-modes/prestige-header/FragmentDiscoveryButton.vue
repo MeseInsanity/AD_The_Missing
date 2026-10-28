@@ -6,14 +6,18 @@ export default {
   data() {
     return {
       isVisible: false,
+      isDiscoveryPending: false,
+      discoveryRequirement: new Decimal(),
     };
   },
   methods: {
     update() {
-      this.isVisible = Fragments.isDiscoveryPending && !Fragments.isUnlocked;
+      this.isDiscoveryPending = Fragments.isDiscoveryPending;
+      this.discoveryRequirement.copyFrom(Fragments.discoveryRequirement);
+      this.isVisible = !Fragments.isUnlocked && (this.isDiscoveryPending || Replicanti.areUnlocked);
     },
     unlock() {
-      Fragments.unlock();
+      if (this.isDiscoveryPending) Fragments.unlock();
     }
   }
 };
@@ -22,11 +26,19 @@ export default {
 <template>
   <button
     v-if="isVisible"
-    class="o-prestige-button o-fragment-discovery-button"
+    :class="isDiscoveryPending ? 'o-fragment-discovery-button' : 'o-eternity-button o-eternity-button--unavailable'"
+    class="o-prestige-button"
     @click="unlock"
   >
-    Other times await...
-    <br>
-    yet something still remains in this Timeline.
+    <template v-if="isDiscoveryPending">
+      Other times await...
+      <br>
+      yet something still remains in this Timeline.
+    </template>
+    <template v-else>
+      Reach {{ format(discoveryRequirement, 2, 2) }}
+      <br>
+      Infinity Points
+    </template>
   </button>
 </template>

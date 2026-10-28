@@ -8,7 +8,7 @@ export const condensateRepeatMilestones = [
     title: "Refined Translation",
     description: level => {
       const preTranslation = format(Decimal.pow(level.add(1), 2), 2, 2);
-      const translated = format(Decimal.pow(1.1, level), 3, 3);
+      const translated = format(level.times(0.1).add(1), 3, 3);
       return `Fragment gain x${preTranslation} before Translation; translated gain ^${translated}.`;
     }
   },
@@ -33,6 +33,29 @@ export const condensateRepeatMilestones = [
 // Each row groups the single-purchase upgrades which affect the same system.
 // This lets new Drains add their own row without changing the grid's column count.
 export const condensateMilestoneRows = [
+  [
+    {
+      id: "antimatterResonance",
+      title: "Antimatter Resonance",
+      requirement: new Decimal(512),
+      isImplemented: true,
+      description: "Time Study 101 uses Effective Replicanti."
+    },
+    {
+      id: "infiniteResonance",
+      title: "Infinite Resonance",
+      requirement: new Decimal(8192),
+      isImplemented: true,
+      description: "Time Study 21 uses Effective Replicanti."
+    },
+    {
+      id: "temporalConstellation",
+      title: "Temporal Constellation",
+      requirement: new Decimal(1e5),
+      isImplemented: true,
+      description: "Time Study 103's Replicanti Galaxies are strengthened by Galaxy power."
+    }
+  ],
   [
     {
       id: "preserveStabilizeDecay",

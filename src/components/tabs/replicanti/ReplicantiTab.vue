@@ -27,6 +27,8 @@ export default {
       ec8Purchases: 0,
       amount: new Decimal(),
       effectiveReplicanti: new Decimal(),
+      replicantiInterval: new Decimal(),
+      replicantiChance: new Decimal(),
       hasFragments: false,
       mult: new Decimal(),
       hasTDMult: false,
@@ -141,6 +143,8 @@ export default {
         this.ec8Purchases = player.eterc8repl;
       }
       this.amount.copyFrom(Replicanti.amount);
+      this.replicantiInterval.copyFrom(getReplicantiInterval());
+      this.replicantiChance.copyFrom(Replicanti.chance);
       this.hasFragments = Fragments.isUnlocked;
       if (this.hasFragments) {
         this.effectiveReplicanti.copyFrom(Fragments.effectiveReplicanti);
@@ -233,6 +237,9 @@ export default {
           (<span class="c-replicanti-description__fragment-accent">{{ format(amount, 2, 0) }}</span>
           real Replicanti before enhancement)
         </template>.
+        <br>
+        Every {{ format(replicantiInterval, 2, 2) }} ms, each Replicanti has a
+        {{ formatPercents(replicantiChance, 2) }} chance to replicate.
         <br><br>
         Translated to:
         <br>
