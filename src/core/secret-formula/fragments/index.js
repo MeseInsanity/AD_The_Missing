@@ -2,6 +2,7 @@ import { DC } from "../../constants";
 
 import {
   condensateRepeatMilestoneLevel,
+  galacticThresholdDelay,
   hasCondensateMilestone
 } from "./condensate-milestones";
 
@@ -106,7 +107,7 @@ export const Fragments = {
   },
   get replicantiGalaxyScalingStart() {
     const level = this.condensateRepeatMilestoneLevel("rgScalingStart");
-    return new Decimal(15).add(level.pow(3));
+    return new Decimal(15).add(galacticThresholdDelay(level));
   },
   get stabilizeDecayDrain() {
     return player.fragments?.drains?.stabilizeDecay;

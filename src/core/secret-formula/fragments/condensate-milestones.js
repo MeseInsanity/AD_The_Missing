@@ -1,5 +1,10 @@
 import { DC } from "../../constants";
 
+export function galacticThresholdDelay(level) {
+  const triangular = level.times(level.add(1)).div(2);
+  return triangular.times(triangular);
+}
+
 export const condensateRepeatMilestones = [
   {
     id: "fragmentEfficiency",
@@ -26,7 +31,7 @@ export const condensateRepeatMilestones = [
     id: "rgScalingStart",
     base: 16,
     title: "Galactic Threshold",
-    description: level => `Replicanti Galaxy scaling starts ${formatInt(level.pow(3))} later.`
+    description: level => `Replicanti Galaxy scaling starts ${formatInt(galacticThresholdDelay(level))} later.`
   },
 ];
 
