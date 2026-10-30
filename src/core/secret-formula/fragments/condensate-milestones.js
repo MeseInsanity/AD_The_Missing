@@ -8,8 +8,6 @@ export function galacticThresholdDelay(level) {
 export const condensateRepeatMilestones = [
   {
     id: "fragmentEfficiency",
-    base: 2,
-    startsAtOne: true,
     title: "Refined Translation",
     description: level => {
       const preTranslation = format(Decimal.pow(level.add(1), 2), 2, 2);
@@ -134,12 +132,53 @@ export const condensateMilestoneRows = [
 
 const repeatMilestoneById = id => condensateRepeatMilestones.find(milestone => milestone.id === id);
 const milestoneById = id => condensateMilestoneRows.flat().find(milestone => milestone.id === id);
+const refinedTranslationLevelCache = [];
+
+function refinedTranslationRequirement(level) {
+  if (level.lte(1)) return DC.D1;
+  if (level.lte(14)) {
+    // Exact integer multiplication avoids pow's rounding at the early thresholds.
+    let requirement = DC.D1;
+    for (let i = 1; i < level.toNumber(); i++) requirement = requirement.times(level);
+    return requirement;
+  }
+  return level.pow(level.sub(1));
+}
+
+function refinedTranslationLevel(total) {
+  if (total.lt(1)) return DC.D0;
+  if (total.lt(2)) return DC.D1;
+  const cached = refinedTranslationLevelCache.find(entry => entry.total.eq(total));
+  if (cached) return cached.level;
+  const target = total.ln();
+  let level = target.div(target.ln().clampMin(1)).add(1).clampMin(2);
+  // Solve (level - 1) * ln(level) = ln(total), then check integer thresholds.
+  for (let i = 0; i < 12; i++) {
+    const logLevel = level.ln();
+    const step = level.sub(1).times(logLevel).sub(target)
+      .div(logLevel.add(1).sub(DC.D1.div(level)));
+    level = level.sub(step).clampMin(2);
+  }
+  level = level.floor();
+  if (refinedTranslationRequirement(level).gt(total)) level = level.sub(1);
+  if (refinedTranslationRequirement(level.add(1)).lte(total)) level = level.add(1);
+  refinedTranslationLevelCache.unshift({ total: new Decimal(total), level });
+  if (refinedTranslationLevelCache.length > 3) refinedTranslationLevelCache.pop();
+  return level;
+}
 
 export function condensateRepeatMilestoneLevel(id, total) {
   const milestone = repeatMilestoneById(id);
   if (!milestone || total.lt(1)) return DC.D0;
+  if (id === "fragmentEfficiency") return refinedTranslationLevel(total);
   const level = total.log10().div(Math.log10(milestone.base)).floor();
   return milestone.startsAtOne ? level.add(1) : level;
+}
+
+export function condensateRepeatMilestoneNextRequirement(id, level) {
+  const milestone = repeatMilestoneById(id);
+  if (id === "fragmentEfficiency") return refinedTranslationRequirement(level.add(1));
+  return Decimal.pow(milestone.base, milestone.startsAtOne ? level : level.add(1));
 }
 
 export function hasCondensateMilestone(id, total) {

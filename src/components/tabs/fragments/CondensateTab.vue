@@ -1,6 +1,8 @@
 <script>
 import {
   condensateMilestoneRows,
+  condensateRepeatMilestoneLevel,
+  condensateRepeatMilestoneNextRequirement,
   condensateRepeatMilestones
 } from "@/core/secret-formula/fragments/condensate-milestones";
 import { Fragments } from "@/core/secret-formula/fragments";
@@ -41,16 +43,14 @@ export default {
       return this.repeatLevelAt(milestone, this.total);
     },
     repeatLevelAt(milestone, total) {
-      if (total.lt(1)) return new Decimal(0);
-      const level = total.log10().div(Math.log10(milestone.base)).floor();
-      return milestone.startsAtOne ? level.add(1) : level;
+      return condensateRepeatMilestoneLevel(milestone.id, total);
     },
     reachesRepeatLevelOnCondense(milestone) {
       return this.repeatLevelAt(milestone, this.projectedTotal()).gt(this.repeatLevel(milestone));
     },
     nextRepeatRequirement(milestone) {
       const level = this.repeatLevel(milestone);
-      return Decimal.pow(milestone.base, milestone.startsAtOne ? level : level.add(1));
+      return condensateRepeatMilestoneNextRequirement(milestone.id, level);
     },
     repeatProgress(milestone) {
       return this.total.div(this.nextRepeatRequirement(milestone)).clamp(0, 1).toNumber();
