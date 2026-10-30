@@ -283,7 +283,7 @@ export const normalTimeStudies = [
     description: () => (Fragments.hasCondensateMilestone("temporalConstellation")
       ? "Time Dimension multiplier equal to Replicanti Galaxies strengthened by Galaxy power"
       : "Time Dimension multiplier equal to Replicanti Galaxy amount"),
-    effect: () => Decimal.max(Replicanti.galaxies.bought.times(
+    effect: () => Decimal.max(Replicanti.galaxies.total.times(
       Fragments.hasCondensateMilestone("temporalConstellation") ? galaxyStrengthMultiplier() : 1
     ), 1),
     formatEffect: value => formatX(value, 2, 2)
