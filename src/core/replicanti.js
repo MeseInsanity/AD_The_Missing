@@ -5,8 +5,6 @@ import { IC11Production } from "./infinity-challenges";
 const BASE_REPLICANTI_CHANCE = new Decimal(0.2);
 const BASE_REPLICANTI_INTERVAL = DC.E3;
 const REPLICANTI_GALAXY_BASE_BITS = 1024;
-const REPLICANTI_GALAXY_MID_SLOPE = 3072 / 85;
-const REPLICANTI_GALAXY_MID_END_BITS = 2048 + REPLICANTI_GALAXY_MID_SLOPE * 1350;
 const FRAGMENT_REPLICANTI_SLOWDOWN_START = Decimal.pow(2, 1024);
 
 function replicantiGalaxyRequirementLog2(nextGalaxy) {
@@ -15,16 +13,14 @@ function replicantiGalaxyRequirementLog2(nextGalaxy) {
   if (adjustedGalaxy.lte(15)) return new Decimal(REPLICANTI_GALAXY_BASE_BITS);
   if (adjustedGalaxy.lte(100)) {
     const progress = adjustedGalaxy.sub(15).div(85);
-    return new Decimal(REPLICANTI_GALAXY_BASE_BITS).times(DC.D1.add(progress.pow(3)));
+    return new Decimal(REPLICANTI_GALAXY_BASE_BITS).add(progress.times(8976));
   }
   if (adjustedGalaxy.lte(1000)) {
     const progress = adjustedGalaxy.sub(100).div(900);
-    return new Decimal(2048).add(new Decimal(REPLICANTI_GALAXY_MID_SLOPE * 900)
-      .times(progress.add(progress.pow(2).div(2))));
+    return new Decimal(10000).add(progress.times(10000));
   }
   const progress = adjustedGalaxy.sub(1000).div(1000);
-  return new Decimal(REPLICANTI_GALAXY_MID_END_BITS).add(new Decimal(REPLICANTI_GALAXY_MID_SLOPE * 2000)
-    .times(progress.add(progress.pow(2)).add(progress.pow(3).div(3))));
+  return Decimal.pow(2, progress).times(20000);
 }
 
 // Slowdown parameters for replicanti growth, interval will increase by scaleFactor for every scaleLog10
@@ -118,7 +114,7 @@ function replicateOnce() {
 function fastReplicantiBelow308(log10GainFactor, isAutobuyerActive) {
   // Fragment-adjusted Galaxy thresholds cannot use the raw logarithmic bulk inverse below. Let the normal
   // post-loop Galaxy request handle them one at a time so its effective threshold and reduced raw cost agree.
-  const shouldBuyRG = isAutobuyerActive && !RealityUpgrade(6).isLockingMechanics && Fragments.effectiveAmount.lte(1);
+  const shouldBuyRG = isAutobuyerActive && !RealityUpgrade(6).isLockingMechanics && !Fragments.isUnlocked;
   // More than e308 galaxies per tick causes the game to die, and I don't think it's worth the performance hit of
   // Decimalifying the entire calculation.  And yes, this can and does actually happen super-lategame.
   const uncappedAmount = DC.E1.pow(log10GainFactor.plus(Replicanti.amount.max(1).log10()));
