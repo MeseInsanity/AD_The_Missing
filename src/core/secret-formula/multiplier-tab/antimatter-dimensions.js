@@ -211,10 +211,7 @@ export const AD = {
     name: "Break Infinity Upgrades",
     multValue: dim => {
       const mult = DC.D1.timesEffectsOf(
-        BreakInfinityUpgrade.totalAMMult,
-        BreakInfinityUpgrade.achievementMult,
-        BreakInfinityUpgrade.slowestChallengeMult,
-        BreakInfinityUpgrade.infinitiedMult
+        BreakInfinityUpgrade.totalAMMult
       );
       if (dim) {
         return mult.timesEffectsOf(
@@ -280,7 +277,7 @@ export const AD = {
       const dimMults = Array.repeat(DC.D1, 9);
       for (let tier = 1; tier <= 8; tier++) {
         // We don't want to double-count the base effect that TS31 boosts
-        const infinitiedMult = DC.D1.timesEffectsOf(BreakInfinityUpgrade.infinitiedMult);
+        const infinitiedMult = DC.D1.timesEffectsOf(InfinityUpgrade.dim18mult);
         dimMults[tier] = dimMults[tier].times(infinitiedMult.pow(TimeStudy(31).effectOrDefault(1) - 1));
 
         dimMults[tier] = dimMults[tier].timesEffectsOf(

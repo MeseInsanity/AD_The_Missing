@@ -219,7 +219,8 @@ class InfinityDimensionState extends DimensionState {
         tier === 1 ? EternityChallenge(2).reward : null
       );
     if (tier === 1) {
-      mult = mult.times(BreakInfinityUpgrade.infinitiedMult.effectOrDefault(DC.D1));
+      mult = mult.times(new Decimal(BreakInfinityUpgrade.infinitiedMult.effectOrDefault(DC.D1))
+        .powEffectOf(TimeStudy(31)));
     }
     if (tier === 2) {
       mult = mult.times(BreakInfinityUpgrade.slowestChallengeMult.effectOrDefault(DC.D1));

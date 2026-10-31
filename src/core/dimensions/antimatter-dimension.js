@@ -47,13 +47,15 @@ export function antimatterDimensionCommonMultiplier() {
   }
   const infinityUpgradeMultiplier = Effects.product(
     InfinityUpgrade.totalTimeMult,
-    InfinityUpgrade.dim18mult,
     InfinityUpgrade.thisInfinityTimeMult,
     InfinityUpgrade.unspentIPMult,
     InfinityUpgrade.unspentIPMult.chargedEffect,
     InfinityUpgrade.bestInfinityTimeDimensions
   );
-  multiplier = multiplier.times(ruleBreakingInfinityUpgradeMultiplier(infinityUpgradeMultiplier));
+  const infinityCountMultiplier = new Decimal(InfinityUpgrade.dim18mult.effectOrDefault(DC.D1))
+    .powEffectOf(TimeStudy(31));
+  multiplier = multiplier.times(ruleBreakingInfinityUpgradeMultiplier(infinityUpgradeMultiplier
+    .times(infinityCountMultiplier)));
 
   const achievementMultiplier = InfinityChallenge(11).isRunning
     ? Effects.product(

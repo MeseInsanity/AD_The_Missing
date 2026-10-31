@@ -6,6 +6,13 @@ import { MultiplierTabIcons } from "./icons";
 
 // See index.js for documentation
 export const ID = {
+  infiniteImpact: {
+    name: "Infinite Impact",
+    multValue: dim => (dim && Number(dim) !== 1
+      ? DC.D1 : new Decimal(BreakInfinityUpgrade.infinitiedMult.effectOrDefault(DC.D1)).powEffectOf(TimeStudy(31))),
+    isActive: () => BreakInfinityUpgrade.infinitiedMult.canBeApplied && !EternityChallenge(11).isRunning,
+    icon: MultiplierTabIcons.BREAK_INFINITY,
+  },
   total: {
     name: dim => {
       if (dim) return `ID ${dim} Multiplier`;
