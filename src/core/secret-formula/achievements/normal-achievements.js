@@ -840,7 +840,9 @@ export const normalAchievements = [
         ${formatInt(9)} Max Replicanti Galaxies.`;
     },
     checkRequirement: () => Replicanti.galaxies.bought.eq(9) && ReplicantiUpgrade.galaxies.value.eq(9),
-    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE
+    checkEvent: GAME_EVENT.ETERNITY_RESET_BEFORE,
+    reward: "Replicanti Galaxies are 9% stronger.",
+    effect: 0.09
   },
   {
     id: 111,
