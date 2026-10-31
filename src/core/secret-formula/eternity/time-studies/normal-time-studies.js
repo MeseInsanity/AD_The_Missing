@@ -1,6 +1,6 @@
+import { effectiveReplicantiGalaxies, galaxyStrengthMultiplier } from "../../../galaxy-strength";
 import { DC } from "../../../constants";
 import { Fragments } from "../../fragments";
-import { galaxyStrengthMultiplier } from "../../../galaxy-strength";
 
 const IP_TIME_STUDY_POWER = 4;
 const TS141_BASE_MULT = new Decimal("1e180");
@@ -283,9 +283,8 @@ export const normalTimeStudies = [
     description: () => (Fragments.hasCondensateMilestone("temporalConstellation")
       ? "Time Dimension multiplier equal to Replicanti Galaxies strengthened by Galaxy power"
       : "Time Dimension multiplier equal to Replicanti Galaxy amount"),
-    effect: () => Decimal.max(Replicanti.galaxies.total.times(
-      Fragments.hasCondensateMilestone("temporalConstellation") ? galaxyStrengthMultiplier() : 1
-    ), 1),
+    effect: () => Decimal.max(Fragments.hasCondensateMilestone("temporalConstellation")
+      ? effectiveReplicantiGalaxies().times(galaxyStrengthMultiplier()) : Replicanti.galaxies.total, 1),
     formatEffect: value => formatX(value, 2, 2)
   },
   {

@@ -33,3 +33,11 @@ export function antimatterGalaxyJMultiplier() {
   const multiplier = Fragments.galacticThresholdJMultiplier;
   return InfinityChallenge(12).isRunning ? multiplier.pow(0.05) : multiplier;
 }
+
+// RG-specific effects are shared by Tickspeed and Temporal Constellation.
+export function effectiveReplicantiGalaxies() {
+  const bought = Replicanti.galaxies.bought;
+  const studies = 1 + TimeStudy(132).effectOrDefault(0) + TimeStudy(133).effectOrDefault(0);
+  const ec8 = Decimal.min(bought, ReplicantiUpgrade.galaxies.value).times(Effects.sum(EternityChallenge(8).reward));
+  return bought.times(studies).add(Replicanti.galaxies.extra).add(ec8);
+}

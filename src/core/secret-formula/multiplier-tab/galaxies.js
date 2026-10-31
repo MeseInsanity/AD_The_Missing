@@ -1,4 +1,4 @@
-import { antimatterGalaxyJMultiplier } from "../../galaxy-strength";
+import { antimatterGalaxyJMultiplier, effectiveReplicantiGalaxies } from "../../galaxy-strength";
 
 import { MultiplierTabHelper } from "./helper-functions";
 import { MultiplierTabIcons } from "./icons";
@@ -23,22 +23,10 @@ export const galaxies = {
     name: "Replicanti Galaxies",
     displayOverride: () => {
       const num = Replicanti.galaxies.total;
-      let rg = Replicanti.galaxies.bought;
-      rg *= (1 + Effects.sum(TimeStudy(132), TimeStudy(133)));
-      rg += Replicanti.galaxies.extra;
-      rg += Math.min(Replicanti.galaxies.bought, ReplicantiUpgrade.galaxies.value) *
-          Effects.sum(EternityChallenge(8).reward);
-      const mult = rg / Math.clampMin(num, 1) * MultiplierTabHelper.globalGalaxyMult();
+      const mult = effectiveReplicantiGalaxies().div(num.clampMin(1)).times(MultiplierTabHelper.globalGalaxyMult());
       return `${formatInt(num)}, ${formatX(mult, 2, 2)} strength`;
     },
-    multValue: () => {
-      let rg = Replicanti.galaxies.bought;
-      rg *= (1 + Effects.sum(TimeStudy(132), TimeStudy(133)));
-      rg += Replicanti.galaxies.extra;
-      rg += Math.min(Replicanti.galaxies.bought, ReplicantiUpgrade.galaxies.value) *
-          Effectsk(EternityChallenge(8).reward);
-      return Decimal.pow10(rg);
-    },
+    multValue: () => Decimal.pow10(effectiveReplicantiGalaxies()),
     isActive: () => Replicanti.areUnlocked,
     icon: MultiplierTabIcons.SPECIFIC_GLYPH("replication"),
   },
