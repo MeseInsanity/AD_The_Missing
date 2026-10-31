@@ -324,7 +324,7 @@ export const normalTimeStudies = [
     cost: DC.D8,
     requirement: [() => EternityChallenge(3).completions > 0],
     reqType: TS_REQUIREMENT_TYPE.ALL,
-    description: "All Galaxies are strengthened by Galactic Threshold",
+    description: "Antimatter Galaxies bought with 8th Antimatter Dimensions are strengthened by Galactic Threshold",
     effect: 1,
     hideEffect: true
   },

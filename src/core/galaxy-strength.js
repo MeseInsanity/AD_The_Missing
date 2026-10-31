@@ -20,7 +20,6 @@ export function galaxyStrengthMultiplier() {
   if (BreakInfinityUpgrade.galaxyFormula.isBought) {
     modifier = modifier.times(Fragments.galaxyPower.effect().div(4).sqrt());
   }
-  modifier = modifier.times(Fragments.galacticThresholdJMultiplier);
   if (Pelle.isDoomed) modifier = modifier.div(2);
   modifier = modifier.times(Pelle.specialGlyphEffect.power);
   modifier = modifier.times(getAdjustedGlyphEffect("cursedgalaxies"));
@@ -28,4 +27,9 @@ export function galaxyStrengthMultiplier() {
   modifier = modifier.times(ImaginaryUpgrade(9).effectOrDefault(DC.D0).add(1));
   if (InfinityChallenge(12).isRunning) modifier = modifier.pow(0.05);
   return modifier;
+}
+
+export function antimatterGalaxyJMultiplier() {
+  const multiplier = Fragments.galacticThresholdJMultiplier;
+  return InfinityChallenge(12).isRunning ? multiplier.pow(0.05) : multiplier;
 }

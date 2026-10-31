@@ -1,7 +1,7 @@
+import { antimatterGalaxyJMultiplier, galaxyStrengthMultiplier } from "./galaxy-strength";
 import { normalChallenge10PurchasesRemaining, recordNormalChallenge10Purchases } from "./normal-challenges";
 import { DC } from "./constants";
 import { Fragments } from "./secret-formula/fragments";
-import { galaxyStrengthMultiplier } from "./galaxy-strength";
 
 export function effectiveBaseGalaxies() {
   // Note that this already includes the "50% more" active path effect
@@ -19,7 +19,8 @@ export function effectiveBaseGalaxies() {
   let freeGalaxies = player.dilation.totalTachyonGalaxies;
   freeGalaxies = freeGalaxies.mul(DC.D1.add(Decimal.max(0, Replicanti.amount.max(1).log10().div(1e6))
     .times(AlchemyResource.alternation.effectValue)));
-  return Decimal.max(player.galaxies.add(GalaxyGenerator.galaxies).add(replicantiGalaxies).add(freeGalaxies), 0);
+  const antimatterGalaxies = player.galaxies.times(antimatterGalaxyJMultiplier()).add(GalaxyGenerator.galaxies);
+  return Decimal.max(antimatterGalaxies.add(replicantiGalaxies).add(freeGalaxies), 0);
 }
 
 export function getIC4TickspeedSoftcapCoefficient() {

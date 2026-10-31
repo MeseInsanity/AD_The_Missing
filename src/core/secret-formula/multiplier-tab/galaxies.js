@@ -1,3 +1,5 @@
+import { antimatterGalaxyJMultiplier } from "../../galaxy-strength";
+
 import { MultiplierTabHelper } from "./helper-functions";
 import { MultiplierTabIcons } from "./icons";
 
@@ -9,10 +11,11 @@ export const galaxies = {
     name: "Antimatter Galaxies",
     displayOverride: () => {
       const num = player.galaxies.add(GalaxyGenerator.galaxies);
-      const mult = MultiplierTabHelper.globalGalaxyMult();
+      const weightedCount = player.galaxies.times(antimatterGalaxyJMultiplier()).add(GalaxyGenerator.galaxies);
+      const mult = weightedCount.div(num.clampMin(1)).times(MultiplierTabHelper.globalGalaxyMult());
       return `${format(num)}, ${formatX(mult, 2, 2)} strength`;
     },
-    multValue: () => Decimal.pow10(player.galaxies.add(GalaxyGenerator.galaxies)),
+    multValue: () => Decimal.pow10(player.galaxies.times(antimatterGalaxyJMultiplier()).add(GalaxyGenerator.galaxies)),
     isActive: true,
     icon: MultiplierTabIcons.ANTIMATTER,
   },
