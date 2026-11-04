@@ -166,8 +166,9 @@ export const normalTimeStudies = [
     cost: DC.D3,
     requirement: [42, () => Perk.bypassEC5Lock.isBought || EternityChallenge(5).completions > 0],
     reqType: TS_REQUIREMENT_TYPE.ALL,
-    description: () => `You gain Replicanti ${formatInt(5)} times faster`,
-    effect: 5
+    description: "Replicanti grows faster based on your Decayed Fragments",
+    effect: () => Fragments.decayedAmount.log2().div(3).clampMin(1).log2().div(3).add(1),
+    formatEffect: value => formatX(value, 2, 2)
   },
   {
     id: 71,
