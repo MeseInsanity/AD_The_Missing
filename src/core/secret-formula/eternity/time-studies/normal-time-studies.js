@@ -552,8 +552,12 @@ export const normalTimeStudies = [
     requirement: [161],
     reqType: TS_REQUIREMENT_TYPE.AT_LEAST_ONE,
     description: "Eternity Challenge completions improve the Eternity Point formula divisor",
-    effect: () => 2880 - EternityChallenges.completions * 5,
-    formatEffect: value => `2880 → ${format(value, 2, 2)}`
+    effect: () => {
+      const completions = EternityChallenges.completions;
+      if (completions <= 72) return 2880 - completions * 5;
+      return 1030 + 1490 / (1 + 5 * (completions - 72) / 1490);
+    },
+    formatEffect: value => `2880 → ${value.toFixed(0)}`
   },
   {
     id: 173,
