@@ -80,7 +80,7 @@ export const GameCache = {
   timeStudies: new Lazy(() => NormalTimeStudyState.studies
     .map(s => player.timestudy.studies.includes(s.id))),
 
-  currentStudyTree: new Lazy(() => new TimeStudyTree(TimeStudyTree.currentStudies)),
+  currentStudyTree: new Lazy(() => new TimeStudyTree(TimeStudyTree.currentStudies, true)),
 
   achievementPeriod: new Lazy(() => TimeSpan.fromMinutes(new Decimal(30).sub(Effects.sum(
     Perk.achievementGroup1,

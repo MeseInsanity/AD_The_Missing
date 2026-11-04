@@ -100,6 +100,7 @@ class AutomatorParser extends Parser {
     $.RULE("studyListEntry", () => {
       $.OR([
         { ALT: () => $.SUBRULE($.studyRange) },
+        { ALT: () => $.CONSUME(T.JStudyLiteral) },
         { ALT: () => $.CONSUME(T.NumberLiteral) },
         { ALT: () => $.CONSUME(T.StudyPath) },
       ]);

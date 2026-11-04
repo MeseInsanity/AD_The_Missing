@@ -4,6 +4,8 @@ import { Fragments } from "../../fragments";
 
 const IP_TIME_STUDY_POWER = 4;
 const TS141_BASE_MULT = new Decimal("1e180");
+const jStudyUnlocked = (study, challenge) => TimeStudy(study).isBought ||
+  EternityChallenge(challenge).completions > 0 || Boolean(Perk[`bypassEC${challenge}Lock`]?.isBought);
 
 const thisInfinityMult = thisInfinity => {
   // All "this inf time" or "best inf time" mults are * 10
@@ -159,6 +161,8 @@ export const normalTimeStudies = [
   },
   {
     id: 62,
+    displayId: "41j",
+    unlocked: () => jStudyUnlocked(62, 5),
     cost: DC.D3,
     requirement: [42, () => Perk.bypassEC5Lock.isBought || EternityChallenge(5).completions > 0],
     reqType: TS_REQUIREMENT_TYPE.ALL,
@@ -300,8 +304,9 @@ export const normalTimeStudies = [
   {
     id: 112,
     displayId: "13j",
+    unlocked: () => jStudyUnlocked(112, 2),
     cost: DC.D8,
-    requirement: [() => EternityChallenge(2).completions > 0],
+    requirement: [73, () => jStudyUnlocked(112, 2)],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: "Time Shard requirement for Free Tickspeed upgrades is reduced by Condensation Theory",
     effect: 1,
@@ -310,8 +315,9 @@ export const normalTimeStudies = [
   {
     id: 113,
     displayId: "12j",
+    unlocked: () => jStudyUnlocked(113, 1),
     cost: DC.D8,
-    requirement: [() => EternityChallenge(1).completions > 0],
+    requirement: [72, () => jStudyUnlocked(113, 1)],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: "5th and higher Infinity Dimensions are strengthened by Refined Translation",
     effect: 1,
@@ -320,8 +326,9 @@ export const normalTimeStudies = [
   {
     id: 114,
     displayId: "11j",
+    unlocked: () => jStudyUnlocked(114, 3),
     cost: DC.D8,
-    requirement: [() => EternityChallenge(3).completions > 0],
+    requirement: [71, () => jStudyUnlocked(114, 3)],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: "Antimatter Galaxies bought with 8th Antimatter Dimensions are strengthened by Galactic Threshold",
     effect: 1,
@@ -462,8 +469,9 @@ export const normalTimeStudies = [
   {
     id: 152,
     displayId: "21j",
+    unlocked: () => jStudyUnlocked(152, 6),
     cost: new Decimal(16),
-    requirement: [() => EternityChallenge(6).completions > 0],
+    requirement: [131, () => jStudyUnlocked(152, 6)],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: "Fragment's Replicanti effect softcap is 75% weaker, but Fragment Decay lasts 2500 times shorter",
     effect: 0.25,
@@ -472,8 +480,9 @@ export const normalTimeStudies = [
   {
     id: 153,
     displayId: "22j",
+    unlocked: () => jStudyUnlocked(153, 8),
     cost: new Decimal(16),
-    requirement: [() => EternityChallenge(8).completions > 0],
+    requirement: [122, () => jStudyUnlocked(153, 8)],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: "Fragment's Replicanti effect softcap is halved",
     effect: 0.5,
@@ -482,8 +491,9 @@ export const normalTimeStudies = [
   {
     id: 154,
     displayId: "23j",
+    unlocked: () => jStudyUnlocked(154, 4),
     cost: new Decimal(16),
-    requirement: [() => EternityChallenge(4).completions > 0],
+    requirement: [143, () => jStudyUnlocked(154, 4)],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: "Fragment's Replicanti effect softcap starts later over this Eternity",
     effect: () => 16 ** Time.thisEternity.totalSeconds.div(8 * 60 * 60).clamp(0, 1).toNumber(),
@@ -492,8 +502,9 @@ export const normalTimeStudies = [
   {
     id: 155,
     displayId: "31j",
+    unlocked: () => jStudyUnlocked(155, 7),
     cost: new Decimal(35),
-    requirement: [() => EternityChallenge(7).completions > 0],
+    requirement: [111, () => jStudyUnlocked(155, 7)],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: "1xj effects count their corresponding Condensate Milestone levels twice",
     effect: 2,
@@ -502,8 +513,9 @@ export const normalTimeStudies = [
   {
     id: 156,
     displayId: "32j",
+    unlocked: () => jStudyUnlocked(156, 9),
     cost: new Decimal(35),
-    requirement: [() => EternityChallenge(9).completions > 0],
+    requirement: [151, () => jStudyUnlocked(156, 9)],
     reqType: TS_REQUIREMENT_TYPE.ALL,
     description: "2xj effects also affect the third Fragment Replicanti effect softcap",
     effect: 1,

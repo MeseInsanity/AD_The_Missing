@@ -1,5 +1,7 @@
-import { lexer, tokenMap as T } from "./lexer";
+import { jStudyIds } from "../time-studies/j-study-ids";
+
 import { AutomatorCommands } from "./automator-commands";
+import { lexer, tokenMap as T } from "./lexer";
 import { parser } from "./parser";
 
 const BaseVisitor = parser.getBaseCstVisitorConstructorWithDefaults();
@@ -296,6 +298,14 @@ class Validator extends BaseVisitor {
   studyListEntry(ctx, studiesOut) {
     if (ctx.studyRange) {
       this.visit(ctx.studyRange, studiesOut);
+      return;
+    }
+    if (ctx.JStudyLiteral) {
+      if (ctx.JStudyLiteral[0].isInsertedInRecovery) {
+        this.addError(ctx, "Missing Time Study number", "Provide a Time Study ID to purchase");
+        return;
+      }
+      studiesOut.push(jStudyIds[ctx.JStudyLiteral[0].image.toLowerCase()]);
       return;
     }
     if (ctx.NumberLiteral) {

@@ -1,6 +1,7 @@
 import { TimeStudyState } from "./time-studies";
 
 export const NormalTimeStudies = {};
+const jStudyPrerequisites = { 62: 42, 112: 73, 113: 72, 114: 71, 152: 131, 153: 122, 154: 143, 155: 111, 156: 151 };
 
 NormalTimeStudies.pathList = [
   { path: TIME_STUDY_PATH.ANTIMATTER_DIM, studies: [71, 81, 91, 101], name: "Antimatter Dims" },
@@ -20,7 +21,15 @@ export class NormalTimeStudyState extends TimeStudyState {
     const type = config.id > 300 ? TIME_STUDY_TYPE.TRIAD : TIME_STUDY_TYPE.NORMAL;
     super(config, type);
     const path = NormalTimeStudies.pathList.find(p => p.studies.includes(this.id));
-    this._path = path?.path ?? TIME_STUDY_PATH.NONE;
+    const jPaths = {
+      114: TIME_STUDY_PATH.ANTIMATTER_DIM,
+      113: TIME_STUDY_PATH.INFINITY_DIM,
+      112: TIME_STUDY_PATH.TIME_DIM,
+      152: TIME_STUDY_PATH.ACTIVE,
+      153: TIME_STUDY_PATH.PASSIVE,
+      154: TIME_STUDY_PATH.IDLE
+    };
+    this._path = path?.path ?? jPaths[config.id] ?? TIME_STUDY_PATH.NONE;
   }
 
   get isUnlocked() {
@@ -95,7 +104,10 @@ export class NormalTimeStudyState extends TimeStudyState {
   }
 
   purchaseUntil() {
-    TimeStudyTree.commitToGameState(buyStudiesUntil(this.id));
+    const prerequisite = jStudyPrerequisites[this.id];
+    const studies = buyStudiesUntil(prerequisite ?? this.id);
+    if (prerequisite !== undefined) studies.push(this.id);
+    TimeStudyTree.commitToGameState(studies);
   }
 
   get path() {

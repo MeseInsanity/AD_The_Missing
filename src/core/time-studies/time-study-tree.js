@@ -1,3 +1,5 @@
+import { normalizeJStudyIds } from "./j-study-ids";
+
 /**
  * Abstract representation of a full time study tree object. The intended usage is to supply the constructor with
  * an import string and a budget of time/space theorems, which it will use together to determine which studies can
@@ -26,7 +28,7 @@
  */
 export class TimeStudyTree {
   // The first parameter will either be an import string or an array of studies (possibly with an EC at the end)
-  constructor(studies) {
+  constructor(studies, preserveOwnedJStudies = false) {
     this.spentTheorems = [new Decimal(0), 0];
     this.invalidStudies = [];
     this.purchasedStudies = [];
@@ -41,7 +43,7 @@ export class TimeStudyTree {
         break;
       case "object":
         // Input parameter is an array of time study objects
-        this.attemptBuyArray([...studies], false);
+        this.attemptBuyArray([...studies], false, preserveOwnedJStudies);
         this.selectedStudies = [...studies];
         break;
       case "undefined":
@@ -60,6 +62,8 @@ export class TimeStudyTree {
       return false;
     }
     let test = input.replaceAll(/ +/gu, "");
+    if (/\d+j-\d|\d-\d+j/iu.test(test)) return false;
+    test = normalizeJStudyIds(test);
     TimeStudyTree.sets.forEach((_, x) => test = test.replaceAll(new RegExp(`${x},?`, "gu"), ""));
     return /^,?((\d{2,3}(-\d{2,3})?)\b,?)*(\|\d{1,2}!?)?$/iu.test(test);
   }
@@ -116,7 +120,7 @@ export class TimeStudyTree {
     let internal = input.toLowerCase();
     // Convert every name into the ids it is a shorthand for
     this.sets.forEach((ids, name) => (internal = internal.replace(name, ids.join())));
-    return internal
+    return normalizeJStudyIds(internal)
       .replace(/[|,]$/u, "")
       .replaceAll(" ", "")
       // Allows 11,,21 to be parsed as 11,21 and 11,|1 to be parsed as 11|1
@@ -143,7 +147,7 @@ export class TimeStudyTree {
           ? this.studyRangeToArray(studyRangeSplit[0], studyRangeSplit[1])
           : studyRangeSplit;
         for (const study of studyArray) {
-          if (studyDB.includes(parseInt(study, 10))) {
+          if (/^\d+$/u.test(String(study)) && studyDB.includes(parseInt(study, 10))) {
             const tsObject = TimeStudy(study);
             this.selectedStudies.push(tsObject);
             output.push(tsObject);
@@ -188,6 +192,7 @@ export class TimeStudyTree {
   }
 
   checkTimeStudyNumber(token) {
+    if (!/^\d+$/u.test(String(token))) return 0;
     const tsNumber = parseFloat(token);
     if (!TimeStudy(tsNumber) || (TimeStudy(tsNumber).isTriad && !Ra.canBuyTriad)) {
       return 0;
@@ -198,10 +203,12 @@ export class TimeStudyTree {
   // Attempt to purchase all studies specified in the array which may be either study IDs (which get converted) or
   // study objects. The method needs to support both because turning it entirely to studies causes circular references
   // which make the game fail to load
-  attemptBuyArray(studyArray, checkCosts) {
+  attemptBuyArray(studyArray, checkCosts, preserveOwnedJStudies = false) {
     for (const study of studyArray) {
       const toBuy = typeof study === "object" ? study : TimeStudy(study);
-      if (this.hasRequirements(toBuy)) this.buySingleStudy(toBuy, checkCosts);
+      const legacyOwnedJ = preserveOwnedJStudies && toBuy?.type === TIME_STUDY_TYPE.NORMAL &&
+        [62, 112, 113, 114, 152, 153, 154, 155, 156].includes(toBuy.id) && toBuy.isBought;
+      if (legacyOwnedJ || this.hasRequirements(toBuy)) this.buySingleStudy(toBuy, checkCosts);
     }
   }
 
@@ -322,7 +329,7 @@ export class TimeStudyTree {
   get exportString() {
     return `${this.purchasedStudies
       .filter(s => s instanceof NormalTimeStudyState)
-      .map(s => s.id)
+      .map(s => s.config.displayId ?? s.id)
       .join(",")}|${this.ec}${player.challenge.eternity.current === 0 ? "" : "!"}`;
   }
 }

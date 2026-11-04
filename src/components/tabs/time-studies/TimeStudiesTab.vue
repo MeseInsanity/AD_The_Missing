@@ -33,6 +33,7 @@ export default {
       renderedConnectionCount: 0,
       isEnslaved: false,
       delayTimer: 0,
+      jLayoutState: "",
     };
   },
   computed: {
@@ -41,6 +42,9 @@ export default {
     },
     allStudies() {
       return this.layout.studies;
+    },
+    junction181() {
+      return this.allStudies.find(setup => setup.study === TimeStudy(181));
     },
     studies() {
       return this.allStudies.slice(0, this.renderedStudyCount);
@@ -71,6 +75,11 @@ export default {
     vLevel() {
       // When vLevel changes, we recompute the study tree because of triad studies
       this.$recompute("layout");
+    },
+    jLayoutState() {
+      this.$recompute("layout");
+      this.renderedStudyCount = this.allStudies.length;
+      this.renderedConnectionCount = this.allConnections.length;
     }
   },
   created() {
@@ -110,6 +119,10 @@ export default {
     update() {
       this.respec = player.respec;
       this.layoutType = STUDY_TREE_LAYOUT_TYPE.current;
+      const jIds = [62, 112, 113, 114, 152, 153, 154, 155, 156];
+      const nextJLayoutState = jIds.map(id => Number(TimeStudy(id).isUnlocked)).join("") +
+        Array.range(1, 9).map(id => Number(Boolean(Perk[`bypassEC${id}Lock`]?.isBought))).join("");
+      this.jLayoutState = nextJLayoutState;
       this.vLevel = Ra.pets.v.level;
       this.isEnslaved = Enslaved.isRunning || Date.now() - this.delayTimer < 1000;
     },
@@ -171,6 +184,17 @@ export default {
         v-if="isEnslaved"
         :setup="layout.enslavedStudy"
       />
+      <span
+        class="c-time-study-junction"
+        :style="{ left: `${layout.junction.left + layout.junction.width / 2}rem`,
+                  top: `${layout.junction.top + layout.junction.height / 2}rem` }"
+      />
+      <span
+        v-if="junction181"
+        class="c-time-study-junction"
+        :style="{ left: `${junction181.left + junction181.width / 2}rem`,
+                  top: `${junction181.top + junction181.height / 2}rem` }"
+      />
       <svg
         :style="treeStyleObject"
         class="l-time-study-connection"
@@ -192,5 +216,14 @@ export default {
 </template>
 
 <style scoped>
-
+.c-time-study-junction {
+  position: absolute;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: #888;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+}
 </style>

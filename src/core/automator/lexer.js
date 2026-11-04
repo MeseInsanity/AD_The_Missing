@@ -61,6 +61,11 @@ const NumberLiteral = createToken({
   pattern: /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/,
 });
 
+const JStudyLiteral = createToken({
+  name: "JStudyLiteral",
+  pattern: /(?:11|12|13|21|22|23|31|32|41)[jJ](?![a-zA-Z_0-9])/,
+});
+
 const BlackHoleStr = createToken({
   name: "BlackHoleStr",
   pattern: /[Bb][Hh][12]/,
@@ -361,7 +366,7 @@ export const automatorTokens = [
   HSpace, StringLiteral, StringLiteralSingleQuote, Comment, EOL,
   ComparisonOperator, ...tokenLists.ComparisonOperator,
   LCurly, RCurly, Comma, EqualSign, Pipe, Dash, Exclamation,
-  BlackHoleStr, NumberLiteral,
+  BlackHoleStr, JStudyLiteral, NumberLiteral,
   AutomatorCurrency, ...tokenLists.AutomatorCurrency,
   ECLiteral,
   Keyword, ...keywordTokens,

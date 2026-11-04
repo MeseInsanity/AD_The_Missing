@@ -96,6 +96,7 @@ export default {
       throw "Unknown Time Study type";
     },
     studyString(study) {
+      if (study === this.layout.junction.study) return "111";
       switch (study.type) {
         case TIME_STUDY_TYPE.NORMAL: case TIME_STUDY_TYPE.TRIAD: return `${study.id}`;
         case TIME_STUDY_TYPE.ETERNITY_CHALLENGE: return `EC${study.id}`;

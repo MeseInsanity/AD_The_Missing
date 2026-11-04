@@ -50,6 +50,7 @@ export class TimeStudyTreeLayout {
 
     const TS = id => (TimeStudy(id).isUnlocked ? TimeStudy(id) : null);
     const EC = id => TimeStudy.eternityChallenge(id);
+    const bypass = id => Boolean(Perk[`bypassEC${id}Lock`]?.isBought);
 
     /**
      * @type {TimeStudyRow[]}
@@ -61,30 +62,25 @@ export class TimeStudyTreeLayout {
       normalRow(                         TS(34), TS(31), TS(32), TS(33)               )
     ];
 
-    if (type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_62 || type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_62_181 ||
-      type === STUDY_TREE_LAYOUT_TYPE.ALTERNATIVE_TRIAD_STUDIES) {
-      this.rows.push(
-        normalRow(                           null, TS(41), TS(42)                      ),
-        normalRow(null, TS(113), TS(51), EC(5), null)
-      );
-    } else {
-      this.rows.push(
-        normalRow(                           TS(41), TS(42)                             ),
-        normalRow(null, TS(113), TS(51), EC(5), null)
-      );
-    }
+    this.rows.push(
+      normalRow(null, TS(41), TS(42), EC(5)),
+      normalRow(null, bypass(1) ? null : TS(113), TS(51), TS(62), null)
+    );
 
     this.rows.push(
-      normalRow(null, EC(1), TS(61), TS(62), null),
-      normalRow(null, TS(71),  TS(72),  TS(73),  null),
-      normalRow(EC(3), TS(81), TS(82), TS(83), EC(2)),
-      normalRow(TS(114), TS(91), TS(92), TS(93), TS(112)),
+      normalRow(null, EC(1), TS(61), bypass(1) ? TS(113) : null, null),
+      normalRow(EC(3), TS(71), TS(72), TS(73), EC(2)),
+      normalRow(TS(114), TS(81), TS(82), TS(83), TS(112)),
+      normalRow(null, TS(91), TS(92), TS(93), null),
       normalRow(null, TS(101), TS(102), TS(103), null),
-      normalRow(TS(155), EC(7), TS(111), EC(8), TS(153)),
+      normalRow(!bypass(7) && bypass(8) ? TS(155) : null, bypass(8) ? EC(7) : null,
+        TS(111), bypass(7) ? TS(155) : null, null),
+      normalRow(!bypass(7) && !bypass(8) ? TS(155) : null, bypass(8) ? TS(153) : EC(7),
+        null, EC(8), bypass(8) ? null : TS(153)),
       normalRow(null, TS(121), TS(122), TS(123), null),
-      normalRow(EC(6), TS(131), TS(132), TS(133), null),
+      normalRow(EC(6), TS(131), TS(132), TS(133), TS(154)),
       normalRow(TS(152), TS(141), TS(142), TS(143), EC(4)),
-      normalRow(TS(156), EC(9), TS(151), TS(154), null),
+      normalRow(bypass(9) ? null : TS(156), EC(9), TS(151), bypass(9) ? TS(156) : null, null),
       normalRow(                          TS(161), TS(162)                            ),
       normalRow(                      TS(172), TS(171), TS(173)                       )
     );
@@ -134,6 +130,13 @@ export class TimeStudyTreeLayout {
         this.studies.push(setup);
       }
     }
+    const junction = {
+      type: null,
+      path: TIME_STUDY_PATH.NONE,
+      get isBought() { return TimeStudy(111).isBought; }
+    };
+    const junctionRow = this.rows.findIndex(row => row.items.includes(EC(8)));
+    this.junction = new TimeStudySetup({ study: junction, row: junctionRow, column: 2 });
     const secretStudy = {};
     this.secretStudy = new TimeStudySetup({
       study: secretStudy,
@@ -151,8 +154,24 @@ export class TimeStudyTreeLayout {
     /**
      * @type {TimeStudyConnectionSetup[]}
      */
-    this.connections = TimeStudy.allConnections
-      .map(c => new TimeStudyConnectionSetup(c));
+    const jSources = new Map([[62, [5, 42]], [112, [2, 73]], [113, [1, 72]], [114, [3, 71]],
+      [152, [6, 131]], [153, [8, 122]], [154, [4, 143]], [155, [7, 111]], [156, [9, 151]]]);
+    const visibleStudies = new Set(this.studies.map(setup => setup.study));
+    const connections = TimeStudy.allConnections.filter(connection => {
+      if (connection.from === TimeStudy(111) && [121, 122, 123].some(id => connection.to === TimeStudy(id))) {
+        return false;
+      }
+      return !jSources.has(connection.to.id) || connection.to.type !== TIME_STUDY_TYPE.NORMAL;
+    }).filter(connection => visibleStudies.has(connection.from) && visibleStudies.has(connection.to));
+    for (const [id, [challenge, prerequisite]] of jSources) {
+      const target = TS(id);
+      if (target) {
+        connections.push(new TimeStudyConnection(bypass(challenge) ? TS(prerequisite) : EC(challenge), target));
+      }
+    }
+    connections.push(new TimeStudyConnection(TS(111), junction));
+    for (const id of [121, 122, 123]) connections.push(new TimeStudyConnection(junction, TS(id)));
+    this.connections = connections.map(connection => new TimeStudyConnectionSetup(connection));
     this.secretStudyConnection = new TimeStudyConnectionSetup(
       new TimeStudyConnection(TS(11), secretStudy)
     );
@@ -167,11 +186,12 @@ export class TimeStudyTreeLayout {
     for (const study of this.studies) {
       study.setPosition(this);
     }
+    this.junction.setPosition(this);
     this.secretStudy.setPosition(this);
     this.enslavedStudy.setPosition(this);
 
     for (const connection of this.connections) {
-      connection.setPosition(this.studies, this.width, this.height);
+      connection.setPosition(this.studies.concat(this.junction), this.width, this.height);
     }
     this.secretStudyConnection.setPosition(this.studies.concat(this.secretStudy), this.width, this.height);
     this.enslavedStudyConnection.setPosition(this.studies.concat(this.enslavedStudy), this.width, this.height);

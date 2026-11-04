@@ -51,7 +51,7 @@ export default {
       return {
         timeTheorems: importedTree.spentTheorems[0],
         spaceTheorems: importedTree.spentTheorems[1],
-        newStudies: makeEnumeration(newStudiesArray),
+        newStudies: makeEnumeration(importedTree.purchasedStudies.map(s => this.studyDisplayString(s))),
         newStudiesArray,
         invalidStudies: importedTree.invalidStudies,
         firstPaths: makeEnumeration(importedTree.dimensionPaths),
@@ -67,8 +67,8 @@ export default {
       if (!this.inputIsValidTree) return {};
       const currentStudyTree = GameCache.currentStudyTree.value;
       const combinedTree = this.combinedTreeObject;
-      const newStudiesArray = combinedTree.purchasedStudies
-        .filter(s => !currentStudyTree.purchasedStudies.includes(s)).map(s => this.studyString(s));
+      const newStudies = combinedTree.purchasedStudies.filter(s => !currentStudyTree.purchasedStudies.includes(s));
+      const newStudiesArray = newStudies.map(s => this.studyString(s));
       // To start an EC using the ! functionality, we want to make sure all the following are true:
       // - The imported string needs to end with "!" (this is parsed out in time-study-tree.js and stored into the
       //   canStart prop for tree objects)
@@ -83,7 +83,7 @@ export default {
       return {
         timeTheorems: combinedTree.spentTheorems[0].sub(currentStudyTree.spentTheorems[0]),
         spaceTheorems: combinedTree.spentTheorems[1] - currentStudyTree.spentTheorems[1],
-        newStudies: makeEnumeration(newStudiesArray),
+        newStudies: makeEnumeration(newStudies.map(s => this.studyDisplayString(s))),
         newStudiesArray,
         firstPaths: makeEnumeration(combinedTree.dimensionPaths),
         secondPaths: makeEnumeration(combinedTree.pacePaths),
@@ -94,7 +94,7 @@ export default {
     },
     combinedTreeObject() {
       const combinedTree = new TimeStudyTree();
-      combinedTree.attemptBuyArray(TimeStudyTree.currentStudies, false);
+      combinedTree.attemptBuyArray(TimeStudyTree.currentStudies, false, true);
       combinedTree.attemptBuyArray(combinedTree.parseStudyImport(this.truncatedInput), true);
       return combinedTree;
     },
@@ -213,6 +213,9 @@ export default {
     },
     studyString(study) {
       return study instanceof ECTimeStudyState ? `EC${study.id}` : `${study.id}`;
+    },
+    studyDisplayString(study) {
+      return study instanceof ECTimeStudyState ? `EC${study.id}` : `${study.config.displayId ?? study.id}`;
     }
   },
 };
