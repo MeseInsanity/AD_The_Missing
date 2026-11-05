@@ -918,7 +918,9 @@ export const normalAchievements = [
     name: "This mile took an Eternity",
     description: "Get all Eternity milestones.",
     checkRequirement: () => EternityMilestone.all.every(m => m.isReached),
-    checkEvent: GAME_EVENT.GAME_TICK_AFTER
+    checkEvent: GAME_EVENT.GAME_TICK_AFTER,
+    reward: "Infinity Dimension purchase caps are 50% higher.",
+    effect: 1.5
   },
   {
     id: 113,

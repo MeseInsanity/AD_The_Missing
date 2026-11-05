@@ -495,7 +495,8 @@ export const InfinityDimensions = {
   },
 
   get totalDimCap() {
-    return this.basePurchaseCap.times(Fragments.infinityDimensionCapMultiplier).add(this.capIncrease).floor();
+    return this.basePurchaseCap.times(Fragments.infinityDimensionCapMultiplier).add(this.capIncrease)
+      .floor().times(Achievement(112).effectOrDefault(1)).floor();
   },
 
   canBuy() {
