@@ -86,7 +86,45 @@ export class TimeTheoremPurchaseType {
   }
 }
 
-TimeTheoremPurchaseType.am = new class extends TimeTheoremPurchaseType {
+// AM/IP prices change growth rates; purchases use the stored purchase count across every segment.
+class ScalingTimeTheoremPurchaseType extends TimeTheoremPurchaseType {
+  costAt(amount) {
+    const exponents = this.costExponents;
+    const last = exponents.length - 1;
+    const exponent = amount.lt(last)
+      ? new Decimal(exponents[amount.toNumber()])
+      : amount.sub(last).times(this.finalExponentIncrement).add(exponents[last]);
+    return Decimal.pow10(exponent);
+  }
+
+  get cost() { return this.costAt(this.amount); }
+
+  purchase(bulk = false) {
+    if (!bulk) return super.purchase(false);
+    let purchased = false;
+    const last = this.costExponents.length - 1;
+    while (this.amount.lt(last) && this.canAfford) {
+      if (!super.purchase(false)) return purchased;
+      purchased = true;
+    }
+    if (!this.canAfford) return purchased;
+
+    let count = this.currency.value.log10().sub(this.cost.log10()).div(this.finalExponentIncrement)
+      .floor().add(1).max(1);
+    if (this.currency.gte(this.costAt(this.amount.add(count)))) count = count.add(1);
+    if (this.currency.lt(this.costAt(this.amount.add(count).sub(1)))) count = count.sub(1);
+    if (count.lte(0)) return purchased;
+    const lastCost = this.costAt(this.amount.add(count).sub(1));
+    Currency.timeTheorems.add(count);
+    this.add(count);
+    if (!Perk.ttFree.canBeApplied && this.currency.layer <= 1) this.currency.subtract(lastCost);
+    player.requirementChecks.reality.noPurchasedTT = false;
+    if (Currency.timeTheorems.gte(115) && Pelle.isDoomed) PelleStrikes.ECs.trigger();
+    return true;
+  }
+}
+
+TimeTheoremPurchaseType.am = new class extends ScalingTimeTheoremPurchaseType {
   get amount() { return player.timestudy.amBought; }
   set amount(value) { player.timestudy.amBought = value; }
 
@@ -94,9 +132,11 @@ TimeTheoremPurchaseType.am = new class extends TimeTheoremPurchaseType {
   // AM reaches roughly three times as many orders of magnitude before Eternity in this mod.
   get costBase() { return DC.E60000; }
   get costIncrement() { return DC.E60000; }
+  get costExponents() { return [60000, 120000, 180000, 240000, 300000, 350000, 390000, 420000, 440000]; }
+  get finalExponentIncrement() { return 20000; }
 }();
 
-TimeTheoremPurchaseType.ip = new class extends TimeTheoremPurchaseType {
+TimeTheoremPurchaseType.ip = new class extends ScalingTimeTheoremPurchaseType {
   get amount() { return player.timestudy.ipBought; }
   set amount(value) { player.timestudy.ipBought = value; }
 
@@ -104,6 +144,8 @@ TimeTheoremPurchaseType.ip = new class extends TimeTheoremPurchaseType {
   get costBase() { return DC.D1; }
   // IP reaches roughly four times as many orders of magnitude before Eternity in this mod.
   get costIncrement() { return DC.E400; }
+  get costExponents() { return [0, 400, 800, 1200, 1600, 2000, 2300, 2500, 2600]; }
+  get finalExponentIncrement() { return 100; }
 }();
 
 TimeTheoremPurchaseType.ep = new class extends TimeTheoremPurchaseType {

@@ -761,8 +761,7 @@ boost the production of anything you have seen so far in the game, or even chang
 <br>
 <br>
 Time Theorems are a limited resource which costs more for each one you buy. They can be bought with antimatter,
-Infinity Points, or Eternity Points. Their cost increases by a set factor per purchase. Time Theorems do not
-reset on Eternity.
+Infinity Points, or Eternity Points. Their cost increases with each purchase. Time Theorems do not reset on Eternity.
 <br>
 <br>
 Studies are laid out in a tree-like fashion, where you must buy prerequisites before continuing. The only study you
@@ -810,9 +809,9 @@ the middle of an Eternity.
 <br>
 <b>Costs for Time Theorems:</b>
 <br>
-<b>Antimatter:</b> Initially ${format(DC.E20000)}, ${formatX(DC.E20000)} per Theorem
+<b>Antimatter:</b> Initially ${format(DC.E60000)}; the cost growth slows after ${format(Decimal.pow10(300000))}.
 <br>
-<b>Infinity Points:</b> Initially ${formatInt(1)}, ${formatX(DC.E100)} per Theorem
+<b>Infinity Points:</b> Initially ${formatInt(1)}; the cost growth slows after ${format(Decimal.pow10(2000))}.
 <br>
 <b>Eternity Points:</b> Initially ${formatInt(1)}, ${formatX(2)} per Theorem
 `,
