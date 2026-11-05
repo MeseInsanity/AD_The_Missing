@@ -136,10 +136,17 @@ export class Sacrifice {
   }
 
   static get reflowMultiplier() {
+    return this.reflowMultiplierFor(4);
+  }
+
+  static reflowMultiplierFor(tier, hasStudy = TimeStudy(72).canBeApplied) {
     const upgrade = BreakInfinityUpgrade.bestIPminAmp;
     if (!upgrade.isBought) return DC.D1;
-    const rate = upgrade.config.id4ReflowRate;
-    return this.reflowFactor(typeof rate === "function" ? rate() : (rate ?? DC.D0));
+    const configRate = upgrade.config.id4ReflowRate;
+    const rate = typeof configRate === "function" ? configRate() : (configRate ?? DC.D0);
+    if (tier === 4) return this.reflowFactor(hasStudy ? rate.times(0.9) : rate);
+    if (tier === 8 && hasStudy) return this.reflowFactor(rate.times(0.2));
+    return DC.D1;
   }
 }
 

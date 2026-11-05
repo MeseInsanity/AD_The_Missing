@@ -187,10 +187,9 @@ export const normalTimeStudies = [
       () => Perk.studyECRequirement.isBought ||
         (!EternityChallenge(11).isUnlocked && !EternityChallenge(12).isUnlocked)],
     reqType: TS_REQUIREMENT_TYPE.DIMENSION_PATH,
-    description: "Dimensional Sacrifice affects 4th Infinity Dimension with greatly reduced effect",
-    effect: () => Sacrifice.totalBoost.pow(0.04).clampMin(1),
-    cap: DC.E30000,
-    formatEffect: value => formatX(value, 2, 1)
+    description: "Power Partition also strengthens 8th Infinity Dimension, with a reduced effect on 4th",
+    effect: () => Sacrifice.reflowMultiplierFor(8, true),
+    formatEffect: value => `ID4: ${formatX(Sacrifice.reflowMultiplierFor(4, true), 2, 2)}, ID8: ${formatX(value, 2, 2)}`
   },
   {
     id: 73,

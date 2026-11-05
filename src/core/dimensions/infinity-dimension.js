@@ -215,7 +215,6 @@ class InfinityDimensionState extends DimensionState {
     let mult = GameCache.infinityDimensionCommonMultiplier.value
       .timesEffectsOf(
         tier === 1 ? Achievement(94) : null,
-        tier === 4 ? TimeStudy(72) : null,
         tier === 1 ? EternityChallenge(2).reward : null
       );
     if (tier === 1) {
@@ -228,7 +227,7 @@ class InfinityDimensionState extends DimensionState {
     if (tier === 3) {
       mult = mult.times(BreakInfinityUpgrade.infinityTimeIDMult.effectOrDefault(DC.D1));
     }
-    if (tier === 4) mult = mult.times(Sacrifice.reflowMultiplier);
+    if (tier === 4 || tier === 8) mult = mult.times(Sacrifice.reflowMultiplierFor(tier));
     if (tier >= 5) mult = mult.times(Fragments.infinityDimensionJMultiplier);
     if (BreakInfinityUpgrade.achievementMult.isBought) {
       const tierExponent = 0.8 / (tier * 2.717857142857143);

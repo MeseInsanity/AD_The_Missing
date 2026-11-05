@@ -147,12 +147,23 @@ export const ID = {
         TimeStudy(92),
         TimeStudy(162)
       );
-      if (dim) return dim === 4 ? allMult.times(TimeStudy(72).effectOrDefault(1)) : allMult;
+      if (dim) return allMult;
       const maxActiveDim = MultiplierTabHelper.activeDimCount("ID");
-      return Decimal.pow(allMult, maxActiveDim).times(maxActiveDim >= 4 ? TimeStudy(72).effectOrDefault(1) : DC.D1);
+      return Decimal.pow(allMult, maxActiveDim);
     },
     isActive: () => PlayerProgress.eternityUnlocked(),
     icon: MultiplierTabIcons.TIME_STUDY,
+  },
+  powerPartition: {
+    name: "Power Partition",
+    multValue: dim => {
+      if (dim) return Sacrifice.reflowMultiplierFor(dim);
+      const active = MultiplierTabHelper.activeDimCount("ID");
+      return (active >= 4 ? Sacrifice.reflowMultiplierFor(4) : DC.D1)
+        .times(active >= 8 ? Sacrifice.reflowMultiplierFor(8) : DC.D1);
+    },
+    isActive: () => BreakInfinityUpgrade.bestIPminAmp.isBought,
+    icon: MultiplierTabIcons.SACRIFICE("antimatter"),
   },
   eternityUpgrade: {
     name: "Eternity Upgrades",

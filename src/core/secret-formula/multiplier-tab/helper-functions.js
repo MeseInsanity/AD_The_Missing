@@ -139,7 +139,7 @@ export const MultiplierTabHelper = {
       case 71:
         return dimStr.substr(0, 2) === "AD" && Number(dimStr.charAt(2)) !== 8;
       case 72:
-        return dimStr === "ID4";
+        return dimStr === "ID4" || dimStr === "ID8";
       case 73:
         return dimStr === "TD3";
       case 214:
