@@ -6,7 +6,6 @@ import { Fragments } from "@/core/secret-formula/fragments";
 import wordShift from "@/core/word-shift";
 
 import ReplicantiUpgradeButton, { ReplicantiUpgradeButtonSetup } from "./ReplicantiUpgradeButton";
-import PrimaryButton from "@/components/PrimaryButton";
 import ReplicantiGainText from "./ReplicantiGainText";
 
 import ReplicantiGalaxyButton from "./ReplicantiGalaxyButton";
@@ -14,7 +13,6 @@ import ReplicantiGalaxyButton from "./ReplicantiGalaxyButton";
 export default {
   name: "ReplicantiTab",
   components: {
-    PrimaryButton,
     ReplicantiGainText,
     ReplicantiUpgradeButton,
     ReplicantiGalaxyButton,
@@ -22,7 +20,6 @@ export default {
   data() {
     return {
       isUnlocked: false,
-      isUnlockAffordable: false,
       isInEC8: false,
       ec8Purchases: 0,
       amount: new Decimal(),
@@ -46,7 +43,6 @@ export default {
       isUncapped: false,
       nextEffarigRGThreshold: 0,
       canSeeGalaxyButton: false,
-      unlockCost: new Decimal(),
       scrambledText: "",
       maxReplicanti: new Decimal(),
       estimateToMax: 0,
@@ -132,10 +128,9 @@ export default {
   methods: {
     update() {
       this.isUnlocked = Replicanti.areUnlocked;
-      this.unlockCost = new Decimal(1e140).dividedByEffectOf(PelleRifts.vacuum.milestones[1]);
       if (this.isDoomed) this.scrambledText = this.vacuumText();
       if (!this.isUnlocked) {
-        this.isUnlockAffordable = Currency.infinityPoints.gte(this.unlockCost);
+        if (Tab.infinity.replicanti.isOpen) Tab.infinity.upgrades.show(true);
         return;
       }
       this.isInEC8 = EternityChallenge(8).isRunning;
@@ -199,17 +194,7 @@ export default {
 <template>
   <div class="l-replicanti-tab">
     <br>
-    <PrimaryButton
-      v-if="!isUnlocked"
-      :enabled="isUnlockAffordable"
-      class="o-primary-btn--replicanti-unlock"
-      onclick="Replicanti.unlock();"
-    >
-      Unlock Replicanti
-      <br>
-      Cost: {{ format(unlockCost) }} IP
-    </PrimaryButton>
-    <template v-else>
+    <template v-if="isUnlocked">
       <div
         v-if="isDoomed"
         class="modified-cap"
