@@ -199,12 +199,8 @@ class InfinityIPMultUpgrade extends GameMechanicState {
     return this.isCapped;
   }
 
-  get isRequirementSatisfied() {
-    return Achievement(41).isUnlocked;
-  }
-
   get canBeBought() {
-    return !Pelle.isDoomed && !this.isCapped && Currency.infinityPoints.gte(this.cost) && this.isRequirementSatisfied;
+    return !Pelle.isDoomed && !this.isCapped && Currency.infinityPoints.gte(this.cost);
   }
 
   purchase(amount = 1) {

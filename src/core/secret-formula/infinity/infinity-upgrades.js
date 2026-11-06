@@ -368,7 +368,6 @@ export const infinityUpgrades = {
     id: "ipMult",
     name: "Infinite Returns",
     cost: () => InfinityUpgrade.ipMult.cost,
-    checkRequirement: () => Achievement(41).isUnlocked,
     description: () => `Multiply Infinity Points from all sources by ${formatX(3)}`,
     effect: () => DC.D3.pow(player.IPMultPurchases).clampMax(DC.E1E6),
     cap: () => Effarig.eternityCap ?? DC.E1E6,
