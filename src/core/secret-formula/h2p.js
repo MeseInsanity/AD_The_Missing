@@ -1,6 +1,10 @@
 /* eslint-disable max-len */
 import { DC } from "../constants";
 
+import { jStudyIds } from "../time-studies/j-study-ids";
+
+import { Fragments } from "./fragments";
+
 import { credits } from "@/core/secret-formula/credits";
 
 export const h2p = {
@@ -445,12 +449,12 @@ display as ${format(Infinity)}.
 <br>
 <br>
 Each Infinity completed will give an Infinity Point, which can be spent on upgrades in the new Infinity tab.
-You must purchase these upgrades from top to bottom. You will also gain one "Infinity", which is effectively
-the number of times you have crunched.
+Within each row of the Infinity Upgrade grid, purchase upgrades from left to right. Different rows can be purchased
+independently. You will also gain Infinities, which count your progress through Big Crunches.
 <br>
 <br>
-The "Multiply Infinity Points from all sources by ${formatInt(2)}" upgrade can be bought multiple times,
-but each purchase requires ${formatInt(10)} times as much IP.
+The "Infinite Returns" upgrade can be bought multiple times and multiplies IP gain by ${formatX(3)} per purchase.
+Its price grows in stages, with later scaling changing as you progress.
 You must complete the Achievement "No DLC required" to start purchasing this particular upgrade.
 <br>
 <br>
@@ -476,7 +480,7 @@ Your first Infinity is considered to be the first Normal Challenge, and is thus 
 you unlock challenges.
 <br>
 <br>
-The rightmost column of Infinity Upgrades does not work in challenges.
+Some Infinity Upgrades have restrictions in challenges; check their descriptions for their current effects.
 `,
       isUnlocked: () => PlayerProgress.infinityUnlocked(),
       tags: ["infinity", "autobuyer", "earlygame"],
@@ -561,6 +565,10 @@ ${formatPostBreak(Number.MAX_VALUE, 2)} antimatter you gain (in a continuous man
 nearest integer <i>after</i> all multipliers are applied.
 <br>
 <br>
+Break Infinity Upgrades provide several ways to improve IP gain. For example, Dimensional Dividend uses Infinity Power
+to build a multiplier for IP gained on Big Crunch.
+<br>
+<br>
 The antimatter costs of all Dimensions begin to increase faster after they pass
 ${formatPostBreak(Number.MAX_VALUE, 2)}. The cost <i>between</i> upgrades will increase by ${formatX(10)}
 <i>per upgrade</i> above ${formatPostBreak(Number.MAX_VALUE, 2)}, and a similar scaling happens to
@@ -572,7 +580,8 @@ Tickspeed Upgrade costs as well.
     }, {
       name: "Infinity Dimensions",
       info: () => `
-<b>Unlocking Infinity Dimensions:</b> Infinity Dimensions are unlocked by reaching a certain amount of antimatter.
+<b>Unlocking Infinity Dimensions:</b> Early dimensions have different unlock conditions; completing four Normal
+Challenges unlocks the first four. Later dimensions have additional antimatter, IP, or challenge requirements.
 <br>
 <br>
 <b>Infinity Dimension Purchasing:</b> Infinity Dimensions are only purchasable in sets of ${formatInt(10)}, and cost
@@ -588,10 +597,6 @@ Every crunch, your produced Infinity Dimensions are reset to the amount you purc
 of Infinity Dimensions does not carry between crunches, all the multipliers you got from purchasing them do.
 <br>
 <br>
-<b>Infinity Dimension unlock thresholds (antimatter):</b> ${Array.range(1, 8)
-    .map(tier => formatPostBreak(InfinityDimension(tier)._unlockRequirement))
-    .join(", ")}
-<br>
 <b>Infinity Dimension purchase multipliers:</b> ${Array.range(1, 8)
     .map(tier => format(InfinityDimension(tier)._powerMultiplier))
     .join(", ")}
@@ -605,9 +610,10 @@ of Infinity Dimensions does not carry between crunches, all the multipliers you 
     .join(", ")}
 <br>
 <br>
-Instead of antimatter, the 1st Infinity Dimension produces Infinity Power, which gives a multiplier applied
-to all Antimatter Dimensions equal to (power<sup>${formatInt(7)}</sup>). Infinity Dimensions are not
-affected by Tickspeed Upgrades.
+The 1st Infinity Dimension produces Infinity Power, which multiplies Antimatter Dimensions. Its conversion exponent
+depends on Normal Challenge completions and other upgrades; see the current rate on the Infinity Dimensions tab.
+Infinity Dimensions have purchase caps which can be increased through progression. Infinity Dimensions are not
+normally affected by Tickspeed.
 `,
       isUnlocked: () => Autobuyer.bigCrunch.hasMaxedInterval || PlayerProgress.eternityUnlocked(),
       tags: ["id", "power", "new", "dims", "unlock", "break", "midgame"],
@@ -634,28 +640,25 @@ amount of antimatter before you can attempt them.
     }, {
       name: "Replicanti",
       info: () => `
-Replicanti are another resource you unlock at ${format(DC.E140)} IP. Rather
-than producing something else, Replicanti actually produces <i>itself</i> up to a maximum of
-${formatPostBreak(Number.MAX_VALUE, 2)}. Replicanti are produced at their own pace, unaffected by Tickspeed Upgrades.
-Each individual Replicanti has a certain chance (initially ${formatPercents(0.01)}) of producing another Replicanti
-every Replicanti tick (initially every second), and both of these can be upgraded by spending IP.
+Replicanti unlock for free when Infinity Challenge 9 is completed. They reproduce at their own pace, unaffected by
+Tickspeed Upgrades. The starting chance is ${formatPercents(0.2)} each second. Chance and interval are improved through
+progression rather than purchased with IP.
 <br>
 <br>
-If you have purchased a Replicanti Galaxy upgrade, then you can get a "free" Replicanti Galaxy in exchange for
-resetting your Replicanti count back to ${formatInt(1)}. This Galaxy is free in that it will act as if it was an
-Antimatter Galaxy, but it will not make your next Antimatter Galaxy more expensive. However, it will still reset the
-same things as an Antimatter Galaxy does.
+IP purchases increase the maximum number of Replicanti Galaxies. Obtaining each Galaxy also requires enough
+Replicanti; this requirement grows as you obtain more.${Fragments.isUnlocked ? ` Its calculation can also use the
+Fragment effect, depending on your progression.` : ""} A Replicanti Galaxy does not increase the cost of Antimatter
+Galaxies. Obtaining one normally resets Replicanti and the same progress as an Antimatter Galaxy; later rewards can
+change these resets.
 <br>
 <br>
 <b>Hotkey: R</b> will try to purchase a Replicanti Galaxy.
 <br>
-Replicanti give a multiplier to all Infinity Dimensions, which will reach a maximum of
-${formatX(Math.pow(2, 20), 2, 2)} at ${formatPostBreak(Number.MAX_VALUE, 2)} Replicanti.
+Replicanti give a multiplier to Infinity Dimensions. Their growth initially has a cap; later progression can increase
+and eventually remove it. Above the normal limit, growth slows. The cap and slowdown are separate mechanics.
+${Fragments.isUnlocked ? `Infinity Dimension multipliers use Effective Replicanti, while the Replicanti amount shown
+on its own is the actual amount. See Fragments for how the effective amount is calculated.` : ""}
 <br>
-<br>
-<b>Chance upgrade cost:</b> Base ${format(DC.E150)} IP, cost increment ${formatX(DC.E15)} IP
-<br>
-<b>Interval upgrade cost:</b> Base ${format(DC.E140)} IP, cost increment ${formatX(DC.E10)} IP
 <br>
 <b>Galaxy upgrade cost:</b> Base ${format(DC.E170)} IP, cost increment ${formatX(DC.E25)} IP and an additional
 ${formatX(1e5)} IP per upgrade, scaling similarly to distant Antimatter Galaxies. Above ${formatInt(100)} Replicanti
@@ -666,23 +669,61 @@ from quadratic to cubic, with the ${formatX(DC.E55)} multiplier itself increasin
       tags: ["interval", "chance", "infinity", "galaxy", "galaxies", "midgame"],
       tab: "infinity/replicanti"
     }, {
+      name: "Fragments and Drains",
+      info: () => `
+Big Crunch grants Fragments based on Effective Replicanti. Effective Replicanti is your actual Replicanti multiplied
+by the current Fragment effect; it is not the amount which reproduces. The Fragment effect is calculated from your
+stored Fragments after Decay and any applicable softcaps. Spending Fragments therefore reduces the amount available
+for both the effect and further deposits.
+<br><br>
+Decay weakens the effect over simulated time; it does not remove stored Fragments. A Big Crunch which beats your
+previous best single-Crunch Fragment gain resets the Decay timer. Matching the record is not enough.
+<br><br>
+Click a Drain bar to start or stop depositing Fragments. Only one Drain can run at a time; switching preserves what
+was already deposited, but stopping does not refund it. Drain Lock prevents switching while another Drain is running.
+Both the rate of Fragment spending and the rate of bar progress have limits; the bar is not a linear measure of the
+Fragments spent. A Drain marked Waiting needs a greater Fragment supply before it can make progress again.
+<br><br>
+Stabilize Decay lengthens the Decay half-life. Hover over its milestone markers for their individual rewards.
+${Fragments.stabilizeDecayFraction >= 0.02 ? `As it fills, Translation gradually changes the Fragment gain formula
+from one based on the logarithm of Effective Replicanti towards one based on its amount.` : ""}
+${Fragments.isInfinityPowerDrainUnlocked ? `<br><br><b>Power Through Time:</b> This Drain increases the Infinity
+Dimension purchase cap, with milestones for Infinity gain and transferring Tickspeed to Infinity Dimensions.` : ""}
+${Fragments.isThirdDrainUnlocked ? `<br><br><b>Power of Eternity:</b> This Drain increases Eternities gained. Its
+milestones affect Banked Infinities and the EP formula; completing it also grants passive IP.` : ""}
+`,
+      isUnlocked: () => Fragments.isUnlocked,
+      tags: ["fragment", "decay", "drain", "waiting", "translation", "effective replicanti"],
+      tab: "fragments/main"
+    }, {
+      name: "Condensate",
+      info: () => `
+Condensing turns Fragments into Condensate. It clears your current and total Fragments and your best single-Crunch
+Fragment gain, and stops all Drains. Drain progress is also cleared unless its Anchor milestone is reached. Anchor
+checks include the Condensate gained by this very Condense. Other game progress is not reset by Condensing.
+<br><br>
+Condensate Milestones depend on total Condensate gained, not your current amount. They unlock automatically: some are
+one-time milestones, while others gain levels as total Condensate increases. The repeatable milestones improve
+Fragment gain, the Condensate formula, and the point where Replicanti Galaxy scaling begins. Other milestones retain
+Drain progress or change how existing effects work. Check each milestone for its requirement and effect.
+`,
+      isUnlocked: () => Fragments.isCondensateUnlocked,
+      tags: ["condense", "condensate", "milestone", "anchor"],
+      tab: "fragments/condensate"
+    }, {
       name: "Eternity",
       info: () => `
-Upon reaching ${formatPostBreak(Number.MAX_VALUE, 2)} IP, you can Eternity. Eternities will reset everything before this
-point except challenge times, Achievements, and anything under the General section of the Statistics tab. You will be
-able to access more content after your first Eternity.
+Outside Eternity Challenges, reach ${formatInt(2)}<sup>${formatInt(4096)}</sup> IP to perform your first Eternity.
+Eternity resets earlier progress, while Achievements, records, and certain other progress are retained. Eternity
+Milestones preserve additional upgrades and automation as you advance.
 <br>
 <br>
-You can pass ${formatPostBreak(Number.MAX_VALUE, 2)} IP without anything being forced upon you, unlike the first time
-you reached ${formatPostBreak(Number.MAX_VALUE, 2)} antimatter. You will receive more Eternity Points the more
-Infinity Points you had before going Eternal. You will also gain one "Eternity" for completing an Eternity.
+You can pass this goal without being forced to reset. More Infinity Points can award more Eternity Points (EP).
+Eternities are counted separately from EP, and later effects can increase the number gained per reset.
 <br>
 <br>
-Eternity Point gain scales similarly to Infinity Point gain, but scaling off of Infinity Points instead of antimatter.
-The base amount of EP gained at ${formatPostBreak(Number.MAX_VALUE, 2)} IP is ~${format(1.62, 2, 2)} EP, multiplied by
-${formatInt(5)} for every factor of ${formatPostBreak(Number.MAX_VALUE, 2)} more IP you have. This is always rounded
-down, which means that you will get ${formatInt(1)} EP at ${formatPostBreak(Number.MAX_VALUE, 2)} IP but will not reach
-${formatInt(2)} EP until ${formatPostBreak(DC.E349)}.
+Before multipliers, EP is based on 4<sup>log<sub>2</sub>(IP) / divisor − 1</sup>, rounded down after multipliers.
+The base divisor is ${formatInt(2880)}; some later effects improve it. Eternity Challenges have their own goals.
 <br>
 <br>
 <b>Hotkey: E</b> will try to perform an Eternity reset.
@@ -698,8 +739,8 @@ buffs will generally let you start with certain upgrades you would otherwise los
 autobuyers for better automation, or give you a way to passively gain resources offline at a reduced rate.
 <br>
 <br>
-Milestones which give you upgrades will automatically purchase and upgrade them to their maximum when first starting
-the Eternity, effectively letting you have them permanently.
+Some milestones retain fixed Infinity and Break Infinity upgrades. Repeatable upgrades are separate and may need to
+be purchased again; check each milestone for what it keeps or automates.
 <br>
 <br>
 All of the new autobuyers will have toggles next to their respective manual buttons (for example, Infinity Dimension
@@ -762,11 +803,12 @@ boost the production of anything you have seen so far in the game, or even chang
 <br>
 Time Theorems are a limited resource which costs more for each one you buy. They can be bought with antimatter,
 Infinity Points, or Eternity Points. Their cost increases with each purchase. Time Theorems do not reset on Eternity.
+Buy a 1st Time Dimension before purchasing your first Time Theorem.
 <br>
 <br>
 Studies are laid out in a tree-like fashion, where you must buy prerequisites before continuing. The only study you
-can buy at first is the very top one, and then from there you can purchase any study directly below it which you can
-afford. However, there are three exceptions:
+can buy at first is the very top one. Other studies require connected prerequisites and may have additional
+requirements. Important restrictions include:
 <br>
 Where the lines between studies have a color, you can only choose one of the three paths at a time.
 <br>
@@ -774,6 +816,12 @@ When a study for an Eternity Challenge is in the way, you need to complete all c
 once in order to access the study. You do not need to have the challenge study purchased in order to access it.
 <br>
 Near the bottom, where all the edges join together again, you can only pick one study out of each pair.
+<br>
+<br>
+The Dimension paths offer different ways to improve production; for example, TS72 extends Power Partition to the
+8th Infinity Dimension, with a reduced effect on the 4th. The TS141–143 choices affect IP gain, with different
+conditions for their benefits.
+Read the studies themselves for their current effects and tradeoffs.
 <br>
 <br>
 You are able to hold down shift and then click on a Time Study to buy all studies until that point. This might not buy
@@ -818,6 +866,19 @@ the middle of an Eternity.
       isUnlocked: () => PlayerProgress.eternityUnlocked(),
       tags: ["eternity", "ts", "theorems", "tree", "study", "midgame"],
       tab: "eternity/studies"
+    }, {
+      name: "j Studies",
+      info: () => `
+j Studies are special branches of the Time Study tree. They become visible when their associated challenge has been
+completed or its bypass is available; previously owned studies remain visible. Visibility alone does not guarantee
+purchase: each study also has its own prerequisite and cost.
+<br><br>
+These studies offer different effects and tradeoffs, and some interact with other progression systems. Read the
+visible studies for their effects and requirements when choosing a path.
+`,
+      isUnlocked: () => Object.values(jStudyIds).some(id => TimeStudy(id).isUnlocked),
+      tags: ["j", "j study", "j studies", "tree"],
+      tab: ""
     }, {
       name: "Eternity Challenges",
       info: () => `
