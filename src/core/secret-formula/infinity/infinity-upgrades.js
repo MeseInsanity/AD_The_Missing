@@ -239,7 +239,7 @@ export const infinityUpgrades = {
     id: "galaxyBoost",
     name: "Forbidden Galaxy",
     cost: 1024,
-    checkRequirement: () => InfinityUpgrade.resetBoost.isBought,
+    checkRequirement: () => InfinityUpgrade.dimboostMult.isBought,
     description: "All Galaxies are twice as strong",
     effect: 2,
     charged: {
