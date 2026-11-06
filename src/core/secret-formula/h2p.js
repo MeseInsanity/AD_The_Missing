@@ -444,8 +444,8 @@ Dimensions, Dimension Boosts, and your Antimatter Galaxies. Doing a Big Crunch i
 "Infinitying".
 <br>
 <br>
-You will eventually be able to pass ${formatPostBreak(Number.MAX_VALUE, 6)}, but until then any larger numbers will
-display as ${format(Infinity)}.
+You will eventually be able to pass ${formatPostBreak(Number.MAX_VALUE, 6)}, but until then numbers at or above this
+limit display as ${formatPostBreak(Infinity)}.
 <br>
 <br>
 Each Infinity completed will give an Infinity Point, which can be spent on upgrades in the new Infinity tab.
