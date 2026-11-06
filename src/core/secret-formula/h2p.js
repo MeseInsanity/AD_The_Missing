@@ -453,11 +453,6 @@ Within each row of the Infinity Upgrade grid, purchase upgrades from left to rig
 independently. You will also gain Infinities, which count your progress through Big Crunches.
 <br>
 <br>
-The "Infinite Returns" upgrade can be bought multiple times and multiplies IP gain by ${formatX(3)} per purchase.
-Its price grows in stages, with later scaling changing as you progress.
-You must complete the Achievement "No DLC required" to start purchasing this particular upgrade.
-<br>
-<br>
 <b>Hotkey: C</b> will try to perform a Big Crunch.
 `,
       isUnlocked: () => PlayerProgress.infinityUnlocked(),
@@ -567,6 +562,10 @@ nearest integer <i>after</i> all multipliers are applied.
 <br>
 Break Infinity Upgrades provide several ways to improve IP gain. For example, Dimensional Dividend uses Infinity Power
 to build a multiplier for IP gained on Big Crunch.
+<br>
+<br>
+Infinite Returns can be purchased repeatedly, multiplying IP gain by ${formatX(3)} per purchase. Its price grows in
+stages, with later scaling changing as you progress.
 <br>
 <br>
 The antimatter costs of all Dimensions begin to increase faster after they pass
